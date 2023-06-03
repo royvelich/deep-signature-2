@@ -3,17 +3,17 @@ channels:
   - pyg
   - nvidia
   - pytorch
-  - pytorch3d
+#  - pytorch3d
   - fvcore
   - iopath
   - conda-forge
   - defaults
 dependencies:
-  - python
+  - python=3.10
   - pytorch
   - torchaudio
   - torchvision
-  - cudatoolkit
+  - cudatoolkit=11.7
   - pyg
   - pytorch-sparse
   - pytorch-cluster
@@ -29,9 +29,9 @@ dependencies:
   - numba
   - pyvista
   - shapely
-  - fvcore
-  - iopath
-  - pytorch3d
+#  - fvcore
+#  - iopath
+#  - pytorch3d
   - pip
   - pip:
       - lightly
