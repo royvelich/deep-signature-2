@@ -1,0 +1,43 @@
+name: surface-diff-inv
+channels:
+  - pyg
+  - nvidia
+  - pytorch
+  - pytorch3d
+  - fvcore
+  - iopath
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - pytorch
+  - torchaudio
+  - torchvision
+  - cudatoolkit
+  - pyg
+  - pytorch-sparse
+  - pytorch-cluster
+  - igl
+  - numpy
+  - scipy
+  - scikit-learn
+  - scikit-image
+  - jupyterlab
+  - matplotlib
+  - pandas
+  - plotly
+  - numba
+  - pyvista
+  - shapely
+  - fvcore
+  - iopath
+  - pytorch3d
+  - pip
+  - pip:
+      - lightly
+      - wandb
+      - typed-argument-parser
+      - gitpython
+      - opencv-python
+      - jupyter-bokeh
+      - trame
