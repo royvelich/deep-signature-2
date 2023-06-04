@@ -1,8 +1,10 @@
+import igl
 import numpy
 import pyvista
 import torch
 from torch_geometric.nn import fps
 
+from utils import rearange_mesh_faces
 
 def main():
     grid_points_count = 200
@@ -17,10 +19,18 @@ def main():
     sampled_points[:, 2] = 0.1*numpy.sin(2*numpy.pi*sampled_points[:, 0]*0.5) + numpy.cos(4*numpy.pi*sampled_points[:, 1]*0.1)
 
     cloud = pyvista.PolyData(sampled_points)
-    cloud.plot(point_size=5)
+    # cloud.plot(point_size=5)
 
     surf = cloud.delaunay_2d()
-    surf.plot(show_edges=True)
+    # surf.plot(show_edges=True)
+
+    v = surf.points
+    f = surf.faces
+    f = rearange_mesh_faces(f)
+    # format the faces in the right format
+
+
+    v1, v2, k1, k2 = igl.principal_curvature(v, f)
 
 
 if __name__ == "__main__":
