@@ -4,7 +4,8 @@ import pyvista
 import torch
 from torch_geometric.nn import fps
 
-from utils import rearange_mesh_faces
+from utils import rearange_mesh_faces, calc_dk1_1
+
 
 def main():
     grid_points_count = 200
@@ -31,6 +32,8 @@ def main():
 
 
     v1, v2, k1, k2 = igl.principal_curvature(v, f)
+
+    dk1_1 = calc_dk1_1(v, v1, k1)
 
 
 if __name__ == "__main__":
