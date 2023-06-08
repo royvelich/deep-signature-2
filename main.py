@@ -4,7 +4,7 @@ import pyvista
 import torch
 from torch_geometric.nn import fps
 
-from utils import rearange_mesh_faces, calc_dki_j, plot_mesh_and_color_by_k_or_dki_j
+from utils import rearange_mesh_faces, calc_dki_j, plot_mesh_and_color_by_k_or_dki_j, plot_mesh_with_vector_field, generate_surface
 
 
 def main():
@@ -12,6 +12,7 @@ def main():
     grid_linspace = numpy.linspace(-1, 1, grid_points_count)
     grid_x, grid_y = numpy.meshgrid(grid_linspace, grid_linspace)
     points = numpy.stack([grid_x.ravel(), grid_y.ravel(), numpy.zeros(shape=grid_points_count*grid_points_count)], axis=1)
+
 
     points_tensor = torch.tensor(points)
 
@@ -33,8 +34,13 @@ def main():
     f = rearange_mesh_faces(f)
     # format the faces in the right format
 
+    # generate less dense surface for the vector field visualization
+    surf_vec_field, v_surf_vec_field, f_surf_vec_field = generate_surface(30)
 
     v1, v2, k1, k2 = igl.principal_curvature(v, f)
+    v_less_dense1, v_less_dense2, k_less_dense1, k_less_dense2 = igl.principal_curvature(v_surf_vec_field, f_surf_vec_field)
+
+    plot_mesh_with_vector_field(surf, surf_vec_field, k1,v_less_dense1 , v_less_dense2)
     plot_mesh_and_color_by_k_or_dki_j(surf, k1, "k1")
     plot_mesh_and_color_by_k_or_dki_j(surf, k2, "k2")
     delta = (1/grid_points_count) * 20
