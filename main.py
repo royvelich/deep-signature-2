@@ -1,20 +1,35 @@
 import igl
-import numpy
+import numpy as np
 import pyvista
 import torch
 from torch_geometric.nn import fps
 
 import dataset_generator
-from utils import rearange_mesh_faces, calc_dki_j, plot_mesh_and_color_by_k_or_dki_j, plot_mesh_with_vector_field, generate_surface, calculate_pearson_corr_matrix
+from utils import rearange_mesh_faces, calc_dki_j, plot_mesh_and_color_by_k_or_dki_j, plot_mesh_with_vector_field, \
+    generate_surface, calculate_pearson_corr_matrix, calculate_derivatives
 
 
 def main():
     grid_points_count = 200
-    surf, v, f =generate_surface(grid_points_count)
 
     delta = (1/grid_points_count) * 20
+    surf, v, f = generate_surface(grid_points_count)
+    k1_total,k2_total, dk1_1_total, dk1_2_total, dk2_1_total, dk2_2_total, dk1_22_total, dk2_11_total = calculate_derivatives(v, f, delta)
 
-    calculate_pearson_corr_matrix(v, f, delta=delta)
+
+    for i in range(10):
+        surf, v, f =generate_surface(grid_points_count)
+        k1, k2, dk1_1, dk1_2, dk2_1, dk2_2, dk1_22, dk2_11 = calculate_derivatives(v, f, delta)
+        k1_total= np.concatenate([k1_total, k1])
+        k2_total = np.concatenate([k2_total, k2])
+        dk1_1_total= np.concatenate([dk1_1_total, dk1_1])
+        dk1_2_total = np.concatenate([dk1_2_total, dk1_2])
+        dk2_1_total = np.concatenate([dk2_1_total, dk2_1])
+        dk2_2_total = np.concatenate([dk2_2_total, dk2_2])
+        dk1_22_total = np.concatenate([dk1_22_total, dk1_22])
+        dk2_11_total = np.concatenate([dk2_11_total, dk2_11])
+    calculate_pearson_corr_matrix(k1_total, k2_total, dk1_1_total, dk1_2_total, dk2_1_total, dk2_2_total, dk1_22_total, dk2_11_total)
+    # calculate_pearson_corr_matrix(v, f, delta=delta)
 
     # format the faces in the right format
     surf.plot( show_edges=False, cmap='jet', cpos='xy', screenshot='k.png')

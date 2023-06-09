@@ -87,10 +87,12 @@ def generate_surface(grid_points=200):
     # sampled_points[:, 2] = 0.1*numpy.sin(2*numpy.pi*sampled_points[:, 0]*0.5) + numpy.cos(4*numpy.pi*sampled_points[:, 1]*0.1)
     points_tensor = points_tensor.cpu().detach().numpy()
     # scalar rand between 0 to 100
-    a = np.random.rand()*2
-    b = np.random.rand()*2
-    points_tensor[:, 2] = 0.1 * np.sin(2 * np.pi * points_tensor[:, 0] * 0.5) + np.cos(
+    a = np.random.rand()/2
+    b = np.random.rand()/2
+    points_tensor[:, 2] = a* np.sin(2 * np.pi * points_tensor[:, 0] * 0.5) + b*np.cos(
         4 * np.pi * points_tensor[:, 1] * 0.1)
+    # points_tensor[:, 2] = 0.1 * np.sin(2 * np.pi * points_tensor[:, 0] * 0.5) + np.cos(
+    #     4 * np.pi * points_tensor[:, 1] * 0.1)
     # points_tensor[:, 2] = points_tensor[:, 0]**2 + points_tensor[:, 1]**2
 
     cloud = pv.PolyData(points_tensor)
@@ -104,13 +106,8 @@ def generate_surface(grid_points=200):
     f = rearange_mesh_faces(f)
     return surf, v,f
 
-
-def calculate_pearson_corr_matrix(v, f, delta=0.01):
+def calculate_derivatives(v, f,delta=0.01):
     v1, v2, k1, k2 = igl.principal_curvature(v, f)
-
-
-    # plot_mesh_and_color_by_k_or_dki_j(surf, k1, "k1")
-    # plot_mesh_and_color_by_k_or_dki_j(surf, k2, "k2")
     dk1_1 = calc_dki_j(v, v1, k1, delta)
 
     dk1_2 = calc_dki_j(v, v2, k1, delta)
@@ -122,6 +119,16 @@ def calculate_pearson_corr_matrix(v, f, delta=0.01):
     dk1_22 = calc_dki_j(v, v2, dk1_2, delta)
 
     dk2_11 = calc_dki_j(v, v1, dk2_1, delta)
+    return k1, k2, dk1_1, dk1_2, dk2_1, dk2_2, dk1_22, dk2_11
+
+
+def calculate_pearson_corr_matrix(k1, k2, dk1_1, dk1_2, dk2_1, dk2_2, dk1_22, dk2_11):
+
+
+
+    # plot_mesh_and_color_by_k_or_dki_j(surf, k1, "k1")
+    # plot_mesh_and_color_by_k_or_dki_j(surf, k2, "k2")
+
 
 #     calculate pearson correlation matrix
     pearson_corr_matrix = np.corrcoef(np.hstack([k1[:,np.newaxis],k2[:,np.newaxis],dk1_1, dk1_2, dk2_1, dk2_2, dk1_22, dk2_11]),rowvar=False)
