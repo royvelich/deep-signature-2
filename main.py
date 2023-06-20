@@ -10,14 +10,14 @@ from utils import rearange_mesh_faces, calc_dki_j, plot_mesh_and_color_by_k_or_d
 
 
 def main():
-    grid_points_count = 200
+    grid_points_count = 50
 
     delta = (1/grid_points_count) * 20
     surf, v, f = generate_surface(grid_points_count)
     k1_total,k2_total, dk1_1_total, dk1_2_total, dk2_1_total, dk2_2_total, dk1_22_total, dk2_11_total = calculate_derivatives(v, f, delta)
 
 
-    for i in range(10):
+    for i in range(20):
         surf, v, f =generate_surface(grid_points_count)
         k1, k2, dk1_1, dk1_2, dk2_1, dk2_2, dk1_22, dk2_11 = calculate_derivatives(v, f, delta)
         k1_total= np.concatenate([k1_total, k1])

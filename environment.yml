@@ -22,13 +22,14 @@ dependencies:
   - scipy
   - scikit-learn
   - scikit-image
-  - jupyterlab
   - matplotlib
+  - jupyterlab
   - pandas
   - plotly
   - numba
   - pyvista
   - shapely
+  - notebook
 #  - fvcore
 #  - iopath
 #  - pytorch3d
@@ -41,3 +42,4 @@ dependencies:
       - opencv-python
       - jupyter-bokeh
       - trame
+      - noise
