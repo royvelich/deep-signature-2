@@ -33,20 +33,20 @@ class CorrelationEvaluator:
         codazzi_arguments = np.hstack(codazzi_arguments_list)
 
 
-        columns_count = codazzi_arguments.shape[1]
-        num_columns_to_remove = int(columns_count * self._points_ratio)
-
-        # Generate a list of all column indices
-        all_indices = np.arange(columns_count)
-
-        # Randomly choose some indices to remove
-        remove_indices = np.random.choice(all_indices, num_columns_to_remove, replace=False)
-
-        # Get the indices of the columns to keep
-        keep_indices = np.setdiff1d(all_indices, remove_indices)
-
-        # Select only the columns to keep
-        codazzi_arguments_filtered = codazzi_arguments[:, keep_indices]
+        # columns_count = codazzi_arguments.shape[1]
+        # num_columns_to_remove = int(columns_count * self._points_ratio)
+        #
+        # # Generate a list of all column indices
+        # all_indices = np.arange(columns_count)
+        #
+        # # Randomly choose some indices to remove
+        # remove_indices = np.random.choice(all_indices, num_columns_to_remove, replace=False)
+        #
+        # # Get the indices of the columns to keep
+        # keep_indices = np.setdiff1d(all_indices, remove_indices)
+        #
+        # # Select only the columns to keep
+        # codazzi_arguments_filtered = codazzi_arguments[:, keep_indices]
 
         # codazzi_arguments = np.array(codazzi_arguments_list).reshape(8, -1)
         corrcoef1 = np.corrcoef(codazzi_arguments)

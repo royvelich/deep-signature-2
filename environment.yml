@@ -43,3 +43,4 @@ dependencies:
       - jupyter-bokeh
       - trame
       - noise
+      - cgal
