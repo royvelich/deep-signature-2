@@ -13,7 +13,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/applets/evaluate_correlation.py" />
-    <option name="PARAMETERS" value="--patches-count 2000 --num-workers 50 --limit 1 --grid-size 500 --points-count 600" />
+    <option name="PARAMETERS" value="--patches-count 30000 --num-workers 18 --limit 0.1 --grid-size 20 --points-count 100 --min-sigma 1 --max-sigma 6 --max-abs-z 5" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="true" />
     <option name="MODULE_MODE" value="false" />

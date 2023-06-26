@@ -25,22 +25,17 @@ class PatchGenerator(ABC):
         self._limit = limit
         self._grid_size = grid_size
 
-    # @abstractmethod
-    # def _generate(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    #     pass
-
     @abstractmethod
     def generate(self) -> Patch:
         pass
-        # X, Y, Z = self._generate()
-        # v = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
-        # return Mesh.from_vertices(v=v)
 
 
 class GaussianPatchGenerator(PatchGenerator):
-    def __init__(self, limit: float, grid_size: int, sigma: float):
+    def __init__(self, limit: float, grid_size: int, min_sigma: float, max_sigma: float, max_abs_z: float):
         super().__init__(limit=limit, grid_size=grid_size)
-        self._sigma = sigma
+        self._min_sigma = min_sigma
+        self._max_sigma = max_sigma
+        self._max_abs_z = max_abs_z
 
     def generate(self) -> Patch:
         # Create 2D arrays for X, Y
@@ -49,10 +44,12 @@ class GaussianPatchGenerator(PatchGenerator):
         x_grid, y_grid = np.meshgrid(x_linspace, y_linspace)
 
         # Generate random Z values
-        z_grid = np.random.normal(0, 1, x_grid.shape)
+        z_grid = np.random.uniform(-self._max_abs_z, self._max_abs_z, x_grid.shape)
+
+        sigma = np.random.uniform(low=self._min_sigma, high=self._max_sigma)
 
         # Apply Gaussian smoothing
-        z_grid = gaussian_filter(z_grid, sigma=self._sigma)
+        z_grid = gaussian_filter(z_grid, sigma=sigma)
 
         return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid)
 
@@ -88,14 +85,21 @@ class RBFPatchGenerator(PatchGenerator):
         self._points_count = points_count
 
     def generate(self) -> Patch:
+        points_count = np.random.randint(20, 800)
         # Generate random points
-        x = np.random.uniform(low=-self._limit, high=self._limit, size=self._points_count)
-        y = np.random.uniform(low=-self._limit, high=self._limit, size=self._points_count)
-        z = np.random.uniform(low=-self._limit, high=self._limit, size=self._points_count)
+        x = np.random.uniform(low=-self._limit, high=self._limit, size=points_count)
+        y = np.random.uniform(low=-self._limit, high=self._limit, size=points_count)
+        z = np.random.uniform(low=-self._limit, high=self._limit, size=points_count)
+
+        # Define a list of valid function arguments
+        function_args = ['multiquadric']
+
+        # Select a random function argument
+        random_function_arg = np.random.choice(function_args)
 
         # Fit radial basis function to the points
-        smooth = np.random.uniform(low=0.01, high=10)
-        rbf = Rbf(x, y, z, function='linear', smooth=smooth)
+        smooth = np.random.uniform(low=0.1, high=10)
+        rbf = Rbf(x, y, z, function=random_function_arg, smooth=smooth)
 
         # Create 2D grid
         linspace_x = np.linspace(-self._limit, self._limit, self._grid_size)
@@ -157,3 +161,20 @@ class QuadraticMonagePatchGenerator(PatchGenerator):
 
         return Patch(x_grid=u_grid, y_grid=v_grid, z_grid=h)
 
+
+# https://math.stackexchange.com/questions/4722103/pearson-correlation-of-the-principal-curvatures
+class QuadraticMonagePatchGenerator2(PatchGenerator):
+    def __init__(self, limit: float, grid_size: int):
+        super().__init__(limit=limit, grid_size=grid_size)
+
+    def generate(self) -> Patch:
+        x = np.linspace(-self._limit, self._limit, self._grid_size)
+        y = np.linspace(-self._limit, self._limit, self._grid_size)
+
+        k1 = np.random.uniform(low=-1, high=1)
+        k2 = np.random.uniform(low=-1, high=1)
+
+        x_grid, y_grid = np.meshgrid(x, y)
+        z_grid = k1 * x_grid ** 2 / 2 + k2 * y_grid ** 2 / 2
+
+        return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid)

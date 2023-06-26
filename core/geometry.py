@@ -6,6 +6,7 @@ from enum import Enum
 
 # igl
 import igl
+import numpy
 
 # scipy
 from scipy.spatial import cKDTree
@@ -137,8 +138,13 @@ class Patch(Mesh):
         v[:, 2] = z
         pyvista_f = surf.faces
         standard_f = pyvista_faces_to_standard_faces(pyvista_f=pyvista_f)
-        self._tree = cKDTree(v)
         super().__init__(v=v, f=standard_f)
+        self._d1_grid = self._d1.reshape([self._x_grid.shape[0], self._x_grid.shape[1], -1])
+        self._d2_grid = self._d2.reshape([self._x_grid.shape[0], self._x_grid.shape[1], -1])
+        self._k1_grid = self._k1.reshape([self._x_grid.shape[0], self._x_grid.shape[1], -1])
+        self._k2_grid = self._k2.reshape([self._x_grid.shape[0], self._x_grid.shape[1], -1])
+        self._v_grid = self._v.reshape([self._x_grid.shape[0], self._x_grid.shape[1], -1])
+        self._tree = cKDTree(self._v)
 
     def plot(self,
              plotter: pv.Plotter,
@@ -146,41 +152,71 @@ class Patch(Mesh):
              show_principal_directions: bool = False,
              show_center_point: bool = True):
         super().plot(plotter=plotter, show_edges=show_edges, show_principal_directions=show_principal_directions)
-        if show_center_point is True:
-            grid_v = self._v.reshape([self._x_grid.shape[0], self._x_grid.shape[1], 3])
-
-            # specify step size
-            step = 20
-
-            # sample every 10th element
-            sampled_arr = grid_v[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
-
-            # Create a PolyData object from the points
-            cloud = pv.PolyData(sampled_arr.reshape((-1, 3)))
-
-            # Create a Plotter object and add our points to it, then plot
-            plotter.add_mesh(cloud, point_size=10.0, color="red", render_points_as_spheres=True)
+        # if show_center_point is True:
+        #     grid_v = self._v.reshape([self._x_grid.shape[0], self._x_grid.shape[1], 3])
+        #
+        #     # specify step size
+        #     step = 1
+        #
+        #     # sample every 10th element
+        #     sampled_arr = grid_v[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
+        #
+        #     # sampled_arr = grid_v[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]
+        #
+        #     # Create a PolyData object from the points
+        #     cloud = pv.PolyData(sampled_arr.reshape((-1, 3)))
+        #
+        #     # Create a Plotter object and add our points to it, then plot
+        #     plotter.add_mesh(cloud, point_size=10.0, color="red", render_points_as_spheres=True)
 
     def calculate_codazzi_arguments(self) -> np.ndarray:
-        # dk1_1 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=self._k1)
-        # dk1_2 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=self._k1)
-        # dk1_22 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=dk1_2)
-        # dk2_1 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=self._k2)
-        # dk2_2 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=self._k2)
-        # dk2_11 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=dk2_1)
+        # indices = numpy.array([[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]])
+        indices = None
+        k1 = self._k1_grid[:, :, 0]
+        k2 = self._k2_grid[:, :, 0]
+        dk1_1 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=self._k1_grid, indices=indices)
+        dk1_2 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=self._k1_grid, indices=indices)
+        dk1_22 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=dk1_2, indices=indices)
+        dk2_1 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=self._k2_grid, indices=indices)
+        dk2_2 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=self._k2_grid, indices=indices)
+        dk2_11 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=dk2_1, indices=indices)
         # return np.stack((self._k1, self._k2, dk1_1, dk1_2, dk1_22, dk2_1, dk2_2, dk2_11), axis=0)
 
-        # specify step size
-        step = 20
+        # dk1_1 = np.expand_dims(dk1_1, axis=2)
+        # dk1_2 = np.expand_dims(dk1_2, axis=2)
+        # dk1_22 = np.expand_dims(dk1_22, axis=2)
+        # dk2_1 = np.expand_dims(dk2_1, axis=2)
+        # dk2_2 = np.expand_dims(dk2_2, axis=2)
+        # dk2_11 = np.expand_dims(dk2_11, axis=2)
 
-        k1_reshape = self._k1.reshape((self._x_grid.shape[0], self._x_grid.shape[1]))
-        k2_reshape = self._k2.reshape((self._x_grid.shape[0], self._x_grid.shape[1]))
+        # # specify step size
+        # step = 40
+        #
+        # k1_reshape = self._k1.reshape((self._x_grid.shape[0], self._x_grid.shape[1]))
+        # k2_reshape = self._k2.reshape((self._x_grid.shape[0], self._x_grid.shape[1]))
+        #
+        # # sample every 10th element
+        # # k1_sampled = k1_reshape[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
+        # # k2_sampled = k2_reshape[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
+        #
+        # k1_sampled = k1_reshape[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]
+        # k2_sampled = k2_reshape[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]
 
-        # sample every 10th element
-        k1_sampled = k1_reshape[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
-        k2_sampled = k2_reshape[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
+        index1 = self._x_grid.shape[0] // 2
+        index2 = self._x_grid.shape[1] // 2
 
-        return np.stack((k1_sampled.ravel(), k2_sampled.ravel()), axis=0)
+        return np.array([
+            k1[index1, index2],
+            k2[index1, index2],
+            dk1_1[index1, index2],
+            dk1_2[index1, index2],
+            dk1_22[index1, index2],
+            dk2_1[index1, index2],
+            dk2_2[index1, index2],
+            dk2_11[index1, index2]
+        ])
+
+        # return np.stack((k1_sampled.ravel(), k2_sampled.ravel()), axis=0)
 
     def downsample(self, ratio: float) -> Mesh:
         v = torch.tensor(data=self._v)
@@ -203,13 +239,28 @@ class Patch(Mesh):
             h *= 10
             attempt += 1
 
-        return (scalar_field[idx_plus] - scalar_field[idx_minus]) / (2 * h)
+        idx_plus_grid = np.unravel_index(idx_plus, self._v_grid.shape[:-1])
+        idx_minus_grid = np.unravel_index(idx_minus, self._v_grid.shape[:-1])
+        return (scalar_field[idx_plus_grid] - scalar_field[idx_minus_grid]) / (2 * h)
 
-    def _directional_derivative(self, direction_field: np.ndarray, scalar_field: np.ndarray, h: float = 1e-5) -> np.ndarray:
-        return np.array([self._directional_derivative_at_point(point=self._v[i], direction=direction_field[i], scalar_field=scalar_field, h=h) for i in range(self._v.shape[0])])
+    def _directional_derivative_at_point2(self, x, y) -> np.ndarray:
+        return 1
 
-    def _principal_direction_derivative(self, principal_direction: PrincipalDirection, scalar_field: np.ndarray, h: float = 1e-5) -> np.ndarray:
-        if principal_direction == PrincipalDirection.D1:
-            return self._directional_derivative(direction_field=self._d1, scalar_field=scalar_field, h=h)
+    def _directional_derivative(self, direction_field: np.ndarray, scalar_field: np.ndarray, indices: Optional[numpy.ndarray] = None, h: float = 1e-5) -> np.ndarray:
+        # return np.array([self._directional_derivative_at_point(point=self._v[i], direction=direction_field[i], scalar_field=scalar_field, h=h) for i in range(self._v.shape[0])])
+
+        if indices is None:
+            indices_pool = np.ndindex(self._v_grid.shape[:2])
         else:
-            return self._directional_derivative(direction_field=self._d2, scalar_field=scalar_field, h=h)
+            indices_pool = [tuple(row) for row in indices]
+
+        vfunc = np.vectorize(self._directional_derivative_at_point, excluded={2}, signature='(n),(n)->()')
+        return vfunc(self._v_grid, direction_field, scalar_field)
+
+        # return np.array([self._directional_derivative_at_point(point=self._v_grid[index], direction=direction_field[index], scalar_field=scalar_field, h=h) for index in indices_pool])
+
+    def _principal_direction_derivative(self, principal_direction: PrincipalDirection, scalar_field: np.ndarray, indices: Optional[numpy.ndarray] = None,  h: float = 1e-5) -> np.ndarray:
+        if principal_direction == PrincipalDirection.D1:
+            return self._directional_derivative(direction_field=self._d1_grid, scalar_field=scalar_field, indices=indices, h=h)
+        else:
+            return self._directional_derivative(direction_field=self._d2_grid, scalar_field=scalar_field, indices=indices, h=h)
