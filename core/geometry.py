@@ -83,7 +83,7 @@ class Mesh:
             show_edges: bool = False,
             show_principal_directions: bool = False):
         pyvista_mesh = pv.PolyData(self._v, self._pyvista_f)
-        plotter.add_mesh(mesh=pyvista_mesh, show_edges=show_edges)
+        plotter.add_mesh(mesh=pyvista_mesh, show_edges=True)
 
         if show_principal_directions is True:
             pyvista_mesh['d1'] = self._d1
@@ -152,22 +152,22 @@ class Patch(Mesh):
              show_principal_directions: bool = False,
              show_center_point: bool = True):
         super().plot(plotter=plotter, show_edges=show_edges, show_principal_directions=show_principal_directions)
-        # if show_center_point is True:
-        #     grid_v = self._v.reshape([self._x_grid.shape[0], self._x_grid.shape[1], 3])
-        #
-        #     # specify step size
-        #     step = 1
-        #
-        #     # sample every 10th element
-        #     sampled_arr = grid_v[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
-        #
-        #     # sampled_arr = grid_v[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]
-        #
-        #     # Create a PolyData object from the points
-        #     cloud = pv.PolyData(sampled_arr.reshape((-1, 3)))
-        #
-        #     # Create a Plotter object and add our points to it, then plot
-        #     plotter.add_mesh(cloud, point_size=10.0, color="red", render_points_as_spheres=True)
+        if show_center_point is True:
+            grid_v = self._v.reshape([self._x_grid.shape[0], self._x_grid.shape[1], 3])
+
+            # specify step size
+            step = 1
+
+            # sample every 10th element
+            # sampled_arr = grid_v[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
+
+            sampled_arr = grid_v[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2 ]
+
+            # Create a PolyData object from the points
+            cloud = pv.PolyData(sampled_arr.reshape((-1, 3)))
+
+            # Create a Plotter object and add our points to it, then plot
+            plotter.add_mesh(cloud, point_size=10.0, color="red", render_points_as_spheres=True)
 
     def calculate_codazzi_arguments(self) -> np.ndarray:
         # indices = numpy.array([[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]])
@@ -224,7 +224,8 @@ class Patch(Mesh):
         v = v[indices].cpu().detach().numpy()
         return Mesh.from_vertices(v=v)
 
-    def _directional_derivative_at_point(self, point: np.ndarray, direction: np.ndarray, scalar_field: np.ndarray, h: float = 1e-5, max_attempts: int = 10) -> np.ndarray:
+    def _directional_derivative_at_point(self, point: np.ndarray, direction: np.ndarray, scalar_field: np.ndarray, h: float = 1e-5, max_attempts: int = 8) -> np.ndarray:
+        h = 1e-8
         _, idx = self._tree.query(point)
         attempt = 0
         while True:
@@ -242,9 +243,6 @@ class Patch(Mesh):
         idx_plus_grid = np.unravel_index(idx_plus, self._v_grid.shape[:-1])
         idx_minus_grid = np.unravel_index(idx_minus, self._v_grid.shape[:-1])
         return (scalar_field[idx_plus_grid] - scalar_field[idx_minus_grid]) / (2 * h)
-
-    def _directional_derivative_at_point2(self, x, y) -> np.ndarray:
-        return 1
 
     def _directional_derivative(self, direction_field: np.ndarray, scalar_field: np.ndarray, indices: Optional[numpy.ndarray] = None, h: float = 1e-5) -> np.ndarray:
         # return np.array([self._directional_derivative_at_point(point=self._v[i], direction=direction_field[i], scalar_field=scalar_field, h=h) for i in range(self._v.shape[0])])
