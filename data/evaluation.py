@@ -96,5 +96,5 @@ class CorrelationEvaluator:
         axs[2].text(axis_limit + 0.1 * axis_limit, 0, 'First row', ha='right', va='center', rotation='vertical')
         axs[2].text(0, -axis_limit - 0.15 * axis_limit, 'Second row', ha='center', va='top')
 
-        plt.tight_layout()
-        plt.show()
+        fig.tight_layout()
+        fig.savefig('fig.png')
