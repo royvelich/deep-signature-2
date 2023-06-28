@@ -46,7 +46,13 @@ class GaussianPatchGenerator(PatchGenerator):
         # Generate random Z values
         z_grid = np.random.uniform(-self._max_abs_z, self._max_abs_z, x_grid.shape)
 
-        sigma = np.random.uniform(low=self._min_sigma, high=self._max_sigma)
+        # sigma = np.random.uniform(low=self._min_sigma, high=self._max_sigma)
+
+        # Define a list of valid function arguments
+        sigma_args = [3, 3.5, 4, 5]
+
+        # Select a random function argument
+        sigma = np.random.choice(sigma_args)
 
         # Apply Gaussian smoothing
         z_grid = gaussian_filter(z_grid, sigma=sigma)
@@ -155,9 +161,10 @@ class QuadraticMonagePatchGenerator(PatchGenerator):
 
         coeff_limit = 1
         a = np.random.uniform(-coeff_limit, coeff_limit)
-        b = np.random.uniform(-coeff_limit, coeff_limit)
+        # b = np.random.uniform(-coeff_limit, coeff_limit)
         c = np.random.uniform(-coeff_limit, coeff_limit)
-        h = a * u_grid * u_grid + 2 * b * u_grid * v_grid + c * v_grid * v_grid
+        # h = a * u_grid * u_grid + 2 * b * u_grid * v_grid + c * v_grid * v_grid
+        h = (a / 2) * (u_grid * u_grid) + (c / 2) * (v_grid * v_grid)
 
         return Patch(x_grid=u_grid, y_grid=v_grid, z_grid=h)
 

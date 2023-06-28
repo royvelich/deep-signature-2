@@ -32,9 +32,9 @@ if __name__ == "__main__":
     # patch_generator = RBFPatchGenerator(limit=10, grid_size=300, points_count=500)
     # patch_generator = RBFPatchGenerator(limit=2, grid_size=400, points_count=400)
     # patch_generator = RBFPatchGenerator(limit=args.limit, grid_size=args.grid_size, points_count=args.points_count)
-    patch_generator = GaussianPatchGenerator(limit=args.limit, grid_size=args.grid_size, min_sigma=args.min_sigma, max_sigma=args.max_sigma, max_abs_z=args.max_abs_z)
-    # patch_generator = QuadraticMonagePatchGenerator2(limit=args.limit, grid_size=args.grid_size)
+
+    patch_generator = QuadraticMonagePatchGenerator(limit=args.limit, grid_size=args.grid_size)
+    # patch_generator = GaussianPatchGenerator(limit=args.limit, grid_size=args.grid_size, min_sigma=args.min_sigma, max_sigma=args.max_sigma, max_abs_z=args.max_abs_z)
     patch = patch_generator.generate()
-    # patch = patch.downsample(ratio=0.2)
     Mesh.plot_meshes(meshes=[patch])
 

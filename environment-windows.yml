@@ -43,4 +43,6 @@ dependencies:
       - jupyter-bokeh
       - trame
       - noise
+      - openpyxl
       - cgal
+      - open3d

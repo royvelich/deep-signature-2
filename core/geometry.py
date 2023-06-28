@@ -47,7 +47,8 @@ class Mesh:
         self._v = v
         self._f = f
         self._pyvista_f = standard_faces_to_pyvista_faces(standard_f=f)
-        self._d1, self._d2, self._k1, self._k2 = igl.principal_curvature(v=v, f=f)
+        self._d2, self._d1, self._k2, self._k1 = igl.principal_curvature(v=v, f=f)
+        j = 7
 
     @property
     def v(self) -> np.ndarray:
@@ -156,7 +157,7 @@ class Patch(Mesh):
             grid_v = self._v.reshape([self._x_grid.shape[0], self._x_grid.shape[1], 3])
 
             # specify step size
-            step = 1
+            step = 2
 
             # sample every 10th element
             # sampled_arr = grid_v[step:self._x_grid.shape[0] - step + 1:step, step:self._x_grid.shape[1] - step + 1:step]
@@ -172,14 +173,14 @@ class Patch(Mesh):
     def calculate_codazzi_arguments(self) -> np.ndarray:
         # indices = numpy.array([[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]])
         indices = None
-        k1 = self._k1_grid[:, :, 0]
-        k2 = self._k2_grid[:, :, 0]
-        dk1_1 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=self._k1_grid, indices=indices)
-        dk1_2 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=self._k1_grid, indices=indices)
-        dk1_22 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=dk1_2, indices=indices)
-        dk2_1 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=self._k2_grid, indices=indices)
-        dk2_2 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=self._k2_grid, indices=indices)
-        dk2_11 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=dk2_1, indices=indices)
+        k1 = self._k1_grid[:, :, 0]                                                                                                             # 0
+        k2 = self._k2_grid[:, :, 0]                                                                                                             # 1
+        dk1_1 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=self._k1_grid, indices=indices)    # 2
+        dk1_2 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=self._k1_grid, indices=indices)    # 3
+        dk1_22 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=dk1_2, indices=indices)           # 4
+        dk2_1 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=self._k2_grid, indices=indices)    # 5
+        dk2_2 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D2, scalar_field=self._k2_grid, indices=indices)    # 6
+        dk2_11 = self._principal_direction_derivative(principal_direction=PrincipalDirection.D1, scalar_field=dk2_1, indices=indices)           # 7
         # return np.stack((self._k1, self._k2, dk1_1, dk1_2, dk1_22, dk2_1, dk2_2, dk2_11), axis=0)
 
         # dk1_1 = np.expand_dims(dk1_1, axis=2)
@@ -202,18 +203,26 @@ class Patch(Mesh):
         # k1_sampled = k1_reshape[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]
         # k2_sampled = k2_reshape[self._x_grid.shape[0] // 2, self._x_grid.shape[1] // 2]
 
-        index1 = self._x_grid.shape[0] // 2
-        index2 = self._x_grid.shape[1] // 2
+        # index1 = self._x_grid.shape[0] // 2
+        # index2 = self._x_grid.shape[1] // 2
+
+        step = 2
+        rows, cols = k1.shape
+        row_indices = np.arange(0, rows, step)
+        col_indices = np.arange(0, cols, step)
+
+        row_indices = np.array([self._x_grid.shape[0] // 2])
+        col_indices = np.array([self._x_grid.shape[1] // 2])
 
         return np.array([
-            k1[index1, index2],
-            k2[index1, index2],
-            dk1_1[index1, index2],
-            dk1_2[index1, index2],
-            dk1_22[index1, index2],
-            dk2_1[index1, index2],
-            dk2_2[index1, index2],
-            dk2_11[index1, index2]
+            k1[row_indices, col_indices],
+            k2[row_indices, col_indices],
+            dk1_1[row_indices, col_indices],
+            dk1_2[row_indices, col_indices],
+            dk1_22[row_indices, col_indices],
+            dk2_1[row_indices, col_indices],
+            dk2_2[row_indices, col_indices],
+            dk2_11[row_indices, col_indices]
         ])
 
         # return np.stack((k1_sampled.ravel(), k2_sampled.ravel()), axis=0)
