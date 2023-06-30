@@ -4,6 +4,7 @@ import argparse
 # surface-diff-inv
 from core import utils as core_utils
 from data.generation import GaussianPatchGenerator, InverseFourierPatchGenerator, RBFPatchGenerator, SimplexNoisePatchGenerator, QuadraticMonagePatchGenerator, QuadraticMonagePatchGenerator2
+from core.geometry import ScalarField
 
 # pyvista
 import pyvista as pv
@@ -17,8 +18,9 @@ if __name__ == "__main__":
     parser.add_argument('--patches-count', type=int)
     parser.add_argument('--num-workers', type=int)
     parser.add_argument('--limit', type=float)
+    parser.add_argument('--coeff-limit', type=float)
     parser.add_argument('--grid-size', type=int)
-    # parser.add_argument('--points-count', type=int)
+    parser.add_argument('--points-count', type=int)
     parser.add_argument('--min-sigma', type=float)
     parser.add_argument('--max-sigma', type=float)
     parser.add_argument('--max-abs-z', type=float)
@@ -33,8 +35,6 @@ if __name__ == "__main__":
     # patch_generator = RBFPatchGenerator(limit=2, grid_size=400, points_count=400)
     # patch_generator = RBFPatchGenerator(limit=args.limit, grid_size=args.grid_size, points_count=args.points_count)
 
-    patch_generator = QuadraticMonagePatchGenerator(limit=args.limit, grid_size=args.grid_size)
-    # patch_generator = GaussianPatchGenerator(limit=args.limit, grid_size=args.grid_size, min_sigma=args.min_sigma, max_sigma=args.max_sigma, max_abs_z=args.max_abs_z)
+    patch_generator = QuadraticMonagePatchGenerator(limit=args.limit, grid_size=args.grid_size, coeff_limit=args.coeff_limit)
     patch = patch_generator.generate()
-    Mesh.plot_meshes(meshes=[patch])
-
+    Mesh.plot_meshes(meshes=[patch], show_principal_directions=True, scalar_field=ScalarField.DK1_1)

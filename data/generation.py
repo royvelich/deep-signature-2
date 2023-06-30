@@ -165,6 +165,10 @@ class QuadraticMonagePatchGenerator(PatchGenerator):
         # b = np.random.uniform(-coeff_limit, coeff_limit)
         c = np.random.uniform(-coeff_limit, coeff_limit)
         # h = a * u_grid * u_grid + 2 * b * u_grid * v_grid + c * v_grid * v_grid
+
+        # a = 5
+        # c = -2
+
         h = (a / 2) * (u_grid * u_grid) + (c / 2) * (v_grid * v_grid)
 
         return Patch(x_grid=u_grid, y_grid=v_grid, z_grid=h)
