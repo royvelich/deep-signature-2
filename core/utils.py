@@ -1,11 +1,23 @@
 # standard library
+import sys
+from pathlib import Path
 from tqdm.auto import tqdm
+import yaml
+import argparse
 
 # numpy
 import numpy as np
 
 # joblib
 from joblib import Parallel
+
+
+def save_command_arguments(path: Path, args: argparse.Namespace):
+    args_dict = vars(args)
+
+    # Save the dictionary to a file
+    with open(str(path), 'w') as f:
+        yaml.dump(args_dict, f, default_flow_style=False)
 
 
 def standard_faces_to_pyvista_faces(standard_f: np.ndarray) -> np.ndarray:

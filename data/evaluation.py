@@ -1,6 +1,9 @@
 # standard library
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple
+from datetime import datetime
+import yaml
+from pathlib import Path
 
 # numpy
 import numpy as np
@@ -21,34 +24,23 @@ from data.generation import PatchGenerator
 
 
 class CorrelationEvaluator:
-    def __init__(self, patches_count: int, num_workers: int, patch_generator: PatchGenerator):
+    def __init__(self, patches_count: int, num_workers: int, patch_generator: PatchGenerator, dir_path: Path):
         self._patches_count = patches_count
         self._num_workers = num_workers
         self._patch_generator = patch_generator
+        self._dir_path = dir_path
 
     def _calculate_codazzi_arguments(self) -> np.ndarray:
         patch = self._patch_generator.generate()
         codazzi_arguments = patch.calculate_codazzi_arguments()
         return codazzi_arguments
 
-    def evaluate(self) -> np.ndarray:
-        codazzi_arguments_list = core_utils.ProgressParallel(n_jobs=self._num_workers, total=self._patches_count)(delayed(self._calculate_codazzi_arguments)() for _ in range(self._patches_count))
-        # codazzi_arguments = np.stack(codazzi_arguments_list).T
-        codazzi_arguments = np.hstack(codazzi_arguments_list)
-        corrcoef1 = np.corrcoef(codazzi_arguments)
-        df = pd.DataFrame(corrcoef1)
-        pd.set_option('display.precision', 5)
-        print(df)
-        df.to_excel("./output2.xlsx")
-
-
-        fig, axs = plt.subplots(3, 1, figsize=(10, 15))
+    def _plot_correlation(self, codazzi_arguments: np.ndarray, bins: int = 200, index1: int = 0, index2: int = 1, figsize=(10, 15)):
+        fig, axs = plt.subplots(3, 1, figsize=figsize)
 
         # get data
-        x = codazzi_arguments[0, :]
-        y = codazzi_arguments[1, :]
-
-        bins = 200
+        x = codazzi_arguments[index1, :]
+        y = codazzi_arguments[index2, :]
 
         # Plot histogram for first row
         axs[0].hist(x, bins=bins, color='blue', alpha=0.7)
@@ -97,4 +89,15 @@ class CorrelationEvaluator:
         axs[2].text(0, -axis_limit - 0.15 * axis_limit, 'Second row', ha='center', va='top')
 
         fig.tight_layout()
-        fig.savefig('fig.png')
+        fig.savefig(str(self._dir_path / 'fig.png'))
+
+
+    def evaluate(self) -> np.ndarray:
+        codazzi_arguments_list = core_utils.ProgressParallel(n_jobs=self._num_workers, total=self._patches_count)(delayed(self._calculate_codazzi_arguments)() for _ in range(self._patches_count))
+        codazzi_arguments = np.hstack(codazzi_arguments_list)
+        corrcoef1 = np.corrcoef(codazzi_arguments)
+        df = pd.DataFrame(corrcoef1)
+        pd.set_option('display.precision', 5)
+        print(df)
+        df.to_excel(str(self._dir_path / Path("./corr.xlsx")))
+        self._plot_correlation(codazzi_arguments=codazzi_arguments)

@@ -151,15 +151,16 @@ class SimplexNoisePatchGenerator(PatchGenerator):
 
 # https://math.stackexchange.com/questions/4722103/pearson-correlation-of-the-principal-curvatures
 class QuadraticMonagePatchGenerator(PatchGenerator):
-    def __init__(self, limit: float, grid_size: int):
+    def __init__(self, limit: float, grid_size: int, coeff_limit: float):
         super().__init__(limit=limit, grid_size=grid_size)
+        self._coeff_limit = coeff_limit
 
     def generate(self) -> Patch:
         u = np.linspace(-self._limit, self._limit, self._grid_size)
         v = np.linspace(-self._limit, self._limit, self._grid_size)
         u_grid, v_grid = np.meshgrid(u, v)
 
-        coeff_limit = 1
+        coeff_limit = self._coeff_limit
         a = np.random.uniform(-coeff_limit, coeff_limit)
         # b = np.random.uniform(-coeff_limit, coeff_limit)
         c = np.random.uniform(-coeff_limit, coeff_limit)

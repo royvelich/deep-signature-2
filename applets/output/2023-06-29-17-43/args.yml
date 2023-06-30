@@ -1,0 +1,8 @@
+grid_size: 51
+limit: 1.0
+max_abs_z: null
+max_sigma: null
+min_sigma: null
+num_workers: 18
+patches_count: 5000
+points_count: null
