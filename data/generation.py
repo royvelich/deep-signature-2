@@ -154,16 +154,15 @@ class QuadraticMonagePatchGenerator(PatchGenerator):
     def __init__(self, limit: float, grid_size: int, coeff_limit: float):
         super().__init__(limit=limit, grid_size=grid_size)
         self._coeff_limit = coeff_limit
+        self._rng = np.random.default_rng()
 
     def generate(self) -> Patch:
         u = np.linspace(-self._limit, self._limit, self._grid_size)
         v = np.linspace(-self._limit, self._limit, self._grid_size)
         u_grid, v_grid = np.meshgrid(u, v)
-
-        coeff_limit = self._coeff_limit
-        a = np.random.uniform(-coeff_limit, coeff_limit)
+        a = self._rng.uniform(-self._coeff_limit, self._coeff_limit)
         # b = np.random.uniform(-coeff_limit, coeff_limit)
-        c = np.random.uniform(-coeff_limit, coeff_limit)
+        c = self._rng.uniform(-self._coeff_limit, self._coeff_limit)
         # h = a * u_grid * u_grid + 2 * b * u_grid * v_grid + c * v_grid * v_grid
 
         # a = 5
