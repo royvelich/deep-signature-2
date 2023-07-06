@@ -24,15 +24,16 @@ from data.generation import PatchGenerator
 
 
 class CorrelationEvaluator:
-    def __init__(self, patches_count: int, num_workers: int, patch_generator: PatchGenerator, dir_path: Path):
+    def __init__(self, patches_count: int, num_workers: int, patch_generator: PatchGenerator, dir_path: Path, accuracy: int):
         self._patches_count = patches_count
         self._num_workers = num_workers
         self._patch_generator = patch_generator
         self._dir_path = dir_path
+        self._accuracy = accuracy
 
     def _calculate_codazzi_arguments(self) -> np.ndarray:
         patch = self._patch_generator.generate()
-        codazzi_arguments = patch.calculate_codazzi_arguments()
+        codazzi_arguments = patch.calculate_codazzi_arguments(accuracy=self._accuracy)
         return codazzi_arguments
 
     def _plot_correlation(self, codazzi_arguments: np.ndarray, bins: int = 200, index1: int = 0, index2: int = 1, figsize=(10, 15)):

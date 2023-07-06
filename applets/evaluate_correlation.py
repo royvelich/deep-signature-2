@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('--min-sigma', type=float)
     parser.add_argument('--max-sigma', type=float)
     parser.add_argument('--max-abs-z', type=float)
+    parser.add_argument('--accuracy', type=int)
     args = parser.parse_args()
 
     now = datetime.now()
@@ -39,5 +40,5 @@ if __name__ == "__main__":
     # patch_generator = GaussianPatchGenerator(limit=args.limit, grid_size=args.grid_size, min_sigma=args.min_sigma, max_sigma=args.max_sigma, max_abs_z=args.max_abs_z)
 
     patch_generator = QuadraticMonagePatchGenerator(limit=args.limit, grid_size=args.grid_size, coeff_limit=args.coeff_limit)
-    correlation_evaluator = CorrelationEvaluator(patches_count=args.patches_count, num_workers=args.num_workers, patch_generator=patch_generator, dir_path=dir_path)
+    correlation_evaluator = CorrelationEvaluator(patches_count=args.patches_count, num_workers=args.num_workers, patch_generator=patch_generator, dir_path=dir_path, accuracy=args.accuracy)
     correlation_evaluator.evaluate()

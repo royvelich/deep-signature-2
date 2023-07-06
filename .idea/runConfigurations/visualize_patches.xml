@@ -13,7 +13,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/applets/visualize_patches.py" />
-    <option name="PARAMETERS" value="--patches-count 500 --num-workers 18 --limit 1 --grid-size 51 --coeff-limit 2" />
+    <option name="PARAMETERS" value="--patches-count 500 --num-workers 18 --limit 0.1 --grid-size 31 --coeff-limit 5" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="true" />
     <option name="MODULE_MODE" value="false" />
