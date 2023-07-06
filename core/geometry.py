@@ -237,6 +237,7 @@ class Patch(Mesh):
             mid_x: int,
             mid_y: int,
             order: int,
+            h: float,
             accuracy: int) -> float:
         k = np.zeros(shape=5)
         scalar_field = self._k1_grid if principal_curvature == PrincipalCurvature.K1 else self._k2_grid
@@ -257,7 +258,7 @@ class Patch(Mesh):
         table[(2, 8)] = np.array([-1/560, 8/315, -1/5, 8/5, -205/72, 8/5, -1/5, 8/315, -1/560])
 
         coeffs = table[(order, accuracy)]
-        return coeffs.dot(k)
+        return coeffs.dot(k) / np.power(h, order)
 
     def calculate_codazzi_arguments(self, accuracy: int) -> np.ndarray:
         # row_indices = np.array([self._x_grid.shape[0] // 2])
@@ -290,14 +291,16 @@ class Patch(Mesh):
             p_dir_to_g_dir[PrincipalDirection.D1] = GridDirection.X
             p_dir_to_g_dir[PrincipalDirection.D2] = GridDirection.Y
 
+        h = np.abs(self._y_grid[mid_x, mid_y] - self._y_grid[mid_x + 1, mid_y])
+
         k1 = self._k1_grid[mid_x, mid_y]
         k2 = self._k2_grid[mid_x, mid_y]
-        dk1_1 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K1, principal_direction=PrincipalDirection.D1, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=1, accuracy=accuracy)
-        dk1_2 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K1, principal_direction=PrincipalDirection.D2, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=1, accuracy=accuracy)
-        dk1_22 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K1, principal_direction=PrincipalDirection.D2, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=2, accuracy=accuracy)
-        dk2_1 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K2, principal_direction=PrincipalDirection.D1, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=1, accuracy=accuracy)
-        dk2_2 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K2, principal_direction=PrincipalDirection.D2, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=1, accuracy=accuracy)
-        dk2_11 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K2, principal_direction=PrincipalDirection.D1, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=2, accuracy=accuracy)
+        dk1_1 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K1, principal_direction=PrincipalDirection.D1, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=1, h=h, accuracy=accuracy)
+        dk1_2 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K1, principal_direction=PrincipalDirection.D2, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=1, h=h, accuracy=accuracy)
+        dk1_22 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K1, principal_direction=PrincipalDirection.D2, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=2, h=h, accuracy=accuracy)
+        dk2_1 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K2, principal_direction=PrincipalDirection.D1, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=1, h=h, accuracy=accuracy)
+        dk2_2 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K2, principal_direction=PrincipalDirection.D2, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=1, h=h, accuracy=accuracy)
+        dk2_11 = self._calculate_derivative(principal_curvature=PrincipalCurvature.K2, principal_direction=PrincipalDirection.D1, p_dir_to_g_dir=p_dir_to_g_dir, mid_x=mid_x, mid_y=mid_y, order=2, h=h, accuracy=accuracy)
 
         return np.stack(([k1], [k2], [dk1_1], [dk1_2], [dk1_22], [dk2_1], [dk2_2], [dk2_11]))
 
