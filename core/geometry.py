@@ -116,7 +116,7 @@ class Mesh:
         if show_principal_directions is True:
             pyvista_mesh['d1'] = self._d1
             pyvista_mesh['d2'] = self._d2
-            factor = 5 * (1 / np.abs(np.min(self._v) - np.max(self._v)))
+            factor = 0.03 * (np.abs(np.max(self._v) - np.min(self._v)))
             tolerance = 0.02
 
             glyphs1 = pyvista_mesh.glyph(orient='d1', scale=False, factor=factor, tolerance=tolerance)
@@ -227,7 +227,7 @@ class Patch(Mesh):
                 sampled_grid_v = np.stack((sampled_grid_v1, sampled_grid_v2))
 
             cloud = pv.PolyData(sampled_grid_v.reshape((-1, 3)))
-            plotter.add_mesh(cloud, point_size=10.0, color="pink", render_points_as_spheres=True)
+            plotter.add_mesh(cloud, point_size=15.0, color="black", render_points_as_spheres=True)
 
     def _calculate_derivative(
             self,

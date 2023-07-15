@@ -49,3 +49,4 @@ dependencies:
       - pymesh
       - trimesh
       - libigl
+      - sympy
