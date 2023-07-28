@@ -15,10 +15,17 @@ def calculate_pearson_loss_vectorized(matrix, device):
     identity = torch.eye(num_columns)
     identity[0,1] = 0.5
     identity[1,0] = 0.5
-    identity[0,6] = -0.37
-    identity[6,0] = -0.37
-    identity[1,7] = -0.37
-    identity[7,1] = -0.37
+    # Define the non-zero entries positions in the identity matrix
+    non_zero_entries = [(0, 6), (1, 7)]
+
+    # Create a binary mask for the non-zero entries
+    mask = torch.ones_like(identity)
+    for i, j in non_zero_entries:
+        mask[i, j] = 0
+        mask[j, i] = 0
+
+    # Apply the mask to the correlation matrix
+    correlation_matrix *= mask
 
 
     correlation_matrix=correlation_matrix.to(device)
@@ -47,7 +54,7 @@ def codazzi_loss(output):
     k2_der11 = output[:,7]
 
     # return (torch.norm((k1_der22 - k2_der11)*(k1-k2) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2) - k1*k2*((k1-k2)**2))**2)
-    return (torch.norm((k1_der22 - k2_der11) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2)/(k1-k2+1e-4) - k1*k2*(k1-k2)))/output.size(0)
+    return (torch.norm((k1_der22 - k2_der11) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2)/(k1-k2+1e-6) - k1*k2*(k1-k2)))/output.size(0)
     # return (torch.norm((k1_der22 - k2_der11)*(k1-k2) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2) - k1*k2*((k1-k2)**2))**2)/output.size(0)
 
 

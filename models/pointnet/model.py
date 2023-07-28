@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation
 
+
 class STN3d(nn.Module):
     def __init__(self):
         super(STN3d, self).__init__()
@@ -48,7 +49,7 @@ class STN3d(nn.Module):
 
 
 class STNkd(pl.LightningModule):
-    def __init__(self, k=64):
+    def __init__(self, k=64, dropout_prob=0.8):
         super(STNkd, self).__init__()
         self.conv1 = torch.nn.Conv1d(k, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
@@ -58,6 +59,7 @@ class STNkd(pl.LightningModule):
         # self.fc3 = nn.Linear(256, k*k)
         self.fc3 = nn.Linear(256, 8)
         self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(dropout_prob)  # Add dropout layer with given dropout probability
 
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(128)
@@ -69,14 +71,17 @@ class STNkd(pl.LightningModule):
         self.loss_func = loss_contrastive_plus_codazzi_and_pearson_correlation
 
     def forward(self, x):
-        batchsize = x.size()[0]
-        x = F.relu(self.bn1(self.conv1(x)))
+
+        normalized_features = self.normalize_features(x)
+        x = F.relu(self.bn1(self.conv1(normalized_features)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
-        x = torch.max(x, 2, keepdim=True)[0]
+        x = F.avg_pool1d(x, x.size(-1))
+        # x = torch.max(x, 2, keepdim=True)[0]
         x = x.view(-1, 1024)
 
         x = F.relu(self.bn4(self.fc1(x)))
+        x = self.dropout(x)
         x = F.relu(self.bn5(self.fc2(x)))
         x = self.fc3(x)
 
@@ -117,9 +122,9 @@ class STNkd(pl.LightningModule):
         self.log('val_loss', loss,on_step=False, on_epoch=True)  # Logging the validation loss
         return loss
 
-    def configure_optimizers(self, lr=0.001,weight_decay=0.01):
+    def configure_optimizers(self, lr=0.001,weight_decay=0.1):
         optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.9)
         return [optimizer], [scheduler]
 
     def on_train_epoch_end(self):
@@ -128,6 +133,17 @@ class STNkd(pl.LightningModule):
 
         # Log the learning rate
         self.log('learning_rate', current_lr, on_step=False, on_epoch=True)
+
+    def normalize_features(self, features):
+        mean_values = torch.mean(features, axis=2)
+        std_values = torch.std(features, axis=2)
+        # Mask out elements with zero variance
+        zero_variance_mask = (std_values == 0.0)
+        std_values[zero_variance_mask] = 1.0  # Set to 1.0 to avoid division by zero
+
+        # Step 2: Normalize the features to have zero mean and unit variance
+        normalized_features = (features - torch.unsqueeze(mean_values,dim=2)) / torch.unsqueeze(std_values,dim=2)
+        return normalized_features
 
 class PointNetfeat(nn.Module):
     def __init__(self, global_feat = True, feature_transform = False):
