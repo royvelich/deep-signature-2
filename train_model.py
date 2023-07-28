@@ -55,7 +55,7 @@ checkpoint_callback = ModelCheckpoint(
     save_on_train_epoch_end=True,
     every_n_epochs=20
 )
-visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
+visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][1])
 trainer = Trainer(num_nodes=1,
                   gradient_clip_val=1.0,
                   # log_every_n_steps=1,
