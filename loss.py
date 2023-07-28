@@ -25,11 +25,12 @@ def calculate_pearson_loss_vectorized(matrix, device):
         mask[j, i] = 0
 
     # Apply the mask to the correlation matrix
-    correlation_matrix *= mask
 
-
+    mask= mask.to(device)
     correlation_matrix=correlation_matrix.to(device)
     identity=identity.to(device)
+
+    correlation_matrix *= mask
 
     # Calculate the loss
     loss = torch.linalg.matrix_norm(identity - correlation_matrix) ** 2
