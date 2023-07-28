@@ -39,7 +39,20 @@ def barycentric_average(vertices, faces, values):
     Returns:
         numpy.ndarray: The vertex colors for each vertex in the shape.
     """
-    values = values.cpu().numpy()  # Move values to the CPU
+    if isinstance(vertices, torch.Tensor):
+        if vertices.device.type == 'cuda':
+            vertices = vertices.cpu()
+        vertices = vertices.numpy()
+
+    if isinstance(faces, torch.Tensor):
+        if faces.device.type == 'cuda':
+            faces = faces.cpu()
+        faces = faces.numpy()
+
+    if isinstance(values, torch.Tensor):
+        if values.device.type == 'cuda':
+            values = values.cpu()
+        values = values.numpy()
 
     vertex_colors = np.zeros_like(vertices)
 
