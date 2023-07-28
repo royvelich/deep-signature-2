@@ -269,7 +269,7 @@ def plot_shape_color_vertices(vertices, faces, values1, values2, k1, k2):
 
 
 
-def forward_with_knn(model, shape, radius, k1, k2):
+def forward_with_knn(model, shape, radius, k1, k2, device):
     """
     Perform a forward pass through the given deep learning model using KNN for each point in the 3D shape.
 
@@ -291,7 +291,7 @@ def forward_with_knn(model, shape, radius, k1, k2):
 
 
 
-    output = model(input)
+    output = model(input.to(device))
     # output = output.reshape(-1, k, 3)  # Reshape back to (num_of_points, k, 3)
     val1 = output[:, 0]  # Take the first entry for each point
     val2 = output[:, 1]  # Take the second entry for each point
@@ -322,4 +322,4 @@ class VisualizerCallback(Callback):
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         if trainer.current_epoch % 10 == 0:
-            forward_with_knn(pl_module, self.sample, self.radius, self.k1, self.k2)
+            forward_with_knn(pl_module, self.sample, self.radius, self.k1, self.k2, pl_module.device)
