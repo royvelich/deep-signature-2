@@ -39,6 +39,10 @@ def barycentric_average(vertices, faces, values):
     Returns:
         numpy.ndarray: The vertex colors for each vertex in the shape.
     """
+    vertices = vertices.cpu().numpy()  # Move vertices to the CPU
+    faces = faces.cpu().numpy()  # Move faces to the CPU
+    values = values.cpu().numpy()  # Move values to the CPU
+
     vertex_colors = np.zeros_like(vertices)
 
     for face in faces:
