@@ -55,7 +55,7 @@ def codazzi_loss(output):
     k2_der11 = output[:,7]
 
     # return (torch.norm((k1_der22 - k2_der11)*(k1-k2) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2) - k1*k2*((k1-k2)**2))**2)
-    return (torch.norm((k1_der22 - k2_der11) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2)/(k1-k2+1e-4) - k1*k2*(k1-k2)))/output.size(0)
+    return (torch.norm((k1_der22 - k2_der11) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2)/(torch.sign(k1-k2)*(abs(k1-k2)+1e-4)) - k1*k2*(k1-k2)))/output.size(0)
     # return (torch.norm((k1_der22 - k2_der11)*(k1-k2) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2) - k1*k2*((k1-k2)**2))**2)/output.size(0)
 
 

@@ -39,20 +39,20 @@ def barycentric_average(vertices, faces, values):
     Returns:
         numpy.ndarray: The vertex colors for each vertex in the shape.
     """
-    if isinstance(vertices, torch.Tensor):
-        if vertices.device.type == 'cuda':
-            vertices = vertices.cpu()
-        vertices = vertices.numpy()
-
-    if isinstance(faces, torch.Tensor):
-        if faces.device.type == 'cuda':
-            faces = faces.cpu()
-        faces = faces.numpy()
-
-    if isinstance(values, torch.Tensor):
-        if values.device.type == 'cuda':
-            values = values.cpu()
-        values = values.numpy()
+    # if isinstance(vertices, torch.Tensor):
+    #     if vertices.device.type == 'cuda':
+    #         vertices = vertices.cpu()
+    #     vertices = vertices.numpy()
+    #
+    # if isinstance(faces, torch.Tensor):
+    #     if faces.device.type == 'cuda':
+    #         faces = faces.cpu()
+    #     faces = faces.numpy()
+    #
+    # if isinstance(values, torch.Tensor):
+    #     if values.device.type == 'cuda':
+    #         values = values.cpu()
+    #     values = values.numpy()
 
     vertex_colors = np.zeros_like(vertices)
 
@@ -135,6 +135,29 @@ def plot_shape_color_faces(vertices, faces, values1, values2, k1, k2):
     Returns:
         None
     """
+    if isinstance(vertices, torch.Tensor):
+        if vertices.device.type == 'cuda':
+            vertices = vertices.cpu()
+        vertices = vertices.numpy()
+
+    if isinstance(faces, torch.Tensor):
+        if faces.device.type == 'cuda':
+            faces = faces.cpu()
+        faces = faces.numpy()
+
+    if isinstance(values1, torch.Tensor):
+        if values1.device.type == 'cuda':
+            values1 = values1.cpu()
+        values1 = values1.numpy()
+    if isinstance(values2, torch.Tensor):
+        if values2.device.type == 'cuda':
+            values2 = values2.cpu()
+        values2 = values2.numpy()
+
+
+
+    wandb.log({"||k1-values1||":np.linalg.norm(k1-values1)})
+    wandb.log({"||k2-values2||":np.linalg.norm(k2-values2)})
     values1 = barycentric_average(vertices,faces, values1)
     values2 = barycentric_average(vertices,faces, values2)
     k1 = barycentric_average(vertices,faces, k1)
