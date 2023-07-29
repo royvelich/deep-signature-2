@@ -15,8 +15,8 @@ def main_loop():
     max_epochs = 100
     lr = 0.001
     weight_decay = 0.1
-    # file_path = "/home/gal.yona/diffusion-net/src/diffusion_net/triplets_data_size_30_N_100000_all_monge_patch.pkl"
-    file_path = "./triplets_data_size_30_N_10_all_monge_patch.pkl"
+    file_path = "/home/gal.yona/diffusion-net/src/diffusion_net/triplets_data_size_30_N_100000_all_monge_patch.pkl"
+    # file_path = "./triplets_data_size_30_N_10_all_monge_patch.pkl"
 
 
 
