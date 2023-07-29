@@ -7,7 +7,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from utils import init_wandb
 
 from data.triplet_dataset import CustomTripletDataset
-from models.pointnet.model import STNkd
+from models.pointnet.model import STNkd, PointNet_FC
 from visualize.visualize__results_on_mesh import VisualizerCallback
 
 
@@ -46,7 +46,7 @@ def main_loop():
 
 
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
-    model = STNkd(k=9)
+    model = PointNet_FC(k=9)
 
     # training
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)

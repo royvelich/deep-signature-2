@@ -47,13 +47,103 @@ class STN3d(nn.Module):
         x = x.view(-1, 3, 3)
         return x
 
+class PointNet_FC(pl.LightningModule):
+    def __init__(self, k=64, dropout_prob=0.8):
+        super(PointNet_FC, self).__init__()
+
+        self.fc1 = nn.Linear(k, 128)
+        self.fc2 = nn.Linear(128, 512)
+        self.fc3 = nn.Linear(512, 1024)
+        self.fc4 = nn.Linear(1024, 128)  # Additional fc layer after the Max Pooling
+        self.fc5 = nn.Linear(128, 8)  # Additional fc layer after the Max Pooling
+
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(dropout_prob)
+        self.bn1 = nn.BatchNorm1d(128)
+        self.bn2 = nn.BatchNorm1d(512)
+        self.bn3 = nn.BatchNorm1d(1024)
+        self.bn4 = nn.BatchNorm1d(128)
+
+        self.k = k
+        self.loss_func = loss_contrastive_plus_codazzi_and_pearson_correlation
+
+    def forward(self, x):
+        # normalized_features = self.normalize_features(x)  # Assuming you have a function to normalize x
+        x = F.relu(self.bn1(self.fc1(x)))  # Replace conv1 with fc1
+        x = F.relu(self.bn2(self.fc2(x)))
+        x = F.relu(self.bn3(self.fc3(x)))
+
+        # Apply Max Pooling
+        x = torch.max(x, 2, keepdim=True)[0]
+
+        # Additional fully connected layers
+        x = F.relu(self.bn4(self.fc4(x)))
+        x = self.dropout(x)
+        x = F.relu(self.fc5(x))
+
+        return x
+
+
+    def training_step(self, batch, batch_idx):
+        anc_patches, pos_patches, neg_patches = batch[:,0,:,:], batch[:,1,:,:], batch[:,2,:,:]
+        # ... (your training logic, forward pass, loss computation, etc.)
+
+        output_anc = self.forward(torch.transpose(anc_patches, 1, 2).float())
+
+        output_pos = self.forward(torch.transpose(pos_patches, 1, 2).float())
+
+        output_neg = self.forward(torch.transpose(neg_patches, 1, 2).float())
+
+        loss = self.loss_func(a=output_anc.T, p=output_pos.T,n=output_neg.T)
+
+        self.log('train_loss', loss,on_step=False, on_epoch=True)  # Logging the training loss
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        anc_patches, pos_patches, neg_patches = batch[:,0,:,:], batch[:,1,:,:], batch[:,2,:,:]
+
+        output_anc = self.forward(torch.transpose(anc_patches,1,2).float())
+
+        output_pos = self.forward(torch.transpose(pos_patches,1,2).float())
+
+        output_neg = self.forward(torch.transpose(neg_patches,1,2).float())
+
+        loss = self.loss_func(a=output_anc.T, p=output_pos.T, n=output_neg.T)
+
+
+        self.log('val_loss', loss,on_step=False, on_epoch=True)  # Logging the validation loss
+        return loss
+
+    def configure_optimizers(self, lr=0.001,weight_decay=0.1):
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.9)
+        return [optimizer], [scheduler]
+
+    def on_train_epoch_end(self):
+        # Get the current learning rate from the optimizer
+        current_lr = self.optimizers().param_groups[0]['lr']
+
+        # Log the learning rate
+        self.log('learning_rate', current_lr, on_step=False, on_epoch=True)
+
+    def normalize_features(self, features):
+        mean_values = torch.mean(features, axis=2)
+        std_values = torch.std(features, axis=2)
+        # Mask out elements with zero variance
+        zero_variance_mask = (std_values == 0.0)
+        std_values[zero_variance_mask] = 1.0  # Set to 1.0 to avoid division by zero
+
+        # Step 2: Normalize the features to have zero mean and unit variance
+        normalized_features = (features - torch.unsqueeze(mean_values,dim=2)) / torch.unsqueeze(std_values,dim=2)
+        return normalized_features
+
 
 class STNkd(pl.LightningModule):
     def __init__(self, k=64, dropout_prob=0.8):
         super(STNkd, self).__init__()
-        self.conv1 = torch.nn.Conv1d(k, 64, 1)
-        self.conv2 = torch.nn.Conv1d(64, 128, 1)
-        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
+        # self.conv1 = torch.nn.Conv1d(k, 64, 1)
+        # self.conv2 = torch.nn.Conv1d(64, 128, 1)
+        # self.conv3 = torch.nn.Conv1d(128, 1024, 1)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         # self.fc3 = nn.Linear(256, k*k)
@@ -76,8 +166,8 @@ class STNkd(pl.LightningModule):
         x = F.relu(self.bn1(self.conv1(normalized_features)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
-        x = F.avg_pool1d(x, x.size(-1))
-        # x = torch.max(x, 2, keepdim=True)[0]
+        # x = F.avg_pool1d(x, x.size(-1))
+        x = torch.max(x, 2, keepdim=True)[0]
         x = x.view(-1, 1024)
 
         x = F.relu(self.bn4(self.fc1(x)))
