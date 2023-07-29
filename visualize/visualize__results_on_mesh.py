@@ -349,7 +349,7 @@ class VisualizerCallback(Callback):
 
 
 
-        k1, k2, d1, d2 =  igl.principal_curvature(vertices, faces)
+        d1, d2, k1, k2  =  igl.principal_curvature(vertices, faces)
 
         # Normalize k1 and k2 to [0, 1]
         self.k1 = (k1 - k1.min()) / (k1.max() - k1.min())
