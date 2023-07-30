@@ -94,7 +94,7 @@ class PointNet_FC(pl.LightningModule):
 
         output_neg = self.forward(neg_patches.float())
 
-        loss = self.loss_func(a=output_anc.T, p=output_pos.T,n=output_neg.T)
+        loss = self.loss_func(a=torch.squeeze(output_anc).T, p=torch.squeeze(output_pos).T,n=torch.squeeze(output_neg).T)
 
         self.log('train_loss', loss,on_step=False, on_epoch=True)  # Logging the training loss
         return loss
