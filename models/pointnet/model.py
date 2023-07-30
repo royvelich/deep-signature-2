@@ -68,18 +68,18 @@ class PointNet_FC(pl.LightningModule):
         self.loss_func = loss_contrastive_plus_codazzi_and_pearson_correlation
 
     def forward(self, x):
-        # normalized_features = self.normalize_features(x)  # Assuming you have a function to normalize x
-        x = F.relu(self.bn1(self.fc1(x)))  # Replace conv1 with fc1
-        x = F.relu(self.bn2(self.fc2(x)))
-        x = F.relu(self.bn3(self.fc3(x)))
+        normalized_features = self.normalize_features(x)
+        x = F.relu(self.bn1(self.fc1(normalized_features).transpose(1, 2)))
+        x = F.relu(self.bn2(self.fc2(x.transpose(1,2)).transpose(1,2)))
+        x = F.relu(self.bn3(self.fc3(x.transpose(1,2)).transpose(1,2)))
 
         # Apply Max Pooling
         x = torch.max(x, 2, keepdim=True)[0]
 
         # Additional fully connected layers
-        x = F.relu(self.bn4(self.fc4(x)))
+        x = F.relu(self.bn4(self.fc4(x.transpose(1,2)).transpose(1,2)))
         x = self.dropout(x)
-        x = F.relu(self.fc5(x))
+        x = F.relu(self.fc5(x.transpose(1,2)))
 
         return x
 
@@ -88,11 +88,11 @@ class PointNet_FC(pl.LightningModule):
         anc_patches, pos_patches, neg_patches = batch[:,0,:,:], batch[:,1,:,:], batch[:,2,:,:]
         # ... (your training logic, forward pass, loss computation, etc.)
 
-        output_anc = self.forward(torch.transpose(anc_patches, 1, 2).float())
+        output_anc = self.forward(anc_patches.float())
 
-        output_pos = self.forward(torch.transpose(pos_patches, 1, 2).float())
+        output_pos = self.forward(pos_patches.float())
 
-        output_neg = self.forward(torch.transpose(neg_patches, 1, 2).float())
+        output_neg = self.forward(neg_patches.float())
 
         loss = self.loss_func(a=output_anc.T, p=output_pos.T,n=output_neg.T)
 
@@ -102,13 +102,13 @@ class PointNet_FC(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         anc_patches, pos_patches, neg_patches = batch[:,0,:,:], batch[:,1,:,:], batch[:,2,:,:]
 
-        output_anc = self.forward(torch.transpose(anc_patches,1,2).float())
+        output_anc = self.forward(anc_patches.float())
 
-        output_pos = self.forward(torch.transpose(pos_patches,1,2).float())
+        output_pos = self.forward(pos_patches.float())
 
-        output_neg = self.forward(torch.transpose(neg_patches,1,2).float())
+        output_neg = self.forward(neg_patches.float())
 
-        loss = self.loss_func(a=output_anc.T, p=output_pos.T, n=output_neg.T)
+        loss = self.loss_func(a=torch.squeeze(output_anc).T, p=torch.squeeze(output_pos).T, n=torch.squeeze(output_neg).T)
 
 
         self.log('val_loss', loss,on_step=False, on_epoch=True)  # Logging the validation loss
@@ -127,26 +127,25 @@ class PointNet_FC(pl.LightningModule):
         self.log('learning_rate', current_lr, on_step=False, on_epoch=True)
 
     def normalize_features(self, features):
-        mean_values = torch.mean(features, axis=2)
-        std_values = torch.std(features, axis=2)
+        mean_values = torch.mean(features, axis=1)
+        std_values = torch.std(features, axis=1, unbiased=False)
         # Mask out elements with zero variance
         zero_variance_mask = (std_values == 0.0)
         std_values[zero_variance_mask] = 1.0  # Set to 1.0 to avoid division by zero
 
         # Step 2: Normalize the features to have zero mean and unit variance
-        normalized_features = (features - torch.unsqueeze(mean_values,dim=2)) / torch.unsqueeze(std_values,dim=2)
+        normalized_features = (features - torch.unsqueeze(mean_values,dim=1)) / torch.unsqueeze(std_values,dim=1)
         return normalized_features
 
 
 class STNkd(pl.LightningModule):
     def __init__(self, k=64, dropout_prob=0.8):
         super(STNkd, self).__init__()
-        # self.conv1 = torch.nn.Conv1d(k, 64, 1)
-        # self.conv2 = torch.nn.Conv1d(64, 128, 1)
-        # self.conv3 = torch.nn.Conv1d(128, 1024, 1)
+        self.conv1 = torch.nn.Conv1d(k, 64, 1)
+        self.conv2 = torch.nn.Conv1d(64, 128, 1)
+        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
-        # self.fc3 = nn.Linear(256, k*k)
         self.fc3 = nn.Linear(256, 8)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout_prob)  # Add dropout layer with given dropout probability

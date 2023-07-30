@@ -11,6 +11,11 @@ def calculate_pearson_loss_vectorized(matrix, device):
     # Calculate the Pearson correlation coefficient for each pair of columns
     # correlation_matrix = torch.nn.functional.cosine_similarity(matrix.T.unsqueeze(0), matrix.T.unsqueeze(1), dim=2)
     correlation_matrix = torch.corrcoef(matrix.T)
+
+    nan_mask = torch.isnan(correlation_matrix)
+    # Replace NaN elements with 0
+    correlation_matrix[nan_mask] = 0
+
     # Create an identity matrix
     identity = torch.eye(num_columns)
     identity[0,1] = 0.5

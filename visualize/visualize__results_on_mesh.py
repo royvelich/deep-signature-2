@@ -325,11 +325,12 @@ def forward_with_knn(model, shape, radius, k1, k2, device):
 
     # input = input.reshape(-1, k * 3)  # Flatten the KNN array
     input = torch.nn.utils.rnn.pad_sequence(input, batch_first=True, padding_value=0)
-    input = torch.transpose(input, 1, 2).float()
+    # input = torch.transpose(input, 1, 2).float()
 
 
 
-    output = model(input.to(device))
+    output = model(input.to(device).float())
+    output= torch.squeeze(output)
     # output = output.reshape(-1, k, 3)  # Reshape back to (num_of_points, k, 3)
     val1 = output[:, 0]  # Take the first entry for each point
     val2 = output[:, 1]  # Take the second entry for each point
