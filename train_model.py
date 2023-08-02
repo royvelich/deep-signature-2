@@ -7,7 +7,7 @@ from torch.utils.data import random_split
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from models.point_transformer.model_v1_partseg import PointTransformerSeg26
+from models.point_transformer_conv.model import PointTransformerConvNet
 from utils import init_wandb
 
 from data.triplet_dataset import CustomTripletDataset
@@ -36,7 +36,6 @@ def main_loop():
 
     # Define the ratio for train and validation split (e.g., 80% for training, 20% for validation)
     train_ratio = 0.8
-    val_ratio = 1 - train_ratio
 
     # Calculate the number of samples for train and validation sets
     num_samples = len(custom_dataset)
@@ -54,8 +53,8 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    model = PointTransformerSeg26(in_channels=9)
-    os.environ["WANDB_MODE"] = "offline"
+    model = PointTransformerConvNet(in_channels=9)
+    # os.environ["WANDB_MODE"] = "offline"
 
     # training
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
@@ -66,7 +65,7 @@ def main_loop():
         save_on_train_epoch_end=True,
         every_n_epochs=20
     )
-    visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][1])
+    visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
     trainer = Trainer(num_nodes=1,
                       gradient_clip_val=1.0,
                       # log_every_n_steps=1,
