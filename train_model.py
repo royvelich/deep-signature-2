@@ -1,9 +1,13 @@
+import os
 import pickle
+
+import torch.cuda
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 
+from models.point_transformer.model_v1_partseg import PointTransformerSeg26
 from utils import init_wandb
 
 from data.triplet_dataset import CustomTripletDataset
@@ -15,8 +19,10 @@ def main_loop():
     max_epochs = 100
     lr = 0.001
     weight_decay = 0.1
-    file_path = "/home/gal.yona/diffusion-net/src/diffusion_net/triplets_data_size_30_N_100000_all_monge_patch.pkl"
-    # file_path = "./triplets_data_size_30_N_10_all_monge_patch.pkl"
+    if torch.cuda.is_available():
+        file_path = "/home/gal.yona/diffusion-net/src/diffusion_net/triplets_data_size_30_N_100000_all_monge_patch.pkl"
+    else:
+        file_path = "./triplets_data_size_30_N_10_all_monge_patch.pkl"
 
 
 
@@ -41,13 +47,15 @@ def main_loop():
     train_dataset, val_dataset = random_split(custom_dataset, [num_train_samples, num_val_samples])
 
     # Create DataLoaders for train and validation sets
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True,num_workers=8, collate_fn=custom_dataset.custom_collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False,num_workers=8, collate_fn=custom_dataset.custom_collate_fn)  # No need to shuffle validation data
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=1, collate_fn=custom_dataset.pack_collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, num_workers=1, collate_fn=custom_dataset.pack_collate_fn)  # No need to shuffle validation data
 
 
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
-    model = PointNet_FC(k=9)
+    # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
+    model = PointTransformerSeg26(in_channels=9)
+    os.environ["WANDB_MODE"] = "offline"
 
     # training
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)

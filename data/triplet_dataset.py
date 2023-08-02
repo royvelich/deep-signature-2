@@ -1,5 +1,5 @@
 import torch
-from torch.nn.utils.rnn import pad_sequence
+from torch.nn.utils.rnn import pad_sequence, pack_sequence
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
@@ -18,7 +18,7 @@ class CustomTripletDataset(Dataset):
         return item
 
     # Define a custom collate function to handle variable-sized tensors in each triplet
-    def custom_collate_fn(self, batch):
+    def padding_collate_fn(self, batch):
         # Find the maximum number of vertices in each triplet
         max_vertices = max(max(patch.size(0) for patch in triplet) for triplet in batch)
 
@@ -29,6 +29,14 @@ class CustomTripletDataset(Dataset):
             padded_batch.append(torch.stack(padded_triplet))
 
         return torch.stack(padded_batch)
+
+
+    def pack_collate_fn(self, batch):
+        patches = []
+        for i in range(len(batch)):
+            patches.append(pack_sequence(batch[i], enforce_sorted=False))
+
+        return patches
 
 # Assuming you have your own data in the following format:
 # Replace 'your_data' and 'your_labels' with your actual data and labels

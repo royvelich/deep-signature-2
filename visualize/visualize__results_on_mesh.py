@@ -324,14 +324,17 @@ def forward_with_knn(model, shape, radius, k1, k2, device):
     input = [shape.v_second_moments[idxs] for idxs in indices]
 
     # input = input.reshape(-1, k * 3)  # Flatten the KNN array
-    input = torch.nn.utils.rnn.pad_sequence(input, batch_first=True, padding_value=0)
+    # input = torch.nn.utils.rnn.pad_sequence(input, batch_first=True, padding_value=0)
     # input = torch.transpose(input, 1, 2).float()
+    with torch.no_grad():
+        output = []
+        for i in range(len(input)):
+            output.append(model.forward(input[i].to(device).float()))
 
-
-
-    output = model(input.to(device).float())
-    output= torch.squeeze(output)
+    # output = model(input.to(device).float())
+    # output= torch.squeeze(output)\
     # output = output.reshape(-1, k, 3)  # Reshape back to (num_of_points, k, 3)
+    output = torch.cat(output)
     val1 = output[:, 0]  # Take the first entry for each point
     val2 = output[:, 1]  # Take the second entry for each point
     plot_shape_color_faces(shape.v, shape.f, val1, val2, k1, k2)

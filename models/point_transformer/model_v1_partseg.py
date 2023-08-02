@@ -10,9 +10,9 @@ Please cite our work if the code is helpful to you.
 import torch
 import torch.nn as nn
 import einops
-import pointops
+import libs.pointops as pointops
 
-from ..builder import MODELS
+from .builder import MODELS
 from .utils import LayerNorm1d
 
 

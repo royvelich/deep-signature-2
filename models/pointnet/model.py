@@ -7,6 +7,8 @@ from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
 import pytorch_lightning as pl
+from torch.nn.utils.rnn import pad_packed_sequence
+
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation
 
 
@@ -69,55 +71,100 @@ class PointNet_FC(pl.LightningModule):
 
     def forward(self, x):
         normalized_features = self.normalize_features(x)
-        x = F.relu(self.bn1(self.fc1(normalized_features).transpose(1, 2)))
-        x = F.relu(self.bn2(self.fc2(x.transpose(1,2)).transpose(1,2)))
-        x = F.relu(self.bn3(self.fc3(x.transpose(1,2)).transpose(1,2)))
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
 
         # Apply Max Pooling
-        x = torch.max(x, 2, keepdim=True)[0]
+        x = torch.max(x, 0, keepdim=True)[0]
 
         # Additional fully connected layers
-        x = F.relu(self.bn4(self.fc4(x.transpose(1,2)).transpose(1,2)))
+        x = F.relu(self.fc4(x))
         x = self.dropout(x)
-        x = F.relu(self.fc5(x.transpose(1,2)))
+        x = F.relu(self.fc5(x))
+        return x
+
+
+    def forward_with_bn(self, x):
+        normalized_features = self.normalize_features(x)
+        x = F.relu(self.bn1(self.fc1(normalized_features)))
+        x = F.relu(self.bn2(self.fc2(x)))
+        x = F.relu(self.bn3(self.fc3(x)))
+
+        # Apply Max Pooling
+        x = torch.max(x, 0, keepdim=True)[0]
+
+        # Additional fully connected layers
+        x = F.relu(self.bn4(self.fc4(x)))
+        x = self.dropout(x)
+        x = F.relu(self.fc5(x))
 
         return x
 
 
     def training_step(self, batch, batch_idx):
-        anc_patches, pos_patches, neg_patches = batch[:,0,:,:], batch[:,1,:,:], batch[:,2,:,:]
-        # ... (your training logic, forward pass, loss computation, etc.)
+        anc_patches, pos_patches, neg_patches = self.unpack_batch(batch)
+        loss = 0.0
+        for i in range(len(anc_patches)):
+            output_anc = self.forward(anc_patches[i].float())
 
-        output_anc = self.forward(anc_patches.float())
+            output_pos = self.forward(pos_patches[i].float())
 
-        output_pos = self.forward(pos_patches.float())
+            output_neg = self.forward(neg_patches[i].float())
 
-        output_neg = self.forward(neg_patches.float())
+            loss += self.loss_func(a=output_anc.T, p=output_pos.T,
+                                   n=output_neg.T)
 
-        loss = self.loss_func(a=torch.squeeze(output_anc).T, p=torch.squeeze(output_pos).T,n=torch.squeeze(output_neg).T)
-
+        print("Training loss: ", loss.item())
         self.log('train_loss', loss,on_step=False, on_epoch=True)  # Logging the training loss
         return loss
 
     def validation_step(self, batch, batch_idx):
-        anc_patches, pos_patches, neg_patches = batch[:,0,:,:], batch[:,1,:,:], batch[:,2,:,:]
+        # anc_patches, pos_patches, neg_patches = batch[:,0,:,:], batch[:,1,:,:], batch[:,2,:,:]
+        anc_patches, pos_patches, neg_patches = self.unpack_batch(batch)
+        loss = 0.0
+        for i in range(len(anc_patches)):
+            output_anc = self.forward(anc_patches[i].float())
 
-        output_anc = self.forward(anc_patches.float())
+            output_pos = self.forward(pos_patches[i].float())
 
-        output_pos = self.forward(pos_patches.float())
+            output_neg = self.forward(neg_patches[i].float())
 
-        output_neg = self.forward(neg_patches.float())
-
-        loss = self.loss_func(a=torch.squeeze(output_anc).T, p=torch.squeeze(output_pos).T, n=torch.squeeze(output_neg).T)
-
+            loss += self.loss_func(a=output_anc.T, p=output_pos.T,
+                                   n=output_neg.T)
 
         self.log('val_loss', loss,on_step=False, on_epoch=True)  # Logging the validation loss
         return loss
+
+    def unpack_batch(self, batch):
+        output_anc = []
+        output_pos = []
+        output_neg = []
+        for i in range(len(batch)):
+            # Unpack the packed_patches to get the padded representation
+            padded_patches, original_lengths = pad_packed_sequence(batch[i], batch_first=True)
+
+            # Now you can access the individual patches
+            for j in range(len(original_lengths)):
+                patch_j = padded_patches[j][:original_lengths[j]]
+                if j==0:
+                    output_anc.append(patch_j)
+                elif j==1:
+                    output_pos.append(patch_j)
+                else:
+                    output_neg.append(patch_j)
+
+        # Convert the lists to tensors
+        # output_anc = torch.cat(output_anc, dim=0)
+        # output_pos = torch.cat(output_pos, dim=0)
+        # output_neg = torch.cat(output_neg, dim=0)
+        return output_anc, output_pos, output_neg
 
     def configure_optimizers(self, lr=0.001,weight_decay=0.1):
         optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.9)
         return [optimizer], [scheduler]
+
 
     def on_train_epoch_end(self):
         # Get the current learning rate from the optimizer
@@ -125,6 +172,7 @@ class PointNet_FC(pl.LightningModule):
 
         # Log the learning rate
         self.log('learning_rate', current_lr, on_step=False, on_epoch=True)
+
 
     def normalize_features(self, features):
         mean_values = torch.mean(features, axis=1)
