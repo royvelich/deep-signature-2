@@ -174,14 +174,23 @@ class QuadraticMonagePatchGenerator2(PatchGenerator):
     def __init__(self, limit: float, grid_size: int):
         super().__init__(limit=limit, grid_size=grid_size)
 
-    def generate(self) -> Patch:
-        x = np.linspace(-self._limit, self._limit, self._grid_size)
-        y = np.linspace(-self._limit, self._limit, self._grid_size)
+    def generate(self, k1=0, k2=0,grid_size_delta=0) -> Patch:
+        if grid_size_delta != 0:
+            curr_grid_size = self._grid_size+grid_size_delta
+        else:
+            curr_grid_size = self._grid_size
 
-        k1 = np.random.uniform(low=-1, high=1)
-        k2 = np.random.uniform(low=-1, high=1)
+        x = np.linspace(-self._limit, self._limit, curr_grid_size)
+        y = np.linspace(-self._limit, self._limit, curr_grid_size)
+
+        # calculated to be the index of the vertex with (x,y) closest to (0,0) and positive
+        point0_0_index = int((curr_grid_size** 2 + curr_grid_size)/2)
+
+        if k1==0:
+            k1 = np.random.uniform(low=-1, high=1)
+            k2 = np.random.uniform(low=-1, high=1)
 
         x_grid, y_grid = np.meshgrid(x, y)
         z_grid = k1 * x_grid ** 2 / 2 + k2 * y_grid ** 2 / 2
 
-        return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid)
+        return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid), k1, k2,point0_0_index
