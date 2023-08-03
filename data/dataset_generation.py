@@ -3,17 +3,11 @@ import random
 import torch
 from torch.cuda import is_available
 
-from matplotlib import pyplot as plt
-from torch.optim.lr_scheduler import StepLR
 
-from utils import normalize_points
-
-
-from loss import loss_contrastive_plus_codazzi, loss_contrastive_plus_codazzi_and_pearson_correlation
 
 from deep_signature.generation import QuadraticMonagePatchGenerator2, SimplexNoisePatchGenerator,InverseFourierPatchGenerator
 
-from deep_signature.utils2 import delete_files_in_folder
+# from deep_signature.utils2 import delete_files_in_folder
 
 from tqdm import tqdm
 import pickle
