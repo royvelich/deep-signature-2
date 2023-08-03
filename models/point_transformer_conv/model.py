@@ -6,7 +6,6 @@ from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_p
 import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation
-from torch_geometric.data import Batch
 
 
 class PointTransformerConvNet(pl.LightningModule):
@@ -48,9 +47,11 @@ class PointTransformerConvNet(pl.LightningModule):
     def training_step(self, batch, batch_idx):
 
         output = self.forward(batch)
-        anchor_idx = torch.arange(0, output.size(0), 3)
-        positive_idx = torch.arange(1, output.size(0), 3)
-        negative_idx = torch.arange(2, output.size(0), 3)
+        device = output.device
+
+        anchor_idx = torch.arange(0, output.size(0), 3, device=device)
+        positive_idx = torch.arange(1, output.size(0), 3, device=device)
+        negative_idx = torch.arange(2, output.size(0), 3, device=device)
 
         anchor_output = torch.index_select(output, 0, anchor_idx)
         positive_output = torch.index_select(output, 0, positive_idx)
