@@ -21,7 +21,7 @@ limit = 1
 patch_generator_anc_pos = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size)
 patch_generator_neg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size)
 # patch_generator_neg = InverseFourierPatchGenerator(limit=limit, grid_size=grid_size, scale=0.5)
-N = 10 # how many triplet of patches to train on
+N = 100000 # how many triplet of patches to train on
 
 
 triplets = []
