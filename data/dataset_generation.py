@@ -5,7 +5,7 @@ from torch.cuda import is_available
 
 
 
-from deep_signature.generation import QuadraticMonagePatchGenerator2, SimplexNoisePatchGenerator,InverseFourierPatchGenerator
+from generation import QuadraticMonagePatchGenerator2, SimplexNoisePatchGenerator,InverseFourierPatchGenerator
 
 # from deep_signature.utils2 import delete_files_in_folder
 
