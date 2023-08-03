@@ -160,7 +160,7 @@ def init_wandb(lr,max_epochs, weight_decay):
     return WandbLogger()
 
 # Function to compute edges from faces
-def compute_edges_from_faces(self, faces):
+def compute_edges_from_faces(faces):
     edges = []
     for face in faces:
         edges.extend([(face[i], face[(i + 1) % 3]) for i in range(3)])

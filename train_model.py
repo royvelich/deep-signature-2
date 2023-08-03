@@ -53,7 +53,7 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    model = PointTransformerConvNet(in_channels=9)
+    model = PointTransformerConvNet(in_channels=9, hidden_channels=128)
     # os.environ["WANDB_MODE"] = "offline"
 
     # training
