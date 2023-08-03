@@ -1,9 +1,7 @@
 import torch
-from torch.nn.utils.rnn import pad_sequence, pack_sequence
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
+from torch.nn.utils.rnn import pack_sequence
+from torch.utils.data import Dataset
 from torch_geometric.data import Data, Batch
-import numpy as np
 
 
 # Define your custom dataset class
@@ -62,6 +60,7 @@ class CustomTripletDataset(Dataset):
     def batch_collate_fn(self, batch):
         # use Data and Batch from torch_geometric
         data = []
+        # @TODO: check face_to_edges in torch geometric
         for i in range(len(batch)):
             for j in range(len(batch[i])):
                 edges = self.compute_edges_from_faces(batch[i][j].f)

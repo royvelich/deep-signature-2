@@ -32,6 +32,8 @@ from torch_geometric.nn import fps
 # torch
 import torch
 
+from utils import normalize_points
+
 class PrincipalCurvature(Enum):
     K1 = 1
     K2 = 2
@@ -122,7 +124,7 @@ class Patch(Mesh):
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
         indices = self.downsample(ratio=random.uniform(0.1,0.2))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
-
+        self._v = normalize_points(self._v)
         v = np.stack([self._v[:,0], self._v[:,1]], axis=1)
         # Perform triangulation using Delaunay method
         # self._f = igl.delaunay_triangulation(v)
@@ -132,9 +134,9 @@ class Patch(Mesh):
 
 
 
-        x = torch.from_numpy(x[indices])
-        y = torch.from_numpy(y[indices])
-        z = torch.from_numpy(z[indices])
+        x = torch.from_numpy(self._v[:,0])
+        y = torch.from_numpy(self._v[:,1])
+        z = torch.from_numpy(self._v[:,2])
 
         # calculate second moments
         xx = x ** 2
