@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import igl
 import wandb
+from torch_geometric.data import Data
+
+from utils import compute_edges_from_faces
 
 def calculate_knn(vertices, radius):
     """
@@ -308,19 +311,7 @@ def plot_shape_color_vertices(vertices, faces, values1, values2, k1, k2):
 
 
 def forward_with_knn(model, shape, radius, k1, k2, device):
-    """
-    Perform a forward pass through the given deep learning model using KNN for each point in the 3D shape.
-
-    Args:
-        model: The deep learning model.
-        shape (numpy.ndarray): 3D shape represented as (num_of_points, 3).
-        k (int): Number of nearest neighbors to consider.
-        radius (float): Radius to search for neighbors.
-
-    Returns:
-        numpy.ndarray: The output from the deep learning model represented as (num_of_points, 3).
-    """
-    indices = calculate_knn(shape.v, radius)
+    indices = calculate_knn(shape.pos, radius)
     input = [shape.v_second_moments[idxs] for idxs in indices]
 
     # input = input.reshape(-1, k * 3)  # Flatten the KNN array
@@ -344,12 +335,11 @@ def forward_with_knn(model, shape, radius, k1, k2, device):
 class VisualizerCallback(Callback):
     def __init__(self, radius, sample):
         self.radius = radius
-        self.sample = sample
-
+        self.sample = Data(x=sample.v_second_moments.to(torch.float32), pos=torch.tensor(sample.v, dtype=torch.float32),edge_index=compute_edges_from_faces(sample.f))
         # calculate the k1,k2 values here because it is expensive to calculate it each time we want to plot
         # Calculate k1 and k2 using igl
-        vertices = self.sample.v.astype(np.double)  # Convert vertices to double for igl
-        faces = self.sample.f.astype(np.int32)  # Convert faces to int32 for igl
+        vertices = sample.v.astype(np.double)  # Convert vertices to double for igl
+        faces = sample.f.astype(np.int32)  # Convert faces to int32 for igl
 
 
 

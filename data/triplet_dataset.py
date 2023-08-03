@@ -2,6 +2,9 @@ import torch
 from torch.nn.utils.rnn import pad_sequence, pack_sequence
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+from torch_geometric.data import Data, Batch
+import numpy as np
+
 
 # Define your custom dataset class
 class CustomTripletDataset(Dataset):
@@ -12,10 +15,17 @@ class CustomTripletDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+    # def __getitem__(self, idx):
+    #     patch1, patch2, patch3 = self.data[idx]
+    #     item = patch1.v_second_moments,patch2.v_second_moments,patch3.v_second_moments
+    #     return item
+
+
     def __getitem__(self, idx):
         patch1, patch2, patch3 = self.data[idx]
-        item = patch1.v_second_moments,patch2.v_second_moments,patch3.v_second_moments
+        item = patch1,patch2,patch3
         return item
+
 
     # Define a custom collate function to handle variable-sized tensors in each triplet
     def padding_collate_fn(self, batch):
@@ -38,5 +48,22 @@ class CustomTripletDataset(Dataset):
 
         return patches
 
-# Assuming you have your own data in the following format:
-# Replace 'your_data' and 'your_labels' with your actual data and labels
+    # Function to compute edges from faces
+    def compute_edges_from_faces(self, faces):
+        edges = []
+        for face in faces:
+            edges.extend([(face[i], face[(i + 1) % 3]) for i in range(3)])
+        edges = [tuple(sorted(edge)) for edge in edges]  # Remove duplicates
+        edges = list(set(edges))  # Ensure uniqueness of edges
+        # Convert the list of edges to a 2D tensor with two rows (source and target nodes)
+        edge_index = torch.tensor(edges, dtype=torch.long).t()
+        return edge_index
+
+    def batch_collate_fn(self, batch):
+        # use Data and Batch from torch_geometric
+        data = []
+        for i in range(len(batch)):
+            for j in range(len(batch[i])):
+                edges = self.compute_edges_from_faces(batch[i][j].f)
+                data.append(Data(x=batch[i][j].v_second_moments.to(torch.float32), pos=torch.tensor(batch[i][j].v, dtype=torch.float32), edge_index=edges))
+        return Batch.from_data_list(data)

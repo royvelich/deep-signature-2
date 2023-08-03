@@ -6,6 +6,7 @@ from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_p
 import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation
+from torch_geometric.data import Batch
 
 
 class PointTransformerConvNet(pl.LightningModule):
@@ -26,18 +27,18 @@ class PointTransformerConvNet(pl.LightningModule):
         self.loss_func = loss_contrastive_plus_codazzi_and_pearson_correlation
 
     def forward(self, data):
-        x =data
-        edge_index = radius_graph(x, r=0.5, batch=None, loop=True, max_num_neighbors=32)
+        x = data.x
+        # edge_index = radius_graph(x, r=0.5, batch=None, loop=True, max_num_neighbors=32)
 
         # Apply initial embedding
         x = self.embedding(x)
 
         # Apply Point Transformer Convolutional layers
         for conv_layer in self.conv_layers:
-            x = conv_layer(x=x,pos=data[:,:3], edge_index=edge_index)
+            x = conv_layer(x=x,pos=data.pos, edge_index=data.edge_index)
 
         # Apply pooling to aggregate information from vertices
-        x = self.pooling(x, batch=None)
+        x = self.pooling(x, batch=data.batch)
 
         # Apply final linear layer
         x = self.final_linear(x)
@@ -45,34 +46,33 @@ class PointTransformerConvNet(pl.LightningModule):
         return x
 
     def training_step(self, batch, batch_idx):
-        anc_patches, pos_patches, neg_patches = self.unpack_batch(batch)
-        loss = 0.0
-        for i in range(len(anc_patches)):
-            output_anc = self.forward(anc_patches[i].float())
 
-            output_pos = self.forward(pos_patches[i].float())
+        output = self.forward(batch)
+        anchor_idx = torch.arange(0, output.size(0), 3)
+        positive_idx = torch.arange(1, output.size(0), 3)
+        negative_idx = torch.arange(2, output.size(0), 3)
 
-            output_neg = self.forward(neg_patches[i].float())
+        anchor_output = torch.index_select(output, 0, anchor_idx)
+        positive_output = torch.index_select(output, 0, positive_idx)
+        negative_output = torch.index_select(output, 0, negative_idx)
 
-            loss += self.loss_func(a=output_anc.T, p=output_pos.T,
-                                   n=output_neg.T)
+        loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
-        print("Training loss: ", loss.item())
         self.log('train_loss', loss, on_step=False, on_epoch=True)  # Logging the training loss
         return loss
 
     def validation_step(self, batch, batch_idx):
-        anc_patches, pos_patches, neg_patches = self.unpack_batch(batch)
-        loss = 0.0
-        for i in range(len(anc_patches)):
-            output_anc = self.forward(anc_patches[i].float())
 
-            output_pos = self.forward(pos_patches[i].float())
+        output = self.forward(batch)
+        anchor_idx = torch.arange(0, output.size(0), 3)
+        positive_idx = torch.arange(1, output.size(0), 3)
+        negative_idx = torch.arange(2, output.size(0), 3)
 
-            output_neg = self.forward(neg_patches[i].float())
+        anchor_output = torch.index_select(output, 0, anchor_idx)
+        positive_output = torch.index_select(output, 0, positive_idx)
+        negative_output = torch.index_select(output, 0, negative_idx)
 
-            loss += self.loss_func(a=output_anc.T, p=output_pos.T,
-                                   n=output_neg.T)
+        loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
         self.log('val_loss', loss, on_step=False, on_epoch=True)  # Logging the validation loss
         return loss

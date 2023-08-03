@@ -2,6 +2,7 @@ import os
 
 import igl
 import numpy as np
+import torch
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 from pyvista import PolyData
@@ -157,3 +158,14 @@ def init_wandb(lr,max_epochs, weight_decay):
                })
 
     return WandbLogger()
+
+# Function to compute edges from faces
+def compute_edges_from_faces(self, faces):
+    edges = []
+    for face in faces:
+        edges.extend([(face[i], face[(i + 1) % 3]) for i in range(3)])
+    edges = [tuple(sorted(edge)) for edge in edges]  # Remove duplicates
+    edges = list(set(edges))  # Ensure uniqueness of edges
+    # Convert the list of edges to a 2D tensor with two rows (source and target nodes)
+    edge_index = torch.tensor(edges, dtype=torch.long).t()
+    return edge_index

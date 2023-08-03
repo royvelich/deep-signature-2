@@ -46,8 +46,8 @@ def main_loop():
     train_dataset, val_dataset = random_split(custom_dataset, [num_train_samples, num_val_samples])
 
     # Create DataLoaders for train and validation sets
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=1, collate_fn=custom_dataset.pack_collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, num_workers=1, collate_fn=custom_dataset.pack_collate_fn)  # No need to shuffle validation data
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=1, collate_fn=custom_dataset.batch_collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, num_workers=1, collate_fn=custom_dataset.batch_collate_fn)  # No need to shuffle validation data
 
 
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
@@ -73,7 +73,8 @@ def main_loop():
                       # overfit_batches=1.0,
                       max_epochs=max_epochs,
                       logger=logger,
-                      callbacks=[visualizer_callback, checkpoint_callback])
+                      # callbacks=[visualizer_callback, checkpoint_callback])
+                      callbacks=[checkpoint_callback])
     trainer.fit(model, train_dataloaders=train_loader,val_dataloaders=val_loader)
 
 if __name__ == "__main__":

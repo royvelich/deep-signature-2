@@ -39,7 +39,7 @@ def calculate_pearson_loss_vectorized(matrix, device):
 
     # Calculate the loss
     loss = torch.linalg.matrix_norm(identity - correlation_matrix) ** 2
-    print("pearson loss:", loss)
+    # print("pearson loss:", loss)
 
     return loss
 
@@ -60,7 +60,7 @@ def codazzi_loss(output):
     k1_der22 = output[:,6]
     k2_der11 = output[:,7]
     loss = (torch.norm((k1_der22 - k2_der11) + ((k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2)/(abs(k1-k2)+1e-4))*torch.sign(k1-k2) - k1*k2*(k1-k2)))/output.size(0)
-    print("codazzi loss:", loss)
+    # print("codazzi loss:", loss)
 
     # return (torch.norm((k1_der22 - k2_der11)*(k1-k2) + (k1_der1*k2_der1 + k1_der2*k2_der2 - 2*k2_der1**2 - 2*k1_der2**2) - k1*k2*((k1-k2)**2))**2)
     return loss
@@ -90,7 +90,7 @@ def sanity_check_pc():
 
 def contrastive_tuplet_loss(a,p,n):
     loss = torch.log(1 + torch.exp(torch.linalg.matrix_norm(a-p)**2 - torch.linalg.matrix_norm(a-n)**2))/a.size(0)
-    print("contrastive loss:", loss)
+    # print("contrastive loss:", loss)
     if torch.isnan(loss):
         print("loss is NaN")
     return loss
