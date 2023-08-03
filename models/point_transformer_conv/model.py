@@ -65,9 +65,11 @@ class PointTransformerConvNet(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
 
         output = self.forward(batch)
-        anchor_idx = torch.arange(0, output.size(0), 3)
-        positive_idx = torch.arange(1, output.size(0), 3)
-        negative_idx = torch.arange(2, output.size(0), 3)
+        device = output.device
+
+        anchor_idx = torch.arange(0, output.size(0), 3, device=device)
+        positive_idx = torch.arange(1, output.size(0), 3, device=device)
+        negative_idx = torch.arange(2, output.size(0), 3, device=device)
 
         anchor_output = torch.index_select(output, 0, anchor_idx)
         positive_output = torch.index_select(output, 0, positive_idx)
