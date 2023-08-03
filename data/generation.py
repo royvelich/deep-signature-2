@@ -14,7 +14,7 @@ from scipy.interpolate import Rbf
 import pyvista as pv
 
 # surface-diff-inv
-from core.geometry import Mesh, Patch
+from deep_signature.geometry2 import Mesh, Patch
 
 # noise
 from noise import snoise3
