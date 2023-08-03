@@ -1,6 +1,5 @@
 # standard library
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple
 
 # numpy
 import numpy as np
@@ -11,10 +10,9 @@ from scipy.ndimage import gaussian_filter
 from scipy.interpolate import Rbf
 
 # pyvista
-import pyvista as pv
 
 # surface-diff-inv
-from deep_signature.geometry2 import Mesh, Patch
+from geometry2 import Patch
 
 # noise
 from noise import snoise3
