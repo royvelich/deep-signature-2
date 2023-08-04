@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import igl
 import wandb
-from torch_geometric.data import Data
+from torch_geometric.data import Data, Batch
 
+from data.triplet_dataset import CustomTripletDataset
 from utils import compute_edges_from_faces
 
 def calculate_knn(vertices, radius):
@@ -310,25 +311,32 @@ def plot_shape_color_vertices(vertices, faces, values1, values2, k1, k2):
 
 
 
-def forward_with_knn(model, shape, radius, k1, k2, device):
+def forward_with_knn(model, shape, radius, k1, k2,faces, device):
     indices = calculate_knn(shape.pos, radius)
-    input = [shape.v_second_moments[idxs] for idxs in indices]
-
+    #  i take only edges that both vertices are in idxs
+    # than  i remap them from the mapping of the full shape vertices to the new mapping of idxs
+    mapping  = [{old_idx: new_idx for new_idx, old_idx in enumerate(idxs)} for idxs in indices]
+    input = [Data(x=shape.x[idxs], pos=shape.pos[idxs],
+                  edge_index=torch.tensor([(mapping[i].get(edge[0].item()), mapping[i].get(edge[1].item())) for edge in shape.edge_index[:, np.logical_and(
+                      np.isin(shape.edge_index[0], idxs),
+                      np.isin(shape.edge_index[1], idxs)
+                  )].T]).T) for i, idxs in enumerate(indices)]
+    input = Batch.from_data_list(input)
     # input = input.reshape(-1, k * 3)  # Flatten the KNN array
     # input = torch.nn.utils.rnn.pad_sequence(input, batch_first=True, padding_value=0)
     # input = torch.transpose(input, 1, 2).float()
     with torch.no_grad():
-        output = []
-        for i in range(len(input)):
-            output.append(model.forward(input[i].to(device).float()))
+        output = model.forward(input.to(device))
+        # for i in range(len(input)):
+        #     output.append(model.forward(input[i].to(device)))
 
     # output = model(input.to(device).float())
     # output= torch.squeeze(output)\
     # output = output.reshape(-1, k, 3)  # Reshape back to (num_of_points, k, 3)
-    output = torch.cat(output)
+    # output = torch.cat(output)
     val1 = output[:, 0]  # Take the first entry for each point
     val2 = output[:, 1]  # Take the second entry for each point
-    plot_shape_color_faces(shape.v, shape.f, val1, val2, k1, k2)
+    plot_shape_color_faces(shape.pos, faces, val1, val2, k1, k2)
     # plot_shape_color_vertices(shape.v, shape.f, val1, val2, k1, k2)
 
 # Custom Callback to perform forward_with_knn every M epochs
@@ -338,12 +346,12 @@ class VisualizerCallback(Callback):
         self.sample = Data(x=sample.v_second_moments.to(torch.float32), pos=torch.tensor(sample.v, dtype=torch.float32),edge_index=compute_edges_from_faces(sample.f))
         # calculate the k1,k2 values here because it is expensive to calculate it each time we want to plot
         # Calculate k1 and k2 using igl
-        vertices = sample.v.astype(np.double)  # Convert vertices to double for igl
-        faces = sample.f.astype(np.int32)  # Convert faces to int32 for igl
+        self.vertices = sample.v.astype(np.double)  # Convert vertices to double for igl
+        self.faces = sample.f.astype(np.int32)  # Convert faces to int32 for igl
 
 
 
-        d1, d2, k1, k2  =  igl.principal_curvature(vertices, faces)
+        d1, d2, k1, k2  =  igl.principal_curvature(self.vertices, self.faces)
 
         # Normalize k1 and k2 to [0, 1]
         self.k1 = (k1 - k1.min()) / (k1.max() - k1.min())
@@ -354,4 +362,4 @@ class VisualizerCallback(Callback):
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         if trainer.current_epoch % 10 == 0:
-            forward_with_knn(pl_module, self.sample, self.radius, self.k1, self.k2, pl_module.device)
+            forward_with_knn(pl_module, self.sample, self.radius, self.k1, self.k2,self.faces, pl_module.device)
