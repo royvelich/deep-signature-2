@@ -24,7 +24,7 @@ def main_loop():
         file_path = "/home/gal.yona/deep-signature-2/data/triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
         num_workers = 8
     else:
-        file_path = "./triplets_data_size_30_N_10_all_monge_patch.pkl"
+        file_path = "triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
 
 
 
