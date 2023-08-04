@@ -153,7 +153,7 @@ class PointTransformerConvNet(pl.LightningModule):
         # output_neg = torch.cat(output_neg, dim=0)
         return output_anc, output_pos, output_neg
 
-    def configure_optimizers(self, lr=0.0001,weight_decay=0.0001):
+    def configure_optimizers(self, lr=0.0001,weight_decay=0.001):
         optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.9)
         return [optimizer], [scheduler]
