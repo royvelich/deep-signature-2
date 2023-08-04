@@ -107,7 +107,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
         loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
-        self.log('train_loss', loss, on_step=True, on_epoch=True)  # Logging the training loss
+        self.log('train_loss', loss, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -125,7 +125,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
         loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
-        self.log('val_loss', loss, on_step=True, on_epoch=True)  # Logging the validation loss
+        self.log('val_loss', loss, on_step=False, on_epoch=True)
         return loss
 
 
@@ -153,7 +153,7 @@ class PointTransformerConvNet(pl.LightningModule):
         # output_neg = torch.cat(output_neg, dim=0)
         return output_anc, output_pos, output_neg
 
-    def configure_optimizers(self, lr=0.0003,weight_decay=0.0001):
+    def configure_optimizers(self, lr=0.0001,weight_decay=0.0001):
         optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.9)
         return [optimizer], [scheduler]

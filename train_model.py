@@ -17,8 +17,8 @@ from visualize.visualize__results_on_mesh import VisualizerCallback
 
 def main_loop():
     max_epochs = 100
-    lr = 0.001
-    weight_decay = 0.1
+    lr = 0.0001
+    weight_decay = 0.0001
     num_workers = 1
     if torch.cuda.is_available():
         file_path = "/home/gal.yona/deep-signature-2/data/triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
@@ -55,14 +55,14 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    model = PointTransformerConvNet(in_channels=9, hidden_channels=128)
-    # os.environ["WANDB_MODE"] = "offline"
+    model = PointTransformerConvNet(in_channels=9, hidden_channels=256, out_channels=8, num_layers=5)
+    os.environ["WANDB_MODE"] = "offline"
 
     # training
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model-{epoch:02d}',
+        filename='model_point_transformer_5_layers_width_256-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=20
