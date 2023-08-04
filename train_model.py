@@ -56,7 +56,7 @@ def main_loop():
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
     model = PointTransformerConvNet(in_channels=9, hidden_channels=128, out_channels=8, num_layers=5)
-    os.environ["WANDB_MODE"] = "offline"
+    # os.environ["WANDB_MODE"] = "offline"
 
     # training
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
