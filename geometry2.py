@@ -131,12 +131,26 @@ def normalize_points(vertices):
 
     # Step 3: Find the principal directions (eigenvectors)
     eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
-    principal_directions = eigenvectors.T  # Transpose to get the principal directions as rows
+    # Sort eigenvalues in descending order
+    sorted_indices = np.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[sorted_indices]
+    eigenvectors = eigenvectors[:, sorted_indices]
+    normalized_eigenvectors = eigenvectors / np.linalg.norm(eigenvectors)
+    # normalized_eigenvectors = eigenvectors / np.sqrt(eigenvalues)
+    # Rotation matrix to align with principal axes
+    rotation_matrix = normalized_eigenvectors
 
-    # Step 4: Normalize the points
-    normalized_points = np.dot(centered_points, principal_directions)
+    # Apply rotation to the centered point cloud
+    normalized_points = np.dot(centered_points, rotation_matrix)
+
+    #
+    #
+    # # Step 4: Normalize the points
+    # normalized_points = np.dot(centered_points, normalized_eigenvectors)
+
 
     return normalized_points
+
 
 class Patch(Mesh):
     def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray):
@@ -149,7 +163,7 @@ class Patch(Mesh):
         z = z_grid.ravel()
 
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
-        indices = self.downsample(ratio=random.uniform(0.1,0.2))
+        indices = self.downsample(ratio=random.uniform(0.2,0.4))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
         self._v = normalize_points(self._v)
         v = np.stack([self._v[:,0], self._v[:,1]], axis=1)

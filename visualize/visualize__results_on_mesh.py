@@ -8,6 +8,9 @@ import igl
 import wandb
 from torch_geometric.data import Data, Batch
 
+import plotly.graph_objects as go
+import plotly.offline as pyo
+
 from data.triplet_dataset import CustomTripletDataset
 from utils import compute_edges_from_faces
 
@@ -121,8 +124,44 @@ def plot_on_shape(vertices, faces, values):
     ax.set_zlabel("Z")
     plt.show()
 
+def plot_interactive_shape(vertices, faces, values1, values2, k1, k2, title):
+    fig = go.Figure()
 
-def plot_shape_color_faces(vertices, faces, values1, values2, k1, k2):
+    # Create 3D mesh for the shape
+    for face in faces:
+        x, y, z = zip(*vertices[face])
+        fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=0.5, color='blue'))
+
+    # Set the aspect ratio and camera for a nice view
+    camera = dict(
+        eye=dict(x=1.5, y=1.5, z=0.8),
+        center=dict(x=0, y=0, z=0),
+        up=dict(x=0, y=0, z=1)
+    )
+    fig.update_layout(scene=dict(camera=camera, aspectmode="manual"))
+
+    # # Set color based on values1 and values2
+    # face_colors1 = [np.mean(values1[face]) for face in faces]
+    # face_colors2 = [np.mean(values2[face]) for face in faces]
+    # fig.data[0].facecolor = face_colors1
+    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values1', facecolor=face_colors1))
+    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values2', facecolor=face_colors2))
+    #
+    # # Set color based on k1 and k2
+    # face_colors_k1 = [np.mean(k1[face]) for face in faces]
+    # face_colors_k2 = [np.mean(k2[face]) for face in faces]
+    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k1', facecolor=face_colors_k1))
+    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k2', facecolor=face_colors_k2))
+
+    # Show interactive plot
+    fig.update_layout(title=title)
+    # pyo.iplot(fig)
+
+    # fig.show()
+    wandb.log({"Interactive_3D_Plot": fig})
+
+
+def plot_shape_color_faces(vertices, faces, values1, values2, k1, k2, title=''):
     """
     Plot the shape with colors based on the values1 and values2 arrays.
     Additionally, calculate k1 and k2 using the igl library.
@@ -160,8 +199,8 @@ def plot_shape_color_faces(vertices, faces, values1, values2, k1, k2):
 
 
 
-    wandb.log({"||k1-values1||":np.linalg.norm(k1-values1)})
-    wandb.log({"||k2-values2||":np.linalg.norm(k2-values2)})
+    # wandb.log({"||k1-values1||":np.linalg.norm(k1-values1)})
+    # wandb.log({"||k2-values2||":np.linalg.norm(k2-values2)})
     values1 = barycentric_average(vertices,faces, values1)
     values2 = barycentric_average(vertices,faces, values2)
     k1 = barycentric_average(vertices,faces, k1)
@@ -234,8 +273,11 @@ def plot_shape_color_faces(vertices, faces, values1, values2, k1, k2):
     ax4.set_ylabel("Y")
     ax4.set_zlabel("Z")
 
-    plt.savefig("shape_plot.png")
+    plt.title(title)
+    # plt.savefig("shape_plot.png")
     plt.show()
+
+    plot_interactive_shape(vertices, faces,normalized_values1,normalized_values2,normalized_k1,normalized_k2, title=title)
 
     wandb.log({"plot": wandb.Image("shape_plot.png")})
 
