@@ -57,7 +57,7 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    model = PointTransformerConvNet(in_channels=9, hidden_channels=128, out_channels=8, num_layers=3)
+    model = PointTransformerConvNet(in_channels=9, hidden_channels=256, out_channels=8, num_layers=3)
 
     # training
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)

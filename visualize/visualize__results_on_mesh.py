@@ -124,7 +124,7 @@ def plot_on_shape(vertices, faces, values):
     ax.set_zlabel("Z")
     plt.show()
 
-def plot_interactive_shape(vertices, faces, values1, values2, k1, k2, title):
+def plot_interactive_shape(vertices, faces, values, title):
     fig = go.Figure()
 
     # Create 3D mesh for the shape
@@ -141,23 +141,29 @@ def plot_interactive_shape(vertices, faces, values1, values2, k1, k2, title):
     fig.update_layout(scene=dict(camera=camera, aspectmode="manual"))
 
     # Set color based on values1 and values2
-    face_colors1 = [np.mean(values1[face]) for face in faces]
-    face_colors2 = [np.mean(values2[face]) for face in faces]
-    fig.data[0].facecolor = face_colors1
-    fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values1', facecolor=face_colors1))
-    fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values2', facecolor=face_colors2))
+    face_colors = [np.mean(values[face]) for face in faces]
+    # face_colors2 = [np.mean(values2[face]) for face in faces]
+    # fig.data[0].facecolor = face_colors1
 
-    # Set color based on k1 and k2
-    face_colors_k1 = [np.mean(k1[face]) for face in faces]
-    face_colors_k2 = [np.mean(k2[face]) for face in faces]
-    fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k1', facecolor=face_colors_k1))
-    fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k2', facecolor=face_colors_k2))
+    # Set the face colors and colorscale for each Mesh3d trace using a heatmap colorscale
+    for i, face_color in enumerate(face_colors):
+        fig.data[i].facecolor = face_color
+        fig.data[i].colorscale = 'Viridis'  # You can choose any colorscale you prefer
+
+    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values1', facecolor=face_colors1))
+    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values2', facecolor=face_colors2))
+    #
+    # # Set color based on k1 and k2
+    # face_colors_k1 = [np.mean(k1[face]) for face in faces]
+    # face_colors_k2 = [np.mean(k2[face]) for face in faces]
+    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k1', facecolor=face_colors_k1))
+    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k2', facecolor=face_colors_k2))
 
     # Show interactive plot
     fig.update_layout(title=title)
     # pyo.iplot(fig)
 
-    # fig.show()
+    fig.show()
     wandb.log({"Interactive_3D_Plot": fig})
 
 
@@ -274,10 +280,13 @@ def plot_shape_color_faces(vertices, faces, values1, values2, k1, k2, title=''):
     ax4.set_zlabel("Z")
 
     plt.title(title)
-    # plt.savefig("shape_plot.png")
+    plt.savefig("shape_plot.png")
     plt.show()
 
-    plot_interactive_shape(vertices, faces,normalized_values1,normalized_values2,normalized_k1,normalized_k2, title=title)
+    # plot_interactive_shape(vertices, faces,normalized_values1, title=title+" Values1")
+    # plot_interactive_shape(vertices, faces,normalized_values2, title=title+" Values2")
+    # plot_interactive_shape(vertices, faces,normalized_k1, title=title+" k1")
+    # plot_interactive_shape(vertices, faces,normalized_k2, title=title+" k2")
 
     wandb.log({"plot": wandb.Image("shape_plot.png")})
 
