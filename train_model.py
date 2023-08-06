@@ -57,13 +57,13 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    model = PointTransformerConvNet(in_channels=9, hidden_channels=256, out_channels=8, num_layers=3)
+    model = PointTransformerConvNet(in_channels=9, hidden_channels=128, out_channels=8, num_layers=5)
 
     # training
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_3_layers_width_256-{epoch:02d}',
+        filename='model_point_transformer_5_layers_width_128-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=20
