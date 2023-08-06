@@ -140,18 +140,18 @@ def plot_interactive_shape(vertices, faces, values1, values2, k1, k2, title):
     )
     fig.update_layout(scene=dict(camera=camera, aspectmode="manual"))
 
-    # # Set color based on values1 and values2
-    # face_colors1 = [np.mean(values1[face]) for face in faces]
-    # face_colors2 = [np.mean(values2[face]) for face in faces]
-    # fig.data[0].facecolor = face_colors1
-    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values1', facecolor=face_colors1))
-    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values2', facecolor=face_colors2))
-    #
-    # # Set color based on k1 and k2
-    # face_colors_k1 = [np.mean(k1[face]) for face in faces]
-    # face_colors_k2 = [np.mean(k2[face]) for face in faces]
-    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k1', facecolor=face_colors_k1))
-    # fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k2', facecolor=face_colors_k2))
+    # Set color based on values1 and values2
+    face_colors1 = [np.mean(values1[face]) for face in faces]
+    face_colors2 = [np.mean(values2[face]) for face in faces]
+    fig.data[0].facecolor = face_colors1
+    fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values1', facecolor=face_colors1))
+    fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='Values2', facecolor=face_colors2))
+
+    # Set color based on k1 and k2
+    face_colors_k1 = [np.mean(k1[face]) for face in faces]
+    face_colors_k2 = [np.mean(k2[face]) for face in faces]
+    fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k1', facecolor=face_colors_k1))
+    fig.add_trace(go.Mesh3d(x=x, y=y, z=z, opacity=1.0, colorbar_title='k2', facecolor=face_colors_k2))
 
     # Show interactive plot
     fig.update_layout(title=title)

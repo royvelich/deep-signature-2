@@ -50,8 +50,8 @@ def main_loop():
     train_dataset, val_dataset = random_split(custom_dataset, [num_train_samples, num_val_samples])
 
     # Create DataLoaders for train and validation sets
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=num_workers, collate_fn=custom_dataset.batch_collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=num_workers, collate_fn=custom_dataset.batch_collate_fn)  # No need to shuffle validation data
+    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=num_workers, collate_fn=custom_dataset.batch_collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=num_workers, collate_fn=custom_dataset.batch_collate_fn)  # No need to shuffle validation data
 
 
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz

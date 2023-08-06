@@ -140,7 +140,7 @@ def calculate_pearson_corr_matrix(k1, k2, dk1_1, dk1_2, dk2_1, dk2_2, dk1_22, dk
     return pearson_corr_matrix
 
 
-def init_wandb(lr,max_epochs, weight_decay):
+def init_wandb(lr=0.001,max_epochs=100, weight_decay=0.001):
     # Set a custom temporary directory for WandB
     wandb_dir = "./wandb_tmp_dir"
     os.makedirs(wandb_dir, exist_ok=True)
