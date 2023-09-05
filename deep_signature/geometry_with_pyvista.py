@@ -202,25 +202,25 @@ class Patch(Mesh):
              grid_step: Optional[int] = None,
              scalar_field: Optional[ScalarField] = None):
 
-        if scalar_field is ScalarField.K1:
-            scalars = self._k1_grid
-        elif scalar_field is ScalarField.K2:
-            scalars = self._k2_grid
-        elif scalar_field is ScalarField.DK1_1:
-            scalars = self._dk1_1_grid
-        elif scalar_field is ScalarField.DK1_2:
-            scalars = self._dk1_2_grid
-        elif scalar_field is ScalarField.DK2_1:
-            scalars = self._dk2_1_grid
-        elif scalar_field is ScalarField.DK2_2:
-            scalars = self._dk2_2_grid
-        elif scalar_field is ScalarField.DK1_22:
-            scalars = self._dk1_22_grid
-        elif scalar_field is ScalarField.DK2_11:
-            scalars = self._dk2_11_grid
-        else:
-            scalars = None
-
+        # if scalar_field is ScalarField.K1:
+        #     scalars = self._k1_grid
+        # elif scalar_field is ScalarField.K2:
+        #     scalars = self._k2_grid
+        # elif scalar_field is ScalarField.DK1_1:
+        #     scalars = self._dk1_1_grid
+        # elif scalar_field is ScalarField.DK1_2:
+        #     scalars = self._dk1_2_grid
+        # elif scalar_field is ScalarField.DK2_1:
+        #     scalars = self._dk2_1_grid
+        # elif scalar_field is ScalarField.DK2_2:
+        #     scalars = self._dk2_2_grid
+        # elif scalar_field is ScalarField.DK1_22:
+        #     scalars = self._dk1_22_grid
+        # elif scalar_field is ScalarField.DK2_11:
+        #     scalars = self._dk2_11_grid
+        # else:
+        #     scalars = None
+        scalars = None
         super().plot(plotter=plotter, show_edges=show_edges, scalars=scalars, show_principal_directions=show_principal_directions)
         if show_grid_points is True:
             grid_v = self._v.reshape([self._x_grid.shape[0], self._x_grid.shape[1], 3])

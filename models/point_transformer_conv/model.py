@@ -5,7 +5,8 @@ from torch.nn.utils.rnn import pad_packed_sequence
 from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_pool
 import pytorch_lightning as pl
 
-from loss import loss_contrastive_plus_codazzi_and_pearson_correlation
+from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
+    loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2
 
 
 # Taken from https://github.com/vsitzmann/siren
@@ -68,7 +69,9 @@ class PointTransformerConvNet(pl.LightningModule):
 
         self.decoder = MLP(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=2, activation=self.activation)
 
-        self.loss_func = loss_contrastive_plus_codazzi_and_pearson_correlation
+        # self.loss_func = loss_contrastive_plus_codazzi_and_pearson_correlation
+        self.loss_func = loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2
+
 
     def forward(self, data):
         x = data.x
@@ -82,7 +85,7 @@ class PointTransformerConvNet(pl.LightningModule):
             x = self.activation(self.hidden_bns[i](self.conv_layers[i](x=x,pos=data.pos, edge_index=data.edge_index)))
 
         # Apply pooling to aggregate information from vertices
-        x = self.pooling(x, batch=data.batch)
+        # x = self.pooling(x, batch=data.batch)
 
         # Apply final linear layer
         x = self.decoder(x)

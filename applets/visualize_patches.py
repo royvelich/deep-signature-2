@@ -3,14 +3,14 @@ import argparse
 
 # surface-diff-inv
 from core import utils as core_utils
-from data.generation import GaussianPatchGenerator, InverseFourierPatchGenerator, RBFPatchGenerator, SimplexNoisePatchGenerator, QuadraticMonagePatchGenerator, QuadraticMonagePatchGenerator2
-from core.geometry import ScalarField
+from deep_signature.generation import GaussianPatchGenerator, InverseFourierPatchGenerator, RBFPatchGenerator, SimplexNoisePatchGenerator, QuadraticMonagePatchGenerator, QuadraticMonagePatchGenerator2
+from deep_signature.geometry_with_pyvista import ScalarField
 
 # pyvista
 import pyvista as pv
 
 # surface-diff-inv
-from core.geometry import Mesh
+from deep_signature.geometry_with_pyvista import Mesh
 
 
 if __name__ == "__main__":

@@ -142,7 +142,7 @@ class Mesh:
                 plotter.subplot(0, index)
             else:
                 plotter.subplot(index // shape[0], index % shape[0])
-
+            mesh.plot()
             mesh.plot(plotter=plotter, **kwargs)
         plotter.add_axes()
         plotter.show_grid()

@@ -57,7 +57,11 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    model = PointTransformerConvNet(in_channels=9, hidden_channels=128, out_channels=8, num_layers=5)
+    model = PointTransformerConvNet(in_channels=9, hidden_channels=128, out_channels=2, num_layers=5)
+    # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
+
+    # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
+    # model.eval()
 
     # training
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
@@ -66,9 +70,9 @@ def main_loop():
         filename='model_point_transformer_5_layers_width_128-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
-        every_n_epochs=20
+        every_n_epochs=10
     )
-    visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
+    # visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
     trainer = Trainer(num_nodes=1,
                       gradient_clip_val=1.0,
                       # log_every_n_steps=1,
@@ -76,8 +80,8 @@ def main_loop():
                       # overfit_batches=1.0,
                       max_epochs=max_epochs,
                       logger=logger,
-                      callbacks=[visualizer_callback, checkpoint_callback])
-                      # callbacks=[checkpoint_callback])
+                      # callbacks=[visualizer_callback, checkpoint_callback])
+                      callbacks=[checkpoint_callback])
     trainer.fit(model, train_dataloaders=train_loader,val_dataloaders=val_loader)
 
 if __name__ == "__main__":

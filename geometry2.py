@@ -190,7 +190,7 @@ class Patch(Mesh):
         # will be our input to the model
         self.v_second_moments = torch.stack([x, y, z, xx, yy, zz, xy, yz, zx], axis=1)
 
-    def plot(self, show_principal_directions: bool = True, show_grid_points: bool = True, grid_step: Optional[int] = None, scalar_field: Optional[ScalarField] = None):
+    def plot(self, show_principal_directions: bool = True, show_grid_points: bool = False, grid_step: Optional[int] = None, scalar_field: Optional[ScalarField] = None):
         if scalar_field is ScalarField.K1:
             scalars = self._k1_grid
         elif scalar_field is ScalarField.K2:

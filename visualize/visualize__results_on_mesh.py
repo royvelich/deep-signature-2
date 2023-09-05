@@ -241,30 +241,31 @@ def plot_shape_color_faces(vertices, faces, values1, values2, k1, k2, title=''):
     # Plot the shape with colors based on k1 and k2
     min_k2, max_k2 = k2.min(), k2.max()
     normalized_k2 = (k2 - min_k2) / (max_k2 - min_k2)
+
+    value1_vs_k1 = []
+    value2_vs_k2 = []
     for i, face in enumerate(faces):
         # Calculate the average value for the vertices of the current face
         avg_value1 = np.mean(normalized_values1[face])
         face_color1 = plt.cm.coolwarm(avg_value1)  # Use a colormap to get the color based on values1
         avg_value2 = np.mean(normalized_values2[face])
         face_color2 = plt.cm.coolwarm(avg_value2)  # Use a colormap to get the color based on values2
+        avg_k1 = np.mean(normalized_k1[face])
+        avg_k2 = np.mean(normalized_k2[face])
+        face_color_k1 = plt.cm.coolwarm(avg_k1)  # Use a colormap to get the color based on k1
+        face_color_k2 = plt.cm.coolwarm(avg_k2)  # Use a colormap to get the color based on k2
+        value1_vs_k1.append(np.linalg.norm(np.array(face_color1)-np.array(face_color_k1))/np.linalg.norm(np.array(face_color1)))
+        value2_vs_k2.append(np.linalg.norm(np.array(face_color2)-np.array(face_color_k2))/np.linalg.norm(np.array(face_color2)))
 
         # Plot the face with the computed color based on values1
         ax1.add_collection3d(Poly3DCollection([vertices[face]], alpha=1.0, facecolors=face_color1))
 
         # Plot the face with the computed color based on values2
         ax2.add_collection3d(Poly3DCollection([vertices[face]], alpha=1.0, facecolors=face_color2))
-
-    # Plot the shape with colors based on k1 and k2
-    for i, face in enumerate(faces):
-        # Calculate the average value for the vertices of the current face
-        avg_k1 = np.mean(normalized_k1[face])
-        avg_k2 = np.mean(normalized_k2[face])
-        face_color_k1 = plt.cm.coolwarm(avg_k1)  # Use a colormap to get the color based on k1
-        face_color_k2 = plt.cm.coolwarm(avg_k2)  # Use a colormap to get the color based on k2
-
         # Plot the face with the computed colors based on k1 and k2
         ax3.add_collection3d(Poly3DCollection([vertices[face]], alpha=1.0, facecolors=face_color_k1))
         ax4.add_collection3d(Poly3DCollection([vertices[face]], alpha=1.0, facecolors=face_color_k2))
+
 
     ax1.set_xlabel("X")
     ax1.set_ylabel("Y")
@@ -283,6 +284,14 @@ def plot_shape_color_faces(vertices, faces, values1, values2, k1, k2, title=''):
     plt.savefig("shape_plot.png")
     plt.show()
 
+    plt.figure()
+    plt.plot(value1_vs_k1, label="value1 vs k1")
+    plt.legend()
+    plt.show()
+    plt.figure()
+    plt.plot(value2_vs_k2, label="value2 vs k2")
+    plt.legend()
+    plt.show()
     # plot_interactive_shape(vertices, faces,normalized_values1, title=title+" Values1")
     # plot_interactive_shape(vertices, faces,normalized_values2, title=title+" Values2")
     # plot_interactive_shape(vertices, faces,normalized_k1, title=title+" k1")
@@ -362,7 +371,7 @@ def plot_shape_color_vertices(vertices, faces, values1, values2, k1, k2):
 
 
 
-def forward_with_knn(model, shape, radius, k1, k2,faces, device):
+def forward_with_knn(model, shape, radius, k1=None, k2=None,faces=None, device=None):
     indices = calculate_knn(shape.pos, radius)
     #  i take only edges that both vertices are in idxs
     # than  i remap them from the mapping of the full shape vertices to the new mapping of idxs
@@ -387,8 +396,10 @@ def forward_with_knn(model, shape, radius, k1, k2,faces, device):
     # output = torch.cat(output)
     val1 = output[:, 0]  # Take the first entry for each point
     val2 = output[:, 1]  # Take the second entry for each point
-    plot_shape_color_faces(shape.pos, faces, val1, val2, k1, k2)
+    # plot_shape_color_faces(shape.pos, faces, val1, val2, k1, k2)
     # plot_shape_color_vertices(shape.v, shape.f, val1, val2, k1, k2)
+
+    return val1, val2
 
 # Custom Callback to perform forward_with_knn every M epochs
 class VisualizerCallback(Callback):
@@ -405,9 +416,10 @@ class VisualizerCallback(Callback):
         d1, d2, k1, k2  =  igl.principal_curvature(self.vertices, self.faces)
 
         # Normalize k1 and k2 to [0, 1]
-        self.k1 = (k1 - k1.min()) / (k1.max() - k1.min())
-        self.k2 = (k2 - k2.min()) / (k2.max() - k2.min())
-
+        # self.k1 = (k1 - k1.min()) / (k1.max() - k1.min())
+        # self.k2 = (k2 - k2.min()) / (k2.max() - k2.min())
+        self.k1 = k1
+        self.k2 = k2
     # def on_sanity_check_start(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
     #     forward_with_knn(pl_module, self.sample, self.radius)
 
