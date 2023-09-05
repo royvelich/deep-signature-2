@@ -108,6 +108,9 @@ class PointTransformerConvNet(pl.LightningModule):
         positive_output = torch.index_select(output, 0, positive_idx)
         negative_output = torch.index_select(output, 0, negative_idx)
 
+        # make the size of the anchor and positive the same as the negative
+        anchor_output = anchor_output[:negative_output.size(0)]
+        positive_output = positive_output[:negative_output.size(0)]
         loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
         self.log('train_loss', loss.item(), on_step=False, on_epoch=True)
@@ -126,6 +129,9 @@ class PointTransformerConvNet(pl.LightningModule):
         positive_output = torch.index_select(output, 0, positive_idx)
         negative_output = torch.index_select(output, 0, negative_idx)
 
+        # make the size of the anchor and positive the same as the negative
+        anchor_output = anchor_output[:negative_output.size(0)]
+        positive_output = positive_output[:negative_output.size(0)]
         loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
         self.log('val_loss', loss.item(), on_step=False, on_epoch=True)
