@@ -57,7 +57,7 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    model = PointTransformerConvNet(in_channels=9, hidden_channels=128, out_channels=2, num_layers=5)
+    model = PointTransformerConvNet(in_channels=9, hidden_channels=128, out_channels=2, num_layers=3)
     # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
 
     # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
