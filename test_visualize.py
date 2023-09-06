@@ -83,16 +83,17 @@ def add_colored_mesh(scene,  faces, vertices, colors,position=(0, 0, 0),title='t
 file_path = "./triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
 
 # Load the triplets from the file
-with open(file_path, 'rb') as f:
-    data = pickle.load(f)
+# with open(file_path, 'rb') as f:
+#     data = pickle.load(f)
+#
+# sample = data[0][1]
 
-sample = data[0][1]
 
+patch_generator = QuadraticMonagePatchGenerator2(limit=1.0, grid_size=100)
+sample, k1, k2, point_0_0_index = patch_generator.generate(k1=0.5, k2=-0.5)
 
-# patch_generator = QuadraticMonagePatchGenerator2(limit=1.0, grid_size=100)
-# sample, k1, k2, point_0_0_index = patch_generator.generate(k1=0.5, k2=-0.5)
-
-model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
+# model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
+model_path = "C:/Users\galyo\Downloads\model_point_transformer_5_layers_width_128-epoch=09.ckpt"
 
 model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
 model.eval()

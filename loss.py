@@ -139,5 +139,9 @@ def loss_contrastive_plus_codazzi_and_pearson_correlation(a,p,n, device='cpu'):
 def loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2(a,p,n, device='cpu'):
     return (contrastive_tuplet_loss(a,p,n) + 0.1*calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device))
 
+
 def loss_codazzi_and_pearson_correlation(output, device='cpu'):
     return (codazzi_loss(output)+0.01*calculate_pearson_loss_vectorized(output, device))
+
+def loss__pearson_correlation_k1_k2(a,p,n, device='cpu'):
+    return (calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device))
