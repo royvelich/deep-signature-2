@@ -52,9 +52,9 @@ def calculate_pearson_k1_k2_loss_vectorized(matrix, device):
     # correlation_matrix = torch.nn.functional.cosine_similarity(matrix.T.unsqueeze(0), matrix.T.unsqueeze(1), dim=2)
     correlation_matrix = torch.corrcoef(matrix.T)
 
-    nan_mask = torch.isnan(correlation_matrix)
-    # Replace NaN elements with 0
-    correlation_matrix[nan_mask] = 0
+    # nan_mask = torch.isnan(correlation_matrix)
+    # # Replace NaN elements with 0
+    # correlation_matrix[nan_mask] = 0
 
     # Create an identity matrix
     identity = torch.eye(num_columns)
@@ -145,3 +145,6 @@ def loss_codazzi_and_pearson_correlation(output, device='cpu'):
 
 def loss__pearson_correlation_k1_k2(a,p,n, device='cpu'):
     return (calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device))
+
+def loss_contrastive_plus_pearson_correlation_k1_k2(a,p,n, device='cpu'):
+    return (contrastive_tuplet_loss(a,p,n) +calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device))

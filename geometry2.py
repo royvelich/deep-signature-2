@@ -153,7 +153,7 @@ def normalize_points(vertices):
 
 
 class Patch(Mesh):
-    def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray):
+    def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray,downsample=True):
         self._x_grid = x_grid
         self._y_grid = y_grid
         self._z_grid = z_grid
@@ -163,7 +163,10 @@ class Patch(Mesh):
         z = z_grid.ravel()
 
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
-        indices = self.downsample(ratio=random.uniform(0.2,0.4))
+        if downsample:
+           indices = self.downsample(ratio=random.uniform(0.2,0.4))
+        else:
+            indices = np.arange(len(self._v))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
         self._v = normalize_points(self._v)
         v = np.stack([self._v[:,0], self._v[:,1]], axis=1)
