@@ -36,7 +36,7 @@ def main_loop():
         data = pickle.load(f)
 
     # Create custom dataset
-    custom_dataset = CustomTripletDataset(data, transform=custom_euclidean_transform)
+    custom_dataset = CustomTripletDataset(data)
 
     # Define the ratio for train and validation split (e.g., 80% for training, 20% for validation)
     train_ratio = 0.8
