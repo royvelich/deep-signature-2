@@ -18,10 +18,10 @@ device = torch.device("cuda" if is_available() else "cpu")
 grid_size = 50
 limit = 1
 
-patch_generator_anc_pos = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size)
-patch_generator_neg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size)
+patch_generator_anc_pos = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=False)
+patch_generator_neg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=False)
 # patch_generator_neg = InverseFourierPatchGenerator(limit=limit, grid_size=grid_size, scale=0.5)
-N = 10 # how many triplet of patches to train on
+N = 1000 # how many triplet of patches to train on
 
 neg_noise_low = 0.1
 neg_noise_high = 1.0

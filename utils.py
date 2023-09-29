@@ -7,6 +7,7 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 from pyvista import PolyData
 from sklearn.neighbors import KDTree
+import re
 
 # import pyvista as pv
 
@@ -210,6 +211,21 @@ def custom_euclidean_transform(patch):
         [x,y,z,x ** 2, y ** 2, z ** 2, x * y, x * z, y * z], dim=1)
 
     return patch
+
+
+# Function to convert MATLAB-style face indices to Python-style
+def convert_indices(line):
+    return re.sub(r'\d+', lambda x: str(int(x.group()) - 1), line)
+
+def modify_obj_to_pywavefront_format(obj_path):
+    # Read the original OBJ file
+    with open('C:/Users\galyo\PycharmProjects\point_descriptor\mesh.obj', 'r') as f:
+        lines = f.readlines()
+
+    # Modify face indices and save to a new file
+    modified_lines = [convert_indices(line) if line.startswith('f') else line for line in lines]
+    with open('modified_mesh.obj', 'w') as f:
+        f.writelines(modified_lines)
 
 # Function to compute edges from faces
 def compute_edges_from_faces(faces):
