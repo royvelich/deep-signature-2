@@ -76,6 +76,10 @@ class Mesh:
     def f(self) -> np.ndarray:
         return self._f
 
+    @v.setter
+    def v(self, value):
+        self._v = value
+
     # @property
     # def k1(self) -> np.ndarray:
     #     return self._k1

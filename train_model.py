@@ -8,7 +8,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 from models.point_transformer_conv.model import PointTransformerConvNet
-from utils import init_wandb
+from utils import init_wandb, custom_euclidean_transform
 
 from data.triplet_dataset import CustomTripletDataset
 from models.pointnet.model import STNkd, PointNet_FC
@@ -36,7 +36,7 @@ def main_loop():
         data = pickle.load(f)
 
     # Create custom dataset
-    custom_dataset = CustomTripletDataset(data)
+    custom_dataset = CustomTripletDataset(data, transform=custom_euclidean_transform)
 
     # Define the ratio for train and validation split (e.g., 80% for training, 20% for validation)
     train_ratio = 0.8

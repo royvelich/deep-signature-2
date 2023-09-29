@@ -159,6 +159,58 @@ def init_wandb(lr=0.001,max_epochs=100, weight_decay=0.001):
 
     return WandbLogger()
 
+# Define your custom transform function
+# def custom_affine_transform(patch):
+#     # Apply rotation and translation
+#     transform = Compose([
+#         RandomAffine(degrees=90, translate=(0.1, 0.1))
+#     ])
+#     patch.v = transform(torch.from_numpy(np.expand_dims(patch.v, axis=0)))
+#     # calculate second moments of v
+#     patch.v_second_moments = torch.stack([patch.v[:,0],patch.v[:,1],patch.v[:,2],patch.v[:,0]**2,patch.v[:,1]**2,patch.v[:,2]**2,patch.v[:,0]*patch.v[:,1],patch.v[:,0]*patch.v[:,2],patch.v[:,1]*patch.v[:,2]],dim=1)
+#     return patch
+
+def custom_euclidean_transform(patch):
+    # Generate random rotation angle between 0 and 90 degrees
+    theta = np.radians(np.random.uniform(0, 90))
+
+    # Generate random translations
+    translation = np.random.uniform(-0.5, 0.5, size=3)
+
+    # Define rotation matrix for rotation around x,y,z axis
+    rand_num = np.random.randint(0, 3)
+    if rand_num == 0:
+        rotation_matrix = np.array([[1, 0, 0],
+                                    [0, np.cos(theta), -np.sin(theta)],
+                                    [0, np.sin(theta), np.cos(theta)]])
+    elif rand_num == 1:
+        rotation_matrix = np.array([[np.cos(theta), 0, np.sin(theta)],
+                                    [0, 1, 0],
+                                    [-np.sin(theta), 0, np.cos(theta)]])
+    else:
+        rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
+                                    [np.sin(theta), np.cos(theta), 0],
+                                    [0, 0, 1]])
+
+
+    # Apply rotation
+    patch.v = np.dot(rotation_matrix, patch.v.T).T
+
+    # Apply translation
+    patch.v += translation
+
+    # # Expand dimensions
+    # patch.v = np.expand_dims(patch.v, axis=0)
+
+    x = patch.v[:, 0]
+    y = patch.v[:, 1]
+    z = patch.v[:, 2]
+    # Calculate second moments of v
+    patch.v_second_moments = np.stack(
+        [x,y,z,x ** 2, y ** 2, z ** 2, x * y, x * z, y * z], axis=1)
+
+    return patch
+
 # Function to compute edges from faces
 def compute_edges_from_faces(faces):
     edges = []

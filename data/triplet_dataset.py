@@ -8,7 +8,7 @@ from torch_geometric.data import Data, Batch
 class CustomTripletDataset(Dataset):
     def __init__(self, data, transform=None):
         self.data = data
-        # self.transform = transform
+        self.transform = transform
 
     def __len__(self):
         return len(self.data)
@@ -21,6 +21,10 @@ class CustomTripletDataset(Dataset):
 
     def __getitem__(self, idx):
         patch1, patch2, patch3 = self.data[idx]
+        if self.transform is not None:
+            patch1 = self.transform(patch1)
+            patch2 = self.transform(patch2)
+            patch3 = self.transform(patch3)
         item = patch1,patch2,patch3
         return item
 
