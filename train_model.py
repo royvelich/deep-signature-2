@@ -21,7 +21,7 @@ def main_loop():
     weight_decay = 0.001
     num_workers = 1
     if torch.cuda.is_available():
-        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
+        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
         num_workers = 1
 
     else:
