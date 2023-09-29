@@ -202,12 +202,12 @@ def custom_euclidean_transform(patch):
     # # Expand dimensions
     # patch.v = np.expand_dims(patch.v, axis=0)
 
-    x = patch.v[:, 0]
-    y = patch.v[:, 1]
-    z = patch.v[:, 2]
+    x = torch.from_numpy(patch.v[:, 0])
+    y = torch.from_numpy(patch.v[:, 1])
+    z = torch.from_numpy(patch.v[:, 2])
     # Calculate second moments of v
-    patch.v_second_moments = np.stack(
-        [x,y,z,x ** 2, y ** 2, z ** 2, x * y, x * z, y * z], axis=1)
+    patch.v_second_moments = torch.stack(
+        [x,y,z,x ** 2, y ** 2, z ** 2, x * y, x * z, y * z], dim=1)
 
     return patch
 
