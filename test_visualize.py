@@ -1,4 +1,5 @@
 import pickle
+from datetime import datetime
 
 import igl
 import numpy as np
@@ -10,12 +11,16 @@ from wgpu.gui.auto import WgpuCanvas, run
 import pygfx as gfx
 import pylinalg as la
 
+from wgpu.gui.offscreen import WgpuCanvas
 
 import trimesh
 import pygfx as gfx
 from pygfx import OrbitController
 import imageio
+import numpy as np
+import pywavefront
 
+import time
 
 import pyvista as pv
 
@@ -26,10 +31,10 @@ from utils import compute_edges_from_faces
 
 
 def _rescale_k(k: np.ndarray) -> np.ndarray:
-    # rescale gaussian curvature so it will range between 0 and 1
+    # rescale colors so it will range between 0 and 1
     min_val = k.min()
     max_val = k.max()
-    rescaled_k = (k - min_val) / (max_val - min_val)
+    rescaled_k = (k - min_val+1e-5) / (max_val - min_val+1e-5)
     return rescaled_k
 
 
@@ -79,29 +84,60 @@ def add_colored_mesh(scene,  faces, vertices, colors,position=(0, 0, 0),title='t
     text.local.position = mesh.local.position + (1.0, 0.5, 0)
     mesh.add(text)
 
+def xyz_second_moments(vertices):
+    vertices = torch.tensor(vertices, dtype=torch.float32)
+    xx = vertices[:, 0] ** 2
+    yy = vertices[:, 1] ** 2
+    zz = vertices[:, 2] ** 2
+    xy = vertices[:, 0] * vertices[:, 1]
+    xz = vertices[:, 0] * vertices[:, 2]
+    yz = vertices[:, 1] * vertices[:, 2]
+    # stack using torch
+    return torch.stack([vertices[:, 0], vertices[:, 1], vertices[:, 2], xx, yy, zz, xy, xz, yz], dim=1)
 
-file_path = "./triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
+vis_obj = "patch"
 
-# Load the triplets from the file
-# with open(file_path, 'rb') as f:
-#     data = pickle.load(f)
-#
-# sample = data[0][1]
+if vis_obj == "patch":
+    file_path = "./triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
 
+    # Load the triplets from the file
+    with open(file_path, 'rb') as f:
+        data = pickle.load(f)
 
-patch_generator = QuadraticMonagePatchGenerator2(limit=1.0, grid_size=100)
-sample, k1, k2, point_0_0_index = patch_generator.generate(k1=0.5, k2=-0.5)
+    sample = data[3][2]
+    v = sample.v
+    f = sample.f
+    second_moments = sample.v_second_moments
+    dis = 2 # distance between the rendered patches in the visualization
+else:
+    # Load the OBJ file
+    scene = pywavefront.Wavefront("modified_mesh.obj", collect_faces=True)
+
+    # Get the vertices and faces
+    vertices = np.array(scene.vertices)
+    faces = np.array(scene.mesh_list[0].faces)
+
+    # Now vertices and faces contain the data from the OBJ file
+    sample = {'v': vertices, 'f': faces, "second_moments": xyz_second_moments(vertices)}
+    v = vertices
+    f = faces
+    second_moments = sample["second_moments"]
+    dis = 20
+
+# patch_generator = QuadraticMonagePatchGenerator2(limit=1.0, grid_size=100)
+# sample, k1, k2, point_0_0_index = patch_generator.generate(k1=0.5, k2=-0.5,downsample=False)
+
 
 # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
-model_path = "C:/Users\galyo\Downloads\model_point_transformer_5_layers_width_128-epoch=09.ckpt"
+model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
 
 model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
 model.eval()
 
 sample_patch = sample
-sample_patch = trimesh.Trimesh(vertices=sample_patch.v, faces=sample_patch.f)
+sample_patch = trimesh.Trimesh(vertices=v, faces=f)
 
-d1, d2, k1, k2 = igl.principal_curvature(sample.v, sample.f)
+d1, d2, k1, k2 = igl.principal_curvature(v, f)
 
 canvas = WgpuCanvas(size=(900, 400))
 renderer = gfx.renderers.WgpuRenderer(canvas)
@@ -109,13 +145,13 @@ scene = gfx.Scene()
 camera = gfx.PerspectiveCamera(70, 16 / 9)
 # camera.show_object(scene)
 
-output = model(Data(x=sample.v_second_moments.to(torch.float32), pos=torch.tensor(sample.v, dtype=torch.float32),edge_index=compute_edges_from_faces(sample.f)))
+output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
 output = output.detach().numpy()
 
 add_colored_mesh(scene, faces=sample_patch.faces, vertices=sample_patch.vertices, colors=output[:,0],position=(0,0,0),title='output0')
-add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=output[:,1],position=(2,0,0),title='output1')
-add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors = k1, position=(0,2,0),title='k1')
-add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors = k2, position=(2,2,0),title='k2')
+add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=output[:,1],position=(dis,0,0),title='output1')
+add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors = k1, position=(0,dis,0),title='k1')
+add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors = k2, position=(dis,dis,0),title='k2')
 
 
 scene.add(gfx.AmbientLight(1, 0.2))
@@ -158,21 +194,45 @@ def on_key_down(event):
     elif event.key == "q":
         image = renderer.snapshot()
         # Save the image as a PNG file
-        imageio.imwrite('screenshot'+str(image_num)+'.png', image)
+        date_now = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+        imageio.imwrite('screenshot_'+vis_obj+'_'+str(date_now)+'.png', image)
         image_num += 1
 
-renderer.add_event_handler(on_key_down, "key_down")
+# renderer.add_event_handler(on_key_down, "key_down")
 
 canvas.request_draw(lambda: renderer.render(scene, camera))
+
+def snapshot():
+    renderer.render(scene, camera)
+    # canvas.request_draw()
+    camera.show_object(scene)
+    canvas.draw()
+    # canvas._get_event_wait_time()
+    # wait for render to complete
+    image = renderer.snapshot()
+    # Save the image as a PNG file
+    date_now = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    imageio.imwrite('snapshot_'+vis_obj+'_'+str(date_now)+'.png', image)
+
 
 def animate():
 
     renderer.render(scene, camera)
     canvas.request_draw()
 
+    # snapshot()
+
+
 if __name__ == "__main__":
-    canvas.request_draw(animate)
-    run()
+    # for interactive mode
+    # canvas.request_draw(animate)
+    # run()
+
+
+    # animate()
+    # animate()
+
+    snapshot()
 
 # import matplotlib.pyplot as plt
 # colormap = plt.get_cmap('viridis')  # Choose a colormap that suits your data

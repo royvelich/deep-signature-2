@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import wandb
 from torch.nn.utils.rnn import pad_packed_sequence
 from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_pool
 import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2, loss__pearson_correlation_k1_k2, loss_contrastive_plus_pearson_correlation_k1_k2
-
+from visualize.vis_utils import log_visualization
 
 # Taken from https://github.com/vsitzmann/siren
 class Sine(torch.nn.Module):
@@ -73,7 +74,7 @@ class PointTransformerConvNet(pl.LightningModule):
         self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
 
 
-    def forward(self, data):
+    def forward(self, data, global_pooling=True):
         x = data.x
         # edge_index = radius_graph(x, r=0.5, batch=None, loop=True, max_num_neighbors=32)
 
@@ -85,7 +86,8 @@ class PointTransformerConvNet(pl.LightningModule):
             x = self.activation(self.hidden_bns[i](self.conv_layers[i](x=x,pos=data.pos, edge_index=data.edge_index)))
 
         # Apply pooling to aggregate information from vertices
-        x = self.pooling(x, batch=data.batch)
+        if global_pooling:
+            x = self.pooling(x, batch=data.batch)
 
         # Apply final linear layer
         x = self.decoder(x)
@@ -135,6 +137,8 @@ class PointTransformerConvNet(pl.LightningModule):
         loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
         self.log('val_loss', loss.item(), on_step=False, on_epoch=True)
+        if batch_idx == 0:
+            self.logger.experiment.log({"visuals - output0 and 1 on patch": wandb.Image(log_visualization(self, batch[0]))})
         return loss
 
 
