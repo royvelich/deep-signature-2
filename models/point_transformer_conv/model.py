@@ -85,7 +85,7 @@ class PointTransformerConvNet(pl.LightningModule):
             x = self.activation(self.hidden_bns[i](self.conv_layers[i](x=x,pos=data.pos, edge_index=data.edge_index)))
 
         # Apply pooling to aggregate information from vertices
-        # x = self.pooling(x, batch=data.batch)
+        x = self.pooling(x, batch=data.batch)
 
         # Apply final linear layer
         x = self.decoder(x)
