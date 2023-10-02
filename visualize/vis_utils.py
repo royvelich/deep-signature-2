@@ -108,7 +108,7 @@ k2 = None
 
 def log_visualization(model, data):
     global f, k1, k2
-    v = np.array(data.pos)
+    v = data.pos.cpu().numpy()
     # get faces from edge index
     if f is None:
         f = Delaunay(np.stack([v[:,0], v[:,1]], axis=1)).simplices
