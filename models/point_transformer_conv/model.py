@@ -137,8 +137,8 @@ class PointTransformerConvNet(pl.LightningModule):
         loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
         self.log('val_loss', loss.item(), on_step=False, on_epoch=True)
-        if batch_idx == 0:
-            self.logger.experiment.log({"visuals - output0 and 1 on patch": wandb.Image(log_visualization(self, batch[0]))})
+        # if batch_idx == 0:
+        #     self.logger.experiment.log({"visuals - output0 and 1 on patch": wandb.Image(log_visualization(self, batch[0]))})
         return loss
 
 

@@ -130,6 +130,7 @@ def log_visualization(model, data):
         d1, d2, k1, k2 = igl.principal_curvature(v, f)
 
     canvas = WgpuCanvas(size=(900, 400))
+    # im getting assert adapter_id is not None
     renderer = gfx.renderers.WgpuRenderer(canvas)
     scene = gfx.Scene()
     camera = gfx.PerspectiveCamera(70, 16 / 9)
