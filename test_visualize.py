@@ -104,7 +104,7 @@ if vis_obj == "patch":
     with open(file_path, 'rb') as f:
         data = pickle.load(f)
 
-    sample = data[3][2]
+    sample = data[5][1]
     v = sample.v
     f = sample.f
     second_moments = sample.v_second_moments

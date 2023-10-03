@@ -18,11 +18,13 @@ from visualize.visualize__results_on_mesh import VisualizerCallback
 def main_loop():
     max_epochs = 100
     lr = 0.0001
-    weight_decay = 0.1
+    weight_decay = 0.01
     num_workers = 1
+    combine_reg_and_non_reg_patches = False
     if torch.cuda.is_available():
-        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
+        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
         num_workers = 1
+        combine_reg_and_non_reg_patches = True
 
     else:
         file_path = "triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
@@ -34,6 +36,13 @@ def main_loop():
     # Load the triplets from the file
     with open(file_path, 'rb') as f:
         data = pickle.load(f)
+
+    if combine_reg_and_non_reg_patches:
+        file_path2 = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
+        with open(file_path2, 'rb') as f:
+            data2 = pickle.load(f)
+
+        data = data + data2
 
     # Create custom dataset
     custom_dataset = CustomTripletDataset(data)
