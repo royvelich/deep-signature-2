@@ -5,13 +5,13 @@ import igl
 import numpy as np
 import imageio.v3 as iio
 import torch
-from pygfx import Mesh, MeshPhongMaterial, Geometry, Color, WorldObject, Text
+from pygfx import Mesh, MeshPhongMaterial, Geometry, Color, WorldObject
 from torch_geometric.data import Data
 from wgpu.gui.auto import WgpuCanvas, run
 import pygfx as gfx
 import pylinalg as la
 
-from wgpu.gui.offscreen import WgpuCanvas
+# from wgpu.gui.offscreen import WgpuCanvas
 
 import trimesh
 import pygfx as gfx
@@ -98,7 +98,7 @@ def xyz_second_moments(vertices):
 vis_obj = "patch"
 
 if vis_obj == "patch":
-    file_path = "./triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
+    file_path = "./triplets_data_size_30_N_10_all_monge_patch_normalized_pos_and_rot_regular_sampling.pkl"
 
     # Load the triplets from the file
     with open(file_path, 'rb') as f:
@@ -129,8 +129,7 @@ else:
 
 
 # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
-model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
-
+model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=09-v1.ckpt"
 model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
 model.eval()
 
@@ -145,7 +144,8 @@ scene = gfx.Scene()
 camera = gfx.PerspectiveCamera(70, 16 / 9)
 # camera.show_object(scene)
 
-output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
+# output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
+output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
 output = output.detach().numpy()
 
 add_colored_mesh(scene, faces=sample_patch.faces, vertices=sample_patch.vertices, colors=output[:,0],position=(0,0,0),title='output0')
@@ -198,7 +198,7 @@ def on_key_down(event):
         imageio.imwrite('screenshot_'+vis_obj+'_'+str(date_now)+'.png', image)
         image_num += 1
 
-# renderer.add_event_handler(on_key_down, "key_down")
+renderer.add_event_handler(on_key_down, "key_down")
 
 canvas.request_draw(lambda: renderer.render(scene, camera))
 
@@ -220,19 +220,17 @@ def animate():
     renderer.render(scene, camera)
     canvas.request_draw()
 
-    # snapshot()
-
 
 if __name__ == "__main__":
     # for interactive mode
-    # canvas.request_draw(animate)
-    # run()
+    canvas.request_draw(animate)
+    run()
 
 
     # animate()
     # animate()
 
-    snapshot()
+    # snapshot()
 
 # import matplotlib.pyplot as plt
 # colormap = plt.get_cmap('viridis')  # Choose a colormap that suits your data

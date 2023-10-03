@@ -21,7 +21,7 @@ def main_loop():
     weight_decay = 0.1
     num_workers = 1
     if torch.cuda.is_available():
-        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
+        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
         num_workers = 1
 
     else:
@@ -57,7 +57,11 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    model = PointTransformerConvNet(in_channels=3, hidden_channels=32, out_channels=2, num_layers=3)
+    num_layers = 3
+    hidden_channels = 128
+    in_channels = 3
+    out_channels = 2
+    model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_layers=num_layers)
     # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
 
     # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
@@ -67,7 +71,7 @@ def main_loop():
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_5_layers_width_128-{epoch:02d}',
+        filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=10
