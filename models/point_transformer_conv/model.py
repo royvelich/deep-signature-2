@@ -75,7 +75,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
 
     def forward(self, data, global_pooling=True):
-        x = data.x
+        x = data.pos # x,y,z coordinates of each point
         # edge_index = radius_graph(x, r=0.5, batch=None, loop=True, max_num_neighbors=32)
 
         # Apply initial embedding
