@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2, loss__pearson_correlation_k1_k2, loss_contrastive_plus_pearson_correlation_k1_k2
-from train_model import LR, WEIGHT_DECAY
+from vars import LR, WEIGHT_DECAY
 from visualize.vis_utils import log_visualization
 
 # Taken from https://github.com/vsitzmann/siren

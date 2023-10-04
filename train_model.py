@@ -12,10 +12,10 @@ from utils import init_wandb, custom_euclidean_transform
 
 from data.triplet_dataset import CustomTripletDataset
 from models.pointnet.model import STNkd, PointNet_FC
+from vars import LR, WEIGHT_DECAY
 from visualize.visualize__results_on_mesh import VisualizerCallback
 
-LR = 0.0001
-WEIGHT_DECAY = 0.001
+
 
 
 def main_loop():
