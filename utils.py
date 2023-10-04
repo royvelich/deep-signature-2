@@ -152,8 +152,9 @@ def init_wandb(lr=0.001,max_epochs=100, weight_decay=0.001):
                # entity="geometric-dl",
                config={
                    "learning_rate": lr,
-                   "architecture": "Point Net Max pool",
-                   "dataset": "100000-generated-patch-triplets anc,pos,neg - monge patches",
+                   "architecture": "Point Transformer Net Mean pool",
+                   "dataset": "100000 triplets of patches anc,pos,neg - monge patches fps sampled +"
+                              "10000 triplets - regular sampled",
                    "epochs": max_epochs,
                    "weight_decay": weight_decay
                })
