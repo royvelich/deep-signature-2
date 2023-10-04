@@ -45,7 +45,7 @@ def main_loop():
         data = data + data2
 
     # Create custom dataset
-    custom_dataset = CustomTripletDataset(data[len(data)*0.2:])
+    custom_dataset = CustomTripletDataset(data[int(len(data)*0.2):])
     # release memory
     del data
     # Define the ratio for train and validation split (e.g., 80% for training, 20% for validation)
