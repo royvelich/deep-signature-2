@@ -8,6 +8,7 @@ import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2, loss__pearson_correlation_k1_k2, loss_contrastive_plus_pearson_correlation_k1_k2
+from train_model import LR, WEIGHT_DECAY
 from visualize.vis_utils import log_visualization
 
 # Taken from https://github.com/vsitzmann/siren
@@ -166,7 +167,7 @@ class PointTransformerConvNet(pl.LightningModule):
         # output_neg = torch.cat(output_neg, dim=0)
         return output_anc, output_pos, output_neg
 
-    def configure_optimizers(self, lr=0.0001,weight_decay=0.1):
+    def configure_optimizers(self, lr=LR,weight_decay=WEIGHT_DECAY):
         optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
         return [optimizer], [scheduler]

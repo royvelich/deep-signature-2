@@ -14,11 +14,14 @@ from data.triplet_dataset import CustomTripletDataset
 from models.pointnet.model import STNkd, PointNet_FC
 from visualize.visualize__results_on_mesh import VisualizerCallback
 
+LR = 0.0001
+WEIGHT_DECAY = 0.001
+
 
 def main_loop():
     max_epochs = 100
-    lr = 0.00001
-    weight_decay = 0.001
+    lr = LR
+    weight_decay = WEIGHT_DECAY
     num_workers = 1
     combine_reg_and_non_reg_patches = False
     if torch.cuda.is_available():
