@@ -17,7 +17,7 @@ from visualize.visualize__results_on_mesh import VisualizerCallback
 
 def main_loop():
     max_epochs = 100
-    lr = 0.001
+    lr = 0.00001
     weight_decay = 0.001
     num_workers = 1
     combine_reg_and_non_reg_patches = False
