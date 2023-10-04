@@ -18,7 +18,7 @@ from visualize.visualize__results_on_mesh import VisualizerCallback
 def main_loop():
     max_epochs = 100
     lr = 0.0001
-    weight_decay = 0.01
+    weight_decay = 0.001
     num_workers = 1
     combine_reg_and_non_reg_patches = False
     if torch.cuda.is_available():
@@ -45,7 +45,7 @@ def main_loop():
         data = data + data2
 
     # Create custom dataset
-    custom_dataset = CustomTripletDataset(data[int(len(data)*0.2):])
+    custom_dataset = CustomTripletDataset(data)
     # release memory
     del data
     # Define the ratio for train and validation split (e.g., 80% for training, 20% for validation)
