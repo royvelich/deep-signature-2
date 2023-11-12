@@ -2,15 +2,22 @@ import pickle
 from datetime import datetime
 
 import igl
+import matplotlib
 import numpy as np
 import imageio.v3 as iio
 import torch
+import torch_geometric
+from matplotlib import pyplot as plt
 from pygfx import Mesh, MeshPhongMaterial, Geometry, Color, WorldObject
+from scipy.spatial import Delaunay
+from sklearn.neighbors import NearestNeighbors
 from torch_geometric.data import Data
+from torch_geometric.nn import fps
 from wgpu.gui.auto import WgpuCanvas, run
 import pygfx as gfx
 import pylinalg as la
 
+# uncomment for just snapshot
 # from wgpu.gui.offscreen import WgpuCanvas
 
 import trimesh
@@ -19,6 +26,7 @@ from pygfx import OrbitController
 import imageio
 import numpy as np
 import pywavefront
+import seaborn as sns
 
 import time
 
@@ -26,8 +34,11 @@ import pyvista as pv
 
 from data.triplet_dataset import CustomTripletDataset
 from deep_signature.generation import QuadraticMonagePatchGenerator2
+from geometry2 import normalize_points
 from models.point_transformer_conv.model import PointTransformerConvNet
-from utils import compute_edges_from_faces
+from utils import compute_edges_from_faces, compute_patches_from_mesh
+
+
 
 
 def _rescale_k(k: np.ndarray) -> np.ndarray:
@@ -38,9 +49,12 @@ def _rescale_k(k: np.ndarray) -> np.ndarray:
     return rescaled_k
 
 
-def _get_vertex_colors_from_k(k: np.ndarray) -> np.ndarray:
+def _get_vertex_colors_from_k(k: np.ndarray,title: str) -> np.ndarray:
+    # plot_color_histogram(k, title=title+' histogram')
+
     k = _rescale_k(k=k)
     k_one_minus = 1 - k
+    # plot_color_histogram(k, title=title+' histogram')
 
     # convex combinations between red and blue colors, based on the predicted gaussian curvature
     c1 = np.column_stack((k_one_minus, np.zeros_like(k), np.zeros_like(k), np.ones_like(k)))
@@ -50,8 +64,8 @@ def _get_vertex_colors_from_k(k: np.ndarray) -> np.ndarray:
     return c
 
 
-def _create_world_object_for_mesh(faces, vertices, k: np.ndarray, color: Color = '#ffffff') -> WorldObject:
-    c = _get_vertex_colors_from_k(k=k)
+def _create_world_object_for_mesh(faces, vertices, k: np.ndarray, title='title', color: Color = '#ffffff') -> WorldObject:
+    c = _get_vertex_colors_from_k(k=k, title=title)
     geometry = Geometry(
         indices=np.ascontiguousarray(faces.astype(np.int32)),
         positions=np.ascontiguousarray(vertices.astype(np.float32)),
@@ -68,8 +82,9 @@ def _create_world_object_for_mesh(faces, vertices, k: np.ndarray, color: Color =
 
 
 
-def add_colored_mesh(scene,  faces, vertices, colors,position=(0, 0, 0),title='title'):
-    mesh = _create_world_object_for_mesh(faces, vertices, colors)
+def add_colored_mesh(scene,  faces, vertices, colors,position=(0, 0, 0), title='title'):
+
+    mesh = _create_world_object_for_mesh(faces, vertices, colors, title)
     mesh.local.position = position
     scene.add(mesh)
     text = gfx.Text(
@@ -81,8 +96,10 @@ def add_colored_mesh(scene,  faces, vertices, colors,position=(0, 0, 0),title='t
         ),
         gfx.TextMaterial(color="#0f4"),
     )
-    text.local.position = mesh.local.position + (1.0, 0.5, 0)
+    text.local.position = mesh.local.position + (0, 0.7, 0)
     mesh.add(text)
+
+
 
 def xyz_second_moments(vertices):
     vertices = torch.tensor(vertices, dtype=torch.float32)
@@ -95,74 +112,77 @@ def xyz_second_moments(vertices):
     # stack using torch
     return torch.stack([vertices[:, 0], vertices[:, 1], vertices[:, 2], xx, yy, zz, xy, xz, yz], dim=1)
 
-vis_obj = "patch"
-
-if vis_obj == "patch":
-    file_path = "./triplets_data_size_30_N_10_all_monge_patch_normalized_pos_and_rot_regular_sampling.pkl"
-
-    # Load the triplets from the file
-    with open(file_path, 'rb') as f:
-        data = pickle.load(f)
-
-    sample = data[5][1]
-    v = sample.v
-    f = sample.f
-    second_moments = sample.v_second_moments
-    dis = 2 # distance between the rendered patches in the visualization
-else:
-    # Load the OBJ file
-    scene = pywavefront.Wavefront("modified_mesh.obj", collect_faces=True)
-
-    # Get the vertices and faces
-    vertices = np.array(scene.vertices)
-    faces = np.array(scene.mesh_list[0].faces)
-
-    # Now vertices and faces contain the data from the OBJ file
-    sample = {'v': vertices, 'f': faces, "second_moments": xyz_second_moments(vertices)}
-    v = vertices
-    f = faces
-    second_moments = sample["second_moments"]
-    dis = 20
-
-# patch_generator = QuadraticMonagePatchGenerator2(limit=1.0, grid_size=100)
-# sample, k1, k2, point_0_0_index = patch_generator.generate(k1=0.5, k2=-0.5,downsample=False)
-
-
-# model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
-model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=09-v1.ckpt"
+# vis_obj = "patch"
+# dataset_reg_and_unreg = True
+#
+# if vis_obj == "patch":
+#     # file_path = "./triplets_size_30_N_100_all_monge_patch_normalized_pos_and_rot_80_per_fps_sampling_reg_and_unreg.pkl"
+#     file_path = "./triplets_size_50_N_1_all_torus_normalized_pos_and_rot_80_per_fps_sampling_reg_and_unreg.pkl"
+#
+#     # Load the triplets from the file
+#     with open(file_path, 'rb') as f:
+#         data = pickle.load(f)
+#
+#     sample = data[0][1]
+#     v = sample.v
+#     f = sample.f
+#     second_moments = sample.v_second_moments
+#     dis = 2 # distance between the rendered patches in the visualization
+# else:
+#     # Load the OBJ file
+#     scene = pywavefront.Wavefront("modified_mesh.obj", collect_faces=True)
+#
+#     # Get the vertices and faces
+#     vertices = np.array(scene.vertices)
+#     faces = np.array(scene.mesh_list[0].faces)
+#
+#     # Now vertices and faces contain the data from the OBJ file
+#     sample = {'v': vertices, 'f': faces, "second_moments": xyz_second_moments(vertices)}
+#     v = vertices
+#     f = faces
+#     second_moments = sample["second_moments"]
+#     dis = 20
+#
+# # patch_generator = QuadraticMonagePatchGenerator2(limit=1.0, grid_size=100)
+# # sample, k1, k2, point_0_0_index = patch_generator.generate(k1=0.5, k2=-0.5,downsample=False)
+#
+#
+model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\images\pointtransformer\width128_trained_reg_plus_unreg_patches_k1k2\grid_size_30_reg_patches\model_point_transformer_3_layers_width_128-epoch=29.ckpt"
+# # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=09-v1.ckpt"
 model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
 model.eval()
-
-sample_patch = sample
-sample_patch = trimesh.Trimesh(vertices=v, faces=f)
-
-d1, d2, k1, k2 = igl.principal_curvature(v, f)
-
-canvas = WgpuCanvas(size=(900, 400))
-renderer = gfx.renderers.WgpuRenderer(canvas)
-scene = gfx.Scene()
-camera = gfx.PerspectiveCamera(70, 16 / 9)
-# camera.show_object(scene)
-
-# output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
-output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
-output = output.detach().numpy()
-
-add_colored_mesh(scene, faces=sample_patch.faces, vertices=sample_patch.vertices, colors=output[:,0],position=(0,0,0),title='output0')
-add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=output[:,1],position=(dis,0,0),title='output1')
-add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors = k1, position=(0,dis,0),title='k1')
-add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors = k2, position=(dis,dis,0),title='k2')
-
-
-scene.add(gfx.AmbientLight(1, 0.2))
-
-light = gfx.DirectionalLight(1, 2)
-light.local.position = (0, 0, 1)
-scene.add(light)
-dark_gray = np.array((169, 167, 168, 255)) / 255
-light_gray = np.array((100, 100, 100, 255)) / 255
-background = gfx.Background(None, gfx.BackgroundMaterial(light_gray, dark_gray))
-scene.add(background)
+#
+# sample_patch = sample
+# sample_patch = trimesh.Trimesh(vertices=v, faces=f)
+#
+# # d1, d2, k1, k2 = igl.principal_curvature(v, f)
+# k1,k2 = np.array(0),np.array(0)
+#
+# canvas = WgpuCanvas(size=(900, 400))
+# renderer = gfx.renderers.WgpuRenderer(canvas)
+# scene = gfx.Scene()
+# camera = gfx.PerspectiveCamera(70, 16 / 9)
+# # camera.show_object(scene)
+#
+# # output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
+# output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
+# output = output.detach().numpy()
+#
+# add_colored_mesh(scene, faces=sample_patch.faces, vertices=sample_patch.vertices, colors=output[:,0],position=(0,0,0),title='output0')
+# add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=output[:,1],position=(dis,0,0),title='output1')
+# add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors = k1, position=(0,dis,0),title='k1')
+# add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors = k2, position=(dis,dis,0),title='k2')
+#
+#
+# scene.add(gfx.AmbientLight(1, 0.2))
+#
+# light = gfx.DirectionalLight(1, 2)
+# light.local.position = (0, 0, 1)
+# scene.add(light)
+# dark_gray = np.array((169, 167, 168, 255)) / 255
+# light_gray = np.array((100, 100, 100, 255)) / 255
+# background = gfx.Background(None, gfx.BackgroundMaterial(light_gray, dark_gray))
+# scene.add(background)
 
 
 
@@ -172,10 +192,7 @@ scene.add(background)
 # rot = la.quat_from_euler((0.71, 0.1), order="XY")
 # for obj in scene.children:
 #     obj.local.rotation = la.quat_mul(rot, obj.local.rotation)
-controls = OrbitController(camera)
-controls.zoom_speed = 0.001
-controls.distance = 0.01
-controls.register_events(renderer)
+
 # def on_move(event):
 #     controls.handle_event(event)
 # canvas.connect("mouse-move", on_move)
@@ -183,8 +200,12 @@ controls.register_events(renderer)
 
 image_num = 0
 
-def on_key_down(event):
+def on_key_down(event,camera,scene,renderer):
     global state, image_num
+    controls = OrbitController(camera)
+    controls.zoom_speed = 0.001
+    controls.distance = 0.01
+    controls.register_events(renderer)
     if event.key == "s":
         state = camera.get_state()
     elif event.key == "l":
@@ -195,42 +216,382 @@ def on_key_down(event):
         image = renderer.snapshot()
         # Save the image as a PNG file
         date_now = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-        imageio.imwrite('screenshot_'+vis_obj+'_'+str(date_now)+'.png', image)
+        imageio.imwrite('screenshot_'+'_'+str(date_now)+'.png', image)
         image_num += 1
 
-renderer.add_event_handler(on_key_down, "key_down")
+# renderer.add_event_handler(on_key_down, "key_down")
+#
+# canvas.request_draw(lambda: renderer.render(scene, camera))
 
-canvas.request_draw(lambda: renderer.render(scene, camera))
-
-def snapshot():
+def snapshot(scene, camera, renderer, canvas):
     renderer.render(scene, camera)
     # canvas.request_draw()
     camera.show_object(scene)
+    camera.local.position = camera.local.position + (0, -2.0, -5.0)
     canvas.draw()
     # canvas._get_event_wait_time()
     # wait for render to complete
     image = renderer.snapshot()
     # Save the image as a PNG file
     date_now = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    imageio.imwrite('snapshot_'+vis_obj+'_'+str(date_now)+'.png', image)
+    imageio.imwrite('C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\images\pointtransformer\width128_trained_reg_plus_unreg_patches_k1k2\snapshot_'+vis_obj+'_'+str(date_now)+'.png', image)
 
 
-def animate():
+def animate(scene, camera, canvas, renderer):
 
     renderer.render(scene, camera)
     canvas.request_draw()
 
 
+def snapshot_multiple_patches(data, dataset_reg_and_unreg=False):
+    for i in range(len(data)):
+        index = np.random.randint(0, 3)
+        sample = data[i][index]
+        v = sample.v
+        f = sample.f
+        # second_moments = sample.v_second_moments
+        # sample_patch = sample
+        sample_patch = trimesh.Trimesh(vertices=v, faces=f)
+
+        # d1, d2, k1, k2 = igl.principal_curvature(v, f)
+        k1, k2 = np.array(0), np.array(0)
+
+        canvas = WgpuCanvas(size=(900, 400))
+        renderer = gfx.renderers.WgpuRenderer(canvas)
+        scene = gfx.Scene()
+        camera = gfx.PerspectiveCamera(70, 16 / 9)
+        # camera.show_object(scene)
+
+        # output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
+        output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),
+                            edge_index=compute_edges_from_faces(f)), global_pooling=False)
+        output = output.detach().numpy()
+
+        add_colored_mesh(scene, faces=sample_patch.faces, vertices=sample_patch.vertices, colors=output[:, 0],
+                         position=(0, 0, 0), title='output0')
+        add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=output[:, 1], position=(dis, 0, 0),
+                         title='output1')
+        add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, dis, 0), title='k1')
+        add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, dis, 0),
+                         title='k2')
+        if dataset_reg_and_unreg:
+            sample = data[i][index+3] # take the reg sample
+            v = sample.v
+            f = sample.f
+            # second_moments = sample.v_second_moments
+            # sample_patch = sample
+            sample_patch = trimesh.Trimesh(vertices=v, faces=f)
+            # d1, d2, k1, k2 = igl.principal_curvature(v, f)
+
+            add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, 2*dis, 0),
+                             title='k1_reg')
+            add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, 2*dis, 0),
+                             title='k2_reg')
+
+
+        scene.add(gfx.AmbientLight(1, 0.2))
+
+        light = gfx.DirectionalLight(1, 2)
+        light.local.position = (0, 0, 1)
+        scene.add(light)
+        dark_gray = np.array((169, 167, 168, 255)) / 255
+        light_gray = np.array((100, 100, 100, 255)) / 255
+        background = gfx.Background(None, gfx.BackgroundMaterial(light_gray, dark_gray))
+        scene.add(background)
+        canvas.request_draw(lambda: renderer.render(scene, camera))
+        snapshot(camera=camera, scene=scene, renderer=renderer, canvas=canvas)
+        del canvas
+        del renderer
+        del scene
+        del camera
+
+def snapshot_or_animate_torus(animate=True):
+    dis = 5 # distance between the rendered patches in the visualization
+
+    geometry = gfx.torus_knot_geometry(1.0, 0.3, 32, 8, p=1, q=0)
+    # Load the OBJ file
+    # scene = pywavefront.Wavefront("modified_mesh.obj", collect_faces=True)
+    #
+    # # Get the vertices and faces
+    # v = np.array(scene.vertices)
+    # f = np.array(scene.mesh_list[0].faces)
+    v = geometry.positions.data.astype(np.float32)
+    # need to choose for each neighborhood the faces that contain it vertices and organize them in the right order
+    f = geometry.indices.data.astype(np.int32)
+    normalized_patches, faces = compute_patches_from_mesh(v, f, k=15)
+
+    # second_moments = sample.v_second_moments
+    # sample_patch = sample
+    sample_patch = trimesh.Trimesh(vertices=v, faces=f)
+
+    d1, d2, k1, k2 = igl.principal_curvature(v, f)
+
+    canvas = WgpuCanvas(size=(900, 400))
+    renderer = gfx.renderers.WgpuRenderer(canvas)
+    scene = gfx.Scene()
+    camera = gfx.PerspectiveCamera(70, 16 / 9)
+    # camera.show_object(scene)
+
+    # output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
+
+    output = []
+    for i in range(len(normalized_patches)):
+        output.append(model(Data(x=torch.tensor(normalized_patches[i], dtype=torch.float32), pos=torch.tensor(normalized_patches[i], dtype=torch.float32),
+                            edge_index=compute_edges_from_faces(faces[i])), global_pooling=True).detach().numpy())
+    output = np.concatenate(output, axis=0)
+
+    # output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),
+    #                     edge_index=compute_edges_from_faces(f)), global_pooling=False)
+    # output = output.detach().numpy()
+
+    add_colored_mesh(scene, faces=sample_patch.faces, vertices=sample_patch.vertices, colors=output[:, 0],
+                     position=(0, 0, 0), title='output0')
+    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=output[:, 1], position=(dis, 0, 0),
+                     title='output1')
+    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=output[:,0]*output[:, 1], position=(2*dis, 0, 0),
+                     title='output0*output1')
+    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, dis, 0), title='k1')
+    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, dis, 0),
+                     title='k2')
+    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1*k2, position=(2*dis, dis, 0),
+                     title='k1*k2')
+
+    scene.add(gfx.AmbientLight(1, 0.2))
+
+    light = gfx.DirectionalLight(1, 2)
+    light.local.position = (0, 0, 1)
+    scene.add(light)
+    dark_gray = np.array((169, 167, 168, 255)) / 255
+    light_gray = np.array((100, 100, 100, 255)) / 255
+    background = gfx.Background(None, gfx.BackgroundMaterial(light_gray, dark_gray))
+    scene.add(background)
+    canvas.request_draw(lambda: renderer.render(scene, camera))
+
+
+    def on_key_down2(event):
+        global state, image_num
+        controls = OrbitController(camera)
+        controls.zoom_speed = 0.001
+        controls.distance = 0.01
+        controls.register_events(renderer)
+        if event.key == "s":
+            state = camera.get_state()
+        elif event.key == "l":
+            camera.set_state(state)
+        elif event.key == "r":
+            camera.show_object(scene)
+        elif event.key == "q":
+            image = renderer.snapshot()
+            # Save the image as a PNG file
+            date_now = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+            imageio.imwrite('screenshot_' + '_' + str(date_now) + '.png', image)
+            image_num += 1
+
+    renderer.add_event_handler(on_key_down2, "key_down")
+    if not animate:
+        snapshot(camera=camera, scene=scene, renderer=renderer, canvas=canvas)
+    else:
+        canvas.request_draw(animate(scene=scene, camera=camera, renderer=renderer, canvas=canvas))
+        run()
+
+def plot_color_histogram(data, title):
+    bins = np.linspace(min(data), max(data), 100)
+    matplotlib.use('TkAgg')  # You can choose a suitable backend
+
+    # Create the histogram
+    sns.histplot(data, bins=bins, kde=True, color='blue', edgecolor='k', stat='count')
+
+    # Add labels and a title
+    plt.xlabel('Value Ranges')
+    plt.ylabel('Count')
+    plt.title(title)
+
+    # Show the plot
+    plt.show()
+
+def calculate_correlation(data1, data2):
+    output = np.corrcoef(data1, data2)
+    return output
+
+def animate_mesh():
+    dis = 100  # distance between the rendered patches in the visualization
+
+    # geometry = gfx.torus_knot_geometry(1.0, 0.3, 32, 8, p=1, q=0)
+    # v = geometry.positions.data.astype(np.float32)
+    # f = geometry.indices.data.astype(np.int32)
+
+    # Load the OBJ file
+    mesh_name = "vase-lion100K"
+    scene = pywavefront.Wavefront(mesh_name+".obj", collect_faces=True)
+    v = np.array(scene.vertices)
+    f = np.array(scene.mesh_list[0].faces)
+
+    # downsample the mesh
+    ratio = 0.2
+    # indices = fps(x=torch.tensor(data=v), ratio=ratio)
+    m, v_downsampled, f_downsampled, _, _ = igl.decimate(v, f, int(f.shape[0]*ratio))
+
+    # f_downsampled = []
+    # for i in range(len(f)):
+    #    if np.sum(np.isin(f[i], indices)) == 3:
+    #        face = [np.where(f[i][0] == indices)[0][0], np.where(f[i][1] == indices)[0][0], np.where(f[i][2] == indices)[0][0]]
+    #        f_downsampled.append(face)
+
+
+    # need to choose for each neighborhood the faces that contain it vertices and organize them in the right order
+    # normalized_patches, faces = compute_patches_from_mesh(v, f, k=30)
+    patches_size = 70
+    GT_radius_size = 30
+
+    normalized_patches, faces = compute_patches_from_mesh(v_downsampled, f_downsampled, k=patches_size)
+
+    # second_moments = sample.v_second_moments
+    # sample_patch = sample 
+    sample_patch = trimesh.Trimesh(vertices=v, faces=f)
+    sample_patch_downsampled = trimesh.Trimesh(vertices=v_downsampled, faces=f_downsampled)
+
+    d1, d2, k1, k2 = igl.principal_curvature(v, f, radius=GT_radius_size)
+
+    canvas = WgpuCanvas(size=(900, 400))
+    renderer = gfx.renderers.WgpuRenderer(canvas)
+    scene = gfx.Scene()
+    camera = gfx.PerspectiveCamera(70, 16 / 9)
+    # camera.show_object(scene)
+
+    # output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
+
+    output = []
+    for i in range(len(normalized_patches)):
+        output.append(model(Data(x=torch.tensor(normalized_patches[i], dtype=torch.float32),
+                                 pos=torch.tensor(normalized_patches[i], dtype=torch.float32),
+                                 edge_index=compute_edges_from_faces(faces[i])), global_pooling=True).detach().numpy())
+    output = np.concatenate(output, axis=0)
+    # try to negate the output
+    output = - output
+
+    # output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),
+    #                     edge_index=compute_edges_from_faces(f)), global_pooling=False)
+    # output = output.detach().numpy()
+
+    # calculate_correlation(k1, k2)
+    # calculate_correlation(output[:, 0], output[:, 1])
+
+    add_colored_mesh(scene, faces=sample_patch_downsampled.faces, vertices=sample_patch_downsampled.vertices, colors=output[:, 0],
+                     position=(0, 0, 0), title='output0')
+    add_colored_mesh(scene, sample_patch_downsampled.faces, sample_patch_downsampled.vertices, colors=output[:, 1], position=(dis, 0, 0),
+                     title='output1')
+    add_colored_mesh(scene, sample_patch_downsampled.faces, sample_patch_downsampled.vertices, colors=output[:, 0] * output[:, 1],
+                     position=(2 * dis, 0, 0),
+                     title='output0*output1')
+
+
+    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, dis, 0), title='k1')
+    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, dis, 0),
+                     title='k2')
+    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1 * k2, position=(2 * dis, dis, 0),
+                     title='k1*k2')
+
+
+
+    # if dataset_reg_and_unreg:
+    #     sample = data[i][index + 3]  # take the reg sample
+    #     v = sample.v
+    #     f = sample.f
+    #     # second_moments = sample.v_second_moments
+    #     # sample_patch = sample
+    #     sample_patch = trimesh.Trimesh(vertices=v, faces=f)
+    #     # d1, d2, k1, k2 = igl.principal_curvature(v, f)
+    #
+    #     add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, 2 * dis, 0),
+    #                      title='k1_reg')
+    #     add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, 2 * dis, 0),
+    #                      title='k2_reg')
+
+    scene.add(gfx.AmbientLight(1, 0.2))
+
+    light = gfx.DirectionalLight(1, 3)
+    light.local.position = (0, 0, 1)
+    # add lighht exactly opposite to the first one
+    light2 = gfx.DirectionalLight(1, 3)
+    light2.local.position = (0, 0, -1)
+    light3 = gfx.DirectionalLight(1, 3)
+    light3.local.position = (0, 0, 0)
+    light4 = gfx.DirectionalLight(1, 3)
+    light4.local.position = (0, 1, 0)
+    light5 = gfx.DirectionalLight(1, 3)
+    light5.local.position = (0, -1, 0)
+    light6 = gfx.DirectionalLight(1, 3)
+    light6.local.position = (1, 0, 0)
+    light7 = gfx.DirectionalLight(1, 3)
+    light7.local.position = (-1, 0, 0)
+    scene.add(light)
+    scene.add(light2)
+    scene.add(light3)
+    scene.add(light4)
+    scene.add(light5)
+    scene.add(light6)
+    scene.add(light7)
+    dark_gray = np.array((169, 167, 168, 255)) / 255
+    light_gray = np.array((100, 100, 100, 255)) / 255
+    background = gfx.Background(None, gfx.BackgroundMaterial(light_gray, dark_gray))
+    scene.add(background)
+    canvas.request_draw(lambda: renderer.render(scene, camera))
+
+    def on_key_down2(event):
+        global state, image_num
+        nonlocal dis
+        controls = OrbitController(camera)
+        controls.zoom_speed = 0.001
+        controls.distance = 0.01
+        controls.register_events(renderer)
+        if event.key == "s":
+            state = camera.get_state()
+        elif event.key == "a":
+            # move position of rendered meshes
+            dis  += 0.1*dis
+            positions = [(0, 0, 0), (dis , 0, 0), (2 * dis , 0, 0), (0, dis , 0), (dis , dis , 0), (2 * dis , dis , 0)]
+            for child in scene.children:
+                if isinstance(child, gfx.Mesh):
+                    child.local.position = positions[scene.children.index(child)]
+            renderer.render(scene, camera)
+        elif event.key == "d":
+            dis -= 0.1*dis
+            positions = [(0, 0, 0), (dis, 0, 0), (2 * dis, 0, 0), (0, dis, 0), (dis, dis, 0), (2 * dis, dis, 0)]
+            for child in scene.children:
+                if isinstance(child, gfx.Mesh):
+                    child.local.position = positions[scene.children.index(child)]
+            renderer.render(scene, camera)
+
+        elif event.key == "l":
+            camera.set_state(state)
+        elif event.key == "r":
+            camera.show_object(scene)
+        elif event.key == "q":
+            image = renderer.snapshot()
+            # Save the image as a PNG file
+            date_now = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+            imageio.imwrite(mesh_name + '_' + str(ratio)+"_k_"+str(patches_size) + "_" + str(date_now) + '.png', image)
+            image_num += 1
+
+    renderer.add_event_handler(on_key_down2, "key_down")
+
+    # snapshot(camera=camera, scene=scene, renderer=renderer, canvas=canvas)
+    canvas.request_draw(animate(scene=scene, camera=camera, renderer=renderer, canvas=canvas))
+    run()
+
 if __name__ == "__main__":
     # for interactive mode
-    canvas.request_draw(animate)
-    run()
+    # canvas.request_draw(animate)
+    # run()
 
 
     # animate()
     # animate()
 
     # snapshot()
+    # snapshot_multiple_patches()
+    # snapshot_or_animate_torus()
+    animate_mesh()
 
 # import matplotlib.pyplot as plt
 # colormap = plt.get_cmap('viridis')  # Choose a colormap that suits your data

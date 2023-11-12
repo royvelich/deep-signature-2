@@ -12,7 +12,7 @@ from scipy.interpolate import Rbf
 # pyvista
 
 # surface-diff-inv
-from geometry2 import Patch
+from geometry2 import Patch, Torus
 
 # noise
 from noise import snoise3
@@ -195,3 +195,25 @@ class QuadraticMonagePatchGenerator2(PatchGenerator):
         z_grid = k1 * x_grid ** 2 / 2 + k2 * y_grid ** 2 / 2
 
         return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample), k1, k2,point0_0_index
+
+
+class TorusGenerator(PatchGenerator):
+    def __init__(self, limit: float, grid_size: int, downsample: bool = True):
+        super().__init__(limit=limit, grid_size=grid_size)
+        self.downsample = downsample
+
+    def generate(self, R=1, r=0.5,grid_size_delta=0,k1=1,k2=1) -> Patch:
+        if grid_size_delta != 0:
+            curr_grid_size = self._grid_size+grid_size_delta
+        else:
+            curr_grid_size = self._grid_size
+
+        u = np.linspace(0, 2 * np.pi, curr_grid_size)
+        v = np.linspace(0, 2 * np.pi, curr_grid_size)
+
+        u_grid, v_grid = np.meshgrid(u, v)
+        x_grid = (R + r * np.cos(v_grid)) * np.cos(u_grid)
+        y_grid = (R + r * np.cos(v_grid)) * np.sin(u_grid)
+        z_grid = r * np.sin(v_grid)
+
+        return Torus(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample), R, r, 0

@@ -168,7 +168,7 @@ class Patch(Mesh):
 
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
         if downsample:
-           indices = self.downsample(ratio=random.uniform(0.2,0.4))
+           indices = self.downsample(ratio=random.uniform(0.8,0.82))
         else:
             indices = np.arange(len(self._v))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
@@ -311,7 +311,6 @@ class Patch(Mesh):
         v = torch.tensor(data=self._v)
         indices = fps(x=v, ratio=ratio)
         return indices
-        # return Mesh.from_vertices(v=v)
 
     def _directional_derivative_at_point(self, point: np.ndarray, direction: np.ndarray, scalar_field: np.ndarray, h: float = 1e-8, max_attempts: int = 8) -> np.ndarray:
         _, idx = self._tree.query(point)
@@ -341,3 +340,59 @@ class Patch(Mesh):
             return self._directional_derivative(direction_field=self._d1_grid, scalar_field=scalar_field, h=h)
         else:
             return self._directional_derivative(direction_field=self._d2_grid, scalar_field=scalar_field, h=h)
+
+
+class Torus(Mesh):
+    def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray,downsample=True):
+        self._x_grid = x_grid
+        self._y_grid = y_grid
+        self._z_grid = z_grid
+
+        x = x_grid.ravel()
+        y = y_grid.ravel()
+        z = z_grid.ravel()
+
+        self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
+        if downsample:
+           indices = self.downsample(ratio=random.uniform(0.8,0.82))
+        else:
+            indices = np.arange(len(self._v))
+        self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
+        self._v = normalize_points(self._v)
+        v = np.stack([self._v[:,0], self._v[:,1]], axis=1)
+        # Perform triangulation using Delaunay method
+        self._f = igl.delaunay_triangulation(v)
+        # fs = []
+        # division = 16
+        # v_division = int(len(v)/division)
+        #
+        # for i in range(division):
+        #
+        #     f  = Delaunay(v[i*v_division:(i+1)*v_division]).simplices
+        #     fs.append(f)
+        #
+        # self._f = np.concatenate(fs)
+
+        # self._d1, self._d2, self._k1, self._k2 = igl.principal_curvature(v=v, f=self._f)
+
+
+
+        x = torch.from_numpy(self._v[:,0])
+        y = torch.from_numpy(self._v[:,1])
+        z = torch.from_numpy(self._v[:,2])
+
+        # calculate second moments
+        xx = x ** 2
+        yy = y ** 2
+        zz = z ** 2
+        xy = x * y
+        yz = y * z
+        zx = z * x
+
+        # will be our input to the model
+        self.v_second_moments = torch.stack([x, y, z, xx, yy, zz, xy, yz, zx], axis=1)
+
+    def downsample(self, ratio: float) -> Mesh:
+        v = torch.tensor(data=self._v)
+        indices = fps(x=v, ratio=ratio)
+        return indices

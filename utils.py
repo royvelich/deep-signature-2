@@ -6,10 +6,11 @@ import torch
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 from pyvista import PolyData
-from sklearn.neighbors import KDTree
+from sklearn.neighbors import KDTree, NearestNeighbors
 import re
 
 # import pyvista as pv
+from geometry2 import normalize_points
 
 
 def rearange_mesh_faces(faces):
@@ -238,6 +239,40 @@ def compute_edges_from_faces(faces):
     # Convert the list of edges to a 2D tensor with two rows (source and target nodes)
     edge_index = torch.tensor(edges, dtype=torch.long).t()
     return edge_index
+
+
+Vdef get_faces_containing_vertices(f, param):
+    faces = []
+    for face in f:
+        if face[0] in param and face[1] in param and face[2] in param:
+            # change indices from global mesh to local patch(from 0...N-1 to 0...k-1)
+            face_curr = np.array(
+                [np.where(param == face[0])[0][0], np.where(param == face[1])[0][0], np.where(param == face[2])[0][0]])
+            faces.append(face_curr)
+    return faces
+
+
+def compute_patches_from_mesh(v, f, k=10):
+    nbrs = NearestNeighbors(n_neighbors=k, algorithm='kd_tree').fit(v)
+
+    # Find k-nearest neighbors
+    distances, indices = nbrs.kneighbors(v)
+    normalized_input = []
+    for i in range(len(v)):
+        normalized_input.append(normalize_points(vertices=v[indices[i]]))
+
+
+    # Compute faces for each patch in normalized_input, use f only faces containing vertices from each patch
+    faces = []
+    for patch_index in range(len(normalized_input)):
+        # get all faces that fully contained with vertices from normalized_input[patch_index]
+        faces.append(get_faces_containing_vertices(f, indices[patch_index]))
+
+    return normalized_input, faces
+
+
+
+
 
 
 
