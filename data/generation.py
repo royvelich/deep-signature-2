@@ -166,8 +166,13 @@ class QuadraticMonagePatchGenerator(PatchGenerator):
         c = QuadraticMonagePatchGenerator._rng.uniform(-self._coeff_limit, self._coeff_limit)
         d = QuadraticMonagePatchGenerator._rng.uniform(-self._coeff_limit, self._coeff_limit)
         e = QuadraticMonagePatchGenerator._rng.uniform(-self._coeff_limit, self._coeff_limit)
-        # h = (a / 2) * (u_grid * u_grid) + b * (u_grid * v_grid) + (c / 2) * (v_grid * v_grid)
-        h = (a / 2) * (u_grid * u_grid) + (c / 2) * (v_grid * v_grid) + d * u_grid + e * v_grid
+
+        a = 1
+        b = -0.2
+
+
+        h = a * (u_grid * u_grid * u_grid) + b * (u_grid * v_grid) + a * (v_grid * v_grid * v_grid)
+        # h = (a / 2) * (u_grid * u_grid) + (c / 2) * (v_grid * v_grid) + d * u_grid + e * v_grid
         return Patch(x_grid=u_grid, y_grid=v_grid, z_grid=h)
 
 

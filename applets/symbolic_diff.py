@@ -13,6 +13,9 @@ from sympy.core.expr import Expr
 # numpy
 import numpy as np
 
+# pandas
+import pandas as pd
+
 # deep-signature-2
 from core import utils as core_utils
 from data.generation import GaussianPatchGenerator, InverseFourierPatchGenerator, RBFPatchGenerator, SimplexNoisePatchGenerator, QuadraticMonagePatchGenerator, QuadraticMonagePatchGenerator2
@@ -67,8 +70,9 @@ def substitute_point_into_expression(f: Expr, point: Dict[Symbol, float]) -> Exp
 
 
 def main():
-    L, N, A, B, u, v = symbols('L N A B u v')
-    h = (L / 2) * (u ** 2) + (N / 2) * (v ** 2) + A * u + B * v
+    L, N, A, B, C, u, v = symbols('L N A B C u v')
+    h = (L / 2) * (u ** 2) + (N / 2) * (v ** 2) + A * u * v
+    # h = (L / 2) * (u ** 2) + (N / 2) * (v ** 2)
 
     x = sp.Matrix([u, v, h])
     h_u = diff(h, u)
@@ -84,6 +88,9 @@ def main():
 
     w = compute_weingarten_matrix(x=x, u=u, v=v)
     d1, d2 = compute_principal_directions(w=w)
+    print(f'w: {w}')
+    print(f'd1: {d1}')
+    print(f'd2: {d2}')
 
     grad_k1 = compute_grad(f=k1, u=u, v=v)
     grad_k2 = compute_grad(f=k2, u=u, v=v)
@@ -100,49 +107,86 @@ def main():
     k1_22 = grad_k1_2.dot(d2)
     k2_11 = grad_k2_1.dot(d1)
 
-    point = {
-        u: 0.0,
-        v: 0.0
-    }
+    # point = {
+    #     u: 2.0,
+    #     v: 1.0
+    # }
+    #
+    # k1_eval = substitute_point_into_expression(f=k1, point=point).doit()
+    # k2_eval = substitute_point_into_expression(f=k2, point=point).doit()
+    # k1_1_eval = substitute_point_into_expression(f=k1_1, point=point).doit()
+    # k1_2_eval = substitute_point_into_expression(f=k1_2, point=point).doit()
+    # k2_1_eval = substitute_point_into_expression(f=k2_1, point=point).doit()
+    # k2_2_eval = substitute_point_into_expression(f=k2_2, point=point).doit()
+    # k1_22_eval = substitute_point_into_expression(f=k1_22, point=point).doit()
+    # k2_11_eval = substitute_point_into_expression(f=k2_11, point=point).doit()
 
-    k1_eval = substitute_point_into_expression(f=k1, point=point).doit()
-    k2_eval = substitute_point_into_expression(f=k2, point=point).doit()
-    k1_1_eval = substitute_point_into_expression(f=k1_1, point=point).doit()
-    k1_2_eval = substitute_point_into_expression(f=k1_2, point=point).doit()
-    k2_1_eval = substitute_point_into_expression(f=k2_1, point=point).doit()
-    k2_2_eval = substitute_point_into_expression(f=k2_2, point=point).doit()
-    k1_22_eval = substitute_point_into_expression(f=k1_22, point=point).doit()
-    k2_11_eval = substitute_point_into_expression(f=k2_11, point=point).doit()
-
-    print(f'k1: {k1_eval}')
-    print(f'k2: {k2_eval}')
-    print(f'k1_1: {k1_1_eval}')
-    print(f'k1_2: {k1_2_eval}')
-    print(f'k2_1: {k2_1_eval}')
-    print(f'k2_2: {k2_2_eval}')
+    print(f'H: {H}')
+    print(f'K: {K}')
+    print(f'k1: {k1}')
+    print(f'k2: {k2}')
+    # print(f'k1_1: {k1_1_eval}')
+    # print(f'k1_2: {k1_2_eval}')
+    # print(f'k2_1: {k2_1_eval}')
+    # print(f'k2_2: {k2_2_eval}')
     # print(f'k1_22: {k1_22_eval}')
     # print(f'k2_11: {k2_11_eval}')
 
-    vars = (L, N, A, B)
-    k1_numpy = lambdify(args=vars, expr=k1_eval, modules="numpy")
-    k2_numpy = lambdify(args=vars, expr=k2_eval, modules="numpy")
-    k1_1_numpy = lambdify(args=vars, expr=k1_1_eval, modules="numpy")
-    k1_2_numpy = lambdify(args=vars, expr=k1_2_eval, modules="numpy")
-    k2_1_numpy = lambdify(args=vars, expr=k2_1_eval, modules="numpy")
-    k2_2_numpy = lambdify(args=vars, expr=k2_2_eval, modules="numpy")
-    k1_22_numpy = lambdify(args=vars, expr=k1_22_eval, modules="numpy")
-    k2_11_numpy = lambdify(args=vars, expr=k2_11_eval, modules="numpy")
+    # vars = (u, v, L, N, A, B)
+    vars = (u, v, L, N, A)
 
-    coeff_limit = 1
-    samples_count = 2000000
+    print(f'd1: {d1}')
+    print(f'd2: {d2}')
+    d1_numpy = lambdify(args=vars, expr=d1, modules="numpy")
+    d2_numpy = lambdify(args=vars, expr=d2, modules="numpy")
+    bla1 = d1_numpy(2, 1, -1, 1, 1)
+    bla2 = d2_numpy(2, 1, -1, 1, 1)
+    pass
+
+    k1_numpy = lambdify(args=vars, expr=k1, modules="numpy")
+    k2_numpy = lambdify(args=vars, expr=k2, modules="numpy")
+    k1_1_numpy = lambdify(args=vars, expr=k1_1, modules="numpy")
+    k1_2_numpy = lambdify(args=vars, expr=k1_2, modules="numpy")
+    k2_1_numpy = lambdify(args=vars, expr=k2_1, modules="numpy")
+    k2_2_numpy = lambdify(args=vars, expr=k2_2, modules="numpy")
+    k1_22_numpy = lambdify(args=vars, expr=k1_22, modules="numpy")
+    k2_11_numpy = lambdify(args=vars, expr=k2_11, modules="numpy")
+
+
+
+    # k1_numpy = lambdify(args=vars, expr=k1_eval, modules="numpy")
+    # k2_numpy = lambdify(args=vars, expr=k2_eval, modules="numpy")
+    # k1_1_numpy = lambdify(args=vars, expr=k1_1_eval, modules="numpy")
+    # k1_2_numpy = lambdify(args=vars, expr=k1_2_eval, modules="numpy")
+    # k2_1_numpy = lambdify(args=vars, expr=k2_1_eval, modules="numpy")
+    # k2_2_numpy = lambdify(args=vars, expr=k2_2_eval, modules="numpy")
+    # k1_22_numpy = lambdify(args=vars, expr=k1_22_eval, modules="numpy")
+    # k2_11_numpy = lambdify(args=vars, expr=k2_11_eval, modules="numpy")
+
+    coeff_limit1 = 0.1
+    coeff_limit2 = 1
+    samples_count = 1000000
     rng = np.random.default_rng()
-    coeffs = rng.uniform(low=-coeff_limit, high=coeff_limit, size=(samples_count, 4))
-    lambda_args = [coeffs[:, 0], coeffs[:, 1], coeffs[:, 2], coeffs[:, 3]]
+    coeffs1 = rng.uniform(low=-coeff_limit1, high=coeff_limit1, size=(samples_count, 2))
+    coeffs2 = rng.uniform(low=-coeff_limit2, high=coeff_limit2, size=(samples_count, 4))
+    # lambda_args = [coeffs1[:, 0], coeffs1[:, 1], coeffs2[:, 0], coeffs2[:, 1], coeffs2[:, 2], coeffs2[:, 3]]
+    lambda_args = [coeffs1[:, 0], coeffs1[:, 1], coeffs2[:, 0], coeffs2[:, 1]]
 
     k1_vals = k1_numpy(*lambda_args)
     k2_vals = k2_numpy(*lambda_args)
-    corr = np.corrcoef(k1_vals, k2_vals)
-    print(corr)
+    k1_1_vals = k1_1_numpy(*lambda_args)
+    k1_2_vals = k1_2_numpy(*lambda_args)
+    k2_1_vals = k2_1_numpy(*lambda_args)
+    k2_2_vals = k2_2_numpy(*lambda_args)
+    k1_22_vals = k1_22_numpy(*lambda_args)
+    k2_11_vals = k2_11_numpy(*lambda_args)
+
+    vals = np.stack([k1_vals, k2_vals, k1_1_vals, k1_2_vals, k2_1_vals, k2_2_vals, k1_22_vals, k2_11_vals])
+    corr = np.corrcoef(vals)
+    df = pd.DataFrame(corr)
+    pd.set_option('display.precision', 5)
+    print(df)
+    df.to_excel(str(Path("./corr.xlsx")))
 
 
 if __name__ == "__main__":

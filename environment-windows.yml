@@ -49,3 +49,10 @@ dependencies:
       - trimesh
       - libigl
       - sympy
+      - pygfx
+      - pyvistaqt
+      - imageio
+      - glfw
+      - pytest
+      - open3d
+      - pygltflib
