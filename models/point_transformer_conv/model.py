@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import wandb
 from torch.nn.utils.rnn import pad_packed_sequence
-from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_pool
+from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_pool, global_max_pool, global_add_pool
 import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
@@ -68,6 +68,7 @@ class PointTransformerConvNet(pl.LightningModule):
             self.hidden_bns.append(nn.BatchNorm1d(hidden_channels))
 
         self.pooling = global_mean_pool  # You can use other pooling functions if needed
+        # self.pooling = global_add_pool  # You can use other pooling functions if needed
 
         self.decoder = MLP(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=2, activation=self.activation)
 

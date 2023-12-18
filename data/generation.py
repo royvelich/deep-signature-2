@@ -217,3 +217,29 @@ class TorusGenerator(PatchGenerator):
         z_grid = r * np.sin(v_grid)
 
         return Torus(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample), R, r, 0
+
+
+class PeakSaddleGenerator(PatchGenerator):
+
+    def __init__(self, limit: float, grid_size: int, downsample: bool = True):
+        super().__init__(limit=limit, grid_size=grid_size)
+        self.downsample = downsample
+
+    def generate(self, grid_size_delta=0, shape="peak") -> Patch:
+        if grid_size_delta != 0:
+            curr_grid_size = self._grid_size+grid_size_delta
+        else:
+            curr_grid_size = self._grid_size
+
+        x = np.linspace(-self._limit, self._limit, curr_grid_size)
+        y = np.linspace(-self._limit, self._limit, curr_grid_size)
+        x_grid, y_grid = np.meshgrid(x, y)
+
+        if shape == "peak":
+            z_grid = x_grid ** 2 + y_grid ** 2
+
+
+        else:
+            z_grid =  0.5*x_grid ** 2 - 0.2*y_grid ** 2
+
+        return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample)

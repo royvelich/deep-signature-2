@@ -168,7 +168,7 @@ class Patch(Mesh):
 
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
         if downsample:
-           indices = self.downsample(ratio=random.uniform(0.8,0.82))
+           indices = self.downsample(ratio=random.uniform(0.3,0.32))
         else:
             indices = np.arange(len(self._v))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
@@ -231,6 +231,9 @@ class Patch(Mesh):
                 sampled_grid_v = np.stack((sampled_grid_v1, sampled_grid_v2))
 
             # Add your visualization code for grid points using an alternative library like matplotlib or Plotly.
+
+    def set_faces(self, faces):
+        self._f = faces
 
     def _calculate_derivative(
             self,

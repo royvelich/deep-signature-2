@@ -1,13 +1,16 @@
 import os
+from pathlib import Path
 
 import igl
 import numpy as np
 import torch
+import trimesh
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 from pyvista import PolyData
 from sklearn.neighbors import KDTree, NearestNeighbors
 import re
+import trimesh.visual as visual
 
 # import pyvista as pv
 from geometry2 import normalize_points
@@ -241,7 +244,7 @@ def compute_edges_from_faces(faces):
     return edge_index
 
 
-Vdef get_faces_containing_vertices(f, param):
+def get_faces_containing_vertices(f, param):
     faces = []
     for face in f:
         if face[0] in param and face[1] in param and face[2] in param:
@@ -272,8 +275,75 @@ def compute_patches_from_mesh(v, f, k=10):
 
 
 
+@staticmethod
+def save_glb(vertices: np.ndarray, faces: np.ndarray, colors: np.ndarray = None, path: Path = ''):
+    # Create a mesh with vertex colors
+    mesh = trimesh.Trimesh(
+        vertices=vertices,
+        faces=faces,
+        vertex_colors=colors,
+        # visual=TextureVisuals(uv=uv, image=image),
+        visual=visual.ColorVisuals(vertex_colors=colors),
+        process=False
+    )
+
+    # Export to glTF (non-binary)
+    glb_file = mesh.export(file_type="glb")
+
+    # Save to a file
+    with open(str(path), "wb") as f:
+        f.write(glb_file)
+
+@staticmethod
+def unregularize_a_regularize_mesh(v : np.ndarray, f : np.ndarray):
+#     like decimate but in unregularize way
+    mesh = trimesh.Trimesh(vertices=v, faces=f, process=False)
+    mesh = mesh.remove_duplicate_faces()
+    mesh = mesh.remove_duplicate_vertices()
+    mesh = mesh.remove_infinite_values()
+
+
+# region Mesh processing
+
+# fixing pathologies on delaunay triangulation using ratio of inradius to circumradius
+def calculate_area(vertices):
+    # Function to calculate the area of a triangle given its vertices
+    a, b, c = vertices
+    return 0.5 * np.linalg.norm(np.cross(b - a, c - a))
+
+def calculate_inradius(vertices):
+    # Function to calculate the inradius of a triangle given its vertices
+    a, b, c = vertices
+    s = np.sum([np.linalg.norm(b - a), np.linalg.norm(c - b), np.linalg.norm(a - c)]) / 2
+    return calculate_area(vertices) / s
+
+def calculate_circumradius(vertices):
+    # Function to calculate the circumradius of a triangle given its vertices
+    a, b, c = vertices
+    A = calculate_area(vertices)
+    return (np.linalg.norm(a - b) * np.linalg.norm(b - c) * np.linalg.norm(c - a)) / (4 * A)
+
+def calculate_inradius_to_circumradius_ratio(vertices):
+    # Function to calculate the inradius-to-circumradius ratio of a triangle given its vertices
+    return calculate_inradius(vertices) / calculate_circumradius(vertices)
+
+def fix_pathologies(v, f):
+    f_fixed = []
+    min = 10000
+    for face in f:
+        ratio = calculate_inradius_to_circumradius_ratio(v[face])
+        if ratio < min:
+            min = ratio
+        if ratio > 0.168:
+            f_fixed.append(face)
+
+
+    print(min)
+    return np.array(f_fixed)
 
 
 
 
+
+# endregion
 

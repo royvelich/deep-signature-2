@@ -1,5 +1,6 @@
 import pickle
 from datetime import datetime
+from pathlib import Path
 
 import igl
 import matplotlib
@@ -36,9 +37,7 @@ from data.triplet_dataset import CustomTripletDataset
 from deep_signature.generation import QuadraticMonagePatchGenerator2
 from geometry2 import normalize_points
 from models.point_transformer_conv.model import PointTransformerConvNet
-from utils import compute_edges_from_faces, compute_patches_from_mesh
-
-
+from utils import compute_edges_from_faces, compute_patches_from_mesh, save_glb
 
 
 def _rescale_k(k: np.ndarray) -> np.ndarray:
@@ -49,7 +48,7 @@ def _rescale_k(k: np.ndarray) -> np.ndarray:
     return rescaled_k
 
 
-def _get_vertex_colors_from_k(k: np.ndarray,title: str) -> np.ndarray:
+def _get_vertex_colors_from_k(k: np.ndarray,title: str = '') -> np.ndarray:
     # plot_color_histogram(k, title=title+' histogram')
 
     k = _rescale_k(k=k)
@@ -57,7 +56,7 @@ def _get_vertex_colors_from_k(k: np.ndarray,title: str) -> np.ndarray:
     # plot_color_histogram(k, title=title+' histogram')
 
     # convex combinations between red and blue colors, based on the predicted gaussian curvature
-    c1 = np.column_stack((k_one_minus, np.zeros_like(k), np.zeros_like(k), np.ones_like(k)))
+    c1 = np.column_stack((np.zeros_like(k), k_one_minus, np.zeros_like(k), np.ones_like(k)))
     c2 = np.column_stack((np.zeros_like(k), np.zeros_like(k), k, np.ones_like(k)))
     c = c1 + c2
 
@@ -86,6 +85,8 @@ def add_colored_mesh(scene,  faces, vertices, colors,position=(0, 0, 0), title='
 
     mesh = _create_world_object_for_mesh(faces, vertices, colors, title)
     mesh.local.position = position
+    # disable specular highlights
+    mesh.material.specular = 0
     scene.add(mesh)
     text = gfx.Text(
         gfx.TextGeometry(
@@ -413,7 +414,7 @@ def calculate_correlation(data1, data2):
     output = np.corrcoef(data1, data2)
     return output
 
-def animate_mesh():
+def animate_mesh(mesh_name:str="vase-lion100K"):
     dis = 100  # distance between the rendered patches in the visualization
 
     # geometry = gfx.torus_knot_geometry(1.0, 0.3, 32, 8, p=1, q=0)
@@ -421,13 +422,12 @@ def animate_mesh():
     # f = geometry.indices.data.astype(np.int32)
 
     # Load the OBJ file
-    mesh_name = "vase-lion100K"
     scene = pywavefront.Wavefront(mesh_name+".obj", collect_faces=True)
     v = np.array(scene.vertices)
     f = np.array(scene.mesh_list[0].faces)
 
     # downsample the mesh
-    ratio = 0.2
+    ratio = 0.05
     # indices = fps(x=torch.tensor(data=v), ratio=ratio)
     m, v_downsampled, f_downsampled, _, _ = igl.decimate(v, f, int(f.shape[0]*ratio))
 
@@ -439,8 +439,8 @@ def animate_mesh():
 
 
     # need to choose for each neighborhood the faces that contain it vertices and organize them in the right order
-    # normalized_patches, faces = compute_patches_from_mesh(v, f, k=30)
-    patches_size = 70
+    # normalized_   patches, faces = compute_patches_from_mesh(v, f, k=30)
+    patches_size = 10
     GT_radius_size = 30
 
     normalized_patches, faces = compute_patches_from_mesh(v_downsampled, f_downsampled, k=patches_size)
@@ -483,7 +483,16 @@ def animate_mesh():
     add_colored_mesh(scene, sample_patch_downsampled.faces, sample_patch_downsampled.vertices, colors=output[:, 0] * output[:, 1],
                      position=(2 * dis, 0, 0),
                      title='output0*output1')
+    c_uint8_gt = (_get_vertex_colors_from_k(k1*k2) * 255).astype(np.uint8)
 
+    save_glb(vertices=v, faces=f, colors=c_uint8_gt, path=Path(mesh_name+"_"+str(ratio)+'_k1_k2_gt.glb'))
+    d1_downsampled, d2_downsampled, k1_downsampled, k2_downsampled = igl.principal_curvature(v_downsampled, f_downsampled, radius=GT_radius_size)
+
+    c_uint8_gt_downsampled = (_get_vertex_colors_from_k(k1_downsampled*k2_downsampled) * 255).astype(np.uint8)
+    save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces, colors=c_uint8_gt_downsampled, path=Path(mesh_name+"_"+str(ratio)+'_k1_k2_downsampled_gt.glb'))
+
+    c_uint8_output = (_get_vertex_colors_from_k(output[:, 0]*output[:, 1]) * 255).astype(np.uint8)
+    save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces, colors=c_uint8_output, path=Path(mesh_name+"_"+str(ratio)+'_output0_output1.glb'))
 
     add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, dis, 0), title='k1')
     add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, dis, 0),
@@ -507,77 +516,77 @@ def animate_mesh():
     #     add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, 2 * dis, 0),
     #                      title='k2_reg')
 
-    scene.add(gfx.AmbientLight(1, 0.2))
+    # scene.add(gfx.AmbientLight(1, 0.2))
 
-    light = gfx.DirectionalLight(1, 3)
-    light.local.position = (0, 0, 1)
-    # add lighht exactly opposite to the first one
-    light2 = gfx.DirectionalLight(1, 3)
-    light2.local.position = (0, 0, -1)
-    light3 = gfx.DirectionalLight(1, 3)
-    light3.local.position = (0, 0, 0)
-    light4 = gfx.DirectionalLight(1, 3)
-    light4.local.position = (0, 1, 0)
-    light5 = gfx.DirectionalLight(1, 3)
-    light5.local.position = (0, -1, 0)
-    light6 = gfx.DirectionalLight(1, 3)
-    light6.local.position = (1, 0, 0)
-    light7 = gfx.DirectionalLight(1, 3)
-    light7.local.position = (-1, 0, 0)
-    scene.add(light)
-    scene.add(light2)
-    scene.add(light3)
-    scene.add(light4)
-    scene.add(light5)
-    scene.add(light6)
-    scene.add(light7)
-    dark_gray = np.array((169, 167, 168, 255)) / 255
-    light_gray = np.array((100, 100, 100, 255)) / 255
-    background = gfx.Background(None, gfx.BackgroundMaterial(light_gray, dark_gray))
-    scene.add(background)
-    canvas.request_draw(lambda: renderer.render(scene, camera))
-
-    def on_key_down2(event):
-        global state, image_num
-        nonlocal dis
-        controls = OrbitController(camera)
-        controls.zoom_speed = 0.001
-        controls.distance = 0.01
-        controls.register_events(renderer)
-        if event.key == "s":
-            state = camera.get_state()
-        elif event.key == "a":
-            # move position of rendered meshes
-            dis  += 0.1*dis
-            positions = [(0, 0, 0), (dis , 0, 0), (2 * dis , 0, 0), (0, dis , 0), (dis , dis , 0), (2 * dis , dis , 0)]
-            for child in scene.children:
-                if isinstance(child, gfx.Mesh):
-                    child.local.position = positions[scene.children.index(child)]
-            renderer.render(scene, camera)
-        elif event.key == "d":
-            dis -= 0.1*dis
-            positions = [(0, 0, 0), (dis, 0, 0), (2 * dis, 0, 0), (0, dis, 0), (dis, dis, 0), (2 * dis, dis, 0)]
-            for child in scene.children:
-                if isinstance(child, gfx.Mesh):
-                    child.local.position = positions[scene.children.index(child)]
-            renderer.render(scene, camera)
-
-        elif event.key == "l":
-            camera.set_state(state)
-        elif event.key == "r":
-            camera.show_object(scene)
-        elif event.key == "q":
-            image = renderer.snapshot()
-            # Save the image as a PNG file
-            date_now = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-            imageio.imwrite(mesh_name + '_' + str(ratio)+"_k_"+str(patches_size) + "_" + str(date_now) + '.png', image)
-            image_num += 1
-
-    renderer.add_event_handler(on_key_down2, "key_down")
-
-    # snapshot(camera=camera, scene=scene, renderer=renderer, canvas=canvas)
-    canvas.request_draw(animate(scene=scene, camera=camera, renderer=renderer, canvas=canvas))
-    run()
+    # light = gfx.DirectionalLight(1, 3)
+    # light.local.position = (0, 0, 1)
+    # # add lighht exactly opposite to the first one
+    # light2 = gfx.DirectionalLight(1, 3)
+    # light2.local.position = (0, 0, -1)
+    # light3 = gfx.DirectionalLight(1, 3)
+    # light3.local.position = (0, 0, 0)
+    # light4 = gfx.DirectionalLight(1, 3)
+    # light4.local.position = (0, 1, 0)
+    # light5 = gfx.DirectionalLight(1, 3)
+    # light5.local.position = (0, -1, 0)
+    # light6 = gfx.DirectionalLight(1, 3)
+    # light6.local.position = (1, 0, 0)
+    # light7 = gfx.DirectionalLight(1, 3)
+    # light7.local.position = (-1, 0, 0)
+    # scene.add(light)
+    # scene.add(light2)
+    # scene.add(light3)
+    # scene.add(light4)
+    # scene.add(light5)
+    # scene.add(light6)
+    # scene.add(light7)
+    # dark_gray = np.array((169, 167, 168, 255)) / 255
+    # light_gray = np.array((100, 100, 100, 255)) / 255
+    # background = gfx.Background(None, gfx.BackgroundMaterial(light_gray, dark_gray))
+    # scene.add(background)
+    # canvas.request_draw(lambda: renderer.render(scene, camera))
+    #
+    # def on_key_down2(event):
+    #     global state, image_num
+    #     nonlocal dis
+    #     controls = OrbitController(camera)
+    #     controls.zoom_speed = 0.001
+    #     controls.distance = 0.01
+    #     controls.register_events(renderer)
+    #     if event.key == "s":
+    #         state = camera.get_state()
+    #     elif event.key == "a":
+    #         # move position of rendered meshes
+    #         dis  += 0.1*dis
+    #         positions = [(0, 0, 0), (dis , 0, 0), (2 * dis , 0, 0), (0, dis , 0), (dis , dis , 0), (2 * dis , dis , 0)]
+    #         for child in scene.children:
+    #             if isinstance(child, gfx.Mesh):
+    #                 child.local.position = positions[scene.children.index(child)]
+    #         renderer.render(scene, camera)
+    #     elif event.key == "d":
+    #         dis -= 0.1*dis
+    #         positions = [(0, 0, 0), (dis, 0, 0), (2 * dis, 0, 0), (0, dis, 0), (dis, dis, 0), (2 * dis, dis, 0)]
+    #         for child in scene.children:
+    #             if isinstance(child, gfx.Mesh):
+    #                 child.local.position = positions[scene.children.index(child)]
+    #         renderer.render(scene, camera)
+    #
+    #     elif event.key == "l":
+    #         camera.set_state(state)
+    #     elif event.key == "r":
+    #         camera.show_object(scene)
+    #     elif event.key == "q":
+    #         image = renderer.snapshot()
+    #         # Save the image as a PNG file
+    #         date_now = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    #         imageio.imwrite(mesh_name + '_' + str(ratio)+"_k_"+str(patches_size) + "_" + str(date_now) + '.png', image)
+    #         image_num += 1
+    #
+    # renderer.add_event_handler(on_key_down2, "key_down")
+    #
+    # # snapshot(camera=camera, scene=scene, renderer=renderer, canvas=canvas)
+    # canvas.request_draw(animate(scene=scene, camera=camera, renderer=renderer, canvas=canvas))
+    # run()
 
 if __name__ == "__main__":
     # for interactive mode
@@ -591,7 +600,14 @@ if __name__ == "__main__":
     # snapshot()
     # snapshot_multiple_patches()
     # snapshot_or_animate_torus()
-    animate_mesh()
+    # meshes_names = ["vase-lion100K", "chair100K", "chair", "botijo", "aircraft", "blade", "dancer_25K", "dancer2", "dancing_children100K"]
+    meshes_names = ["saddle30"]
+
+    for mesh_name in meshes_names:
+        animate_mesh(mesh_name=mesh_name)
+
+
+
 
 # import matplotlib.pyplot as plt
 # colormap = plt.get_cmap('viridis')  # Choose a colormap that suits your data
