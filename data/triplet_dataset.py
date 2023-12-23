@@ -5,6 +5,8 @@ from torch_geometric.data import Data, Batch
 
 
 # Define your custom dataset class
+
+
 class CustomTripletDataset(Dataset):
     def __init__(self, data, transform=None):
         self.data = data
@@ -50,6 +52,7 @@ class CustomTripletDataset(Dataset):
 
         return patches
 
+
     # Function to compute edges from faces
     def compute_edges_from_faces(self, faces):
         edges = []
@@ -61,6 +64,7 @@ class CustomTripletDataset(Dataset):
         edge_index = torch.tensor(edges, dtype=torch.long).t()
         return edge_index
 
+
     def batch_collate_fn(self, batch):
         # use Data and Batch from torch_geometric
         data = []
@@ -68,5 +72,7 @@ class CustomTripletDataset(Dataset):
         for i in range(len(batch)):
             for j in range(len(batch[i])):
                 edges = self.compute_edges_from_faces(batch[i][j].f)
-                data.append(Data(x=batch[i][j].v_second_moments.to(torch.float32), pos=torch.tensor(batch[i][j].v, dtype=torch.float32), edge_index=edges))
+                # data.append(Data(x=batch[i][j].v_second_moments.to(torch.float32), pos=torch.tensor(batch[i][j].v, dtype=torch.float32), edge_index=edges))
+                # add face to enable supervised learning, can remove if using just unsup learning to decrease overhead
+                data.append(Data(x=batch[i][j].v_second_moments.to(torch.float32), pos=torch.tensor(batch[i][j].v, dtype=torch.float32), edge_index=edges, face=batch[i][j].f))
         return Batch.from_data_list(data)

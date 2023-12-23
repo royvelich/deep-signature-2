@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import trimesh
 from pytorch_lightning.loggers import WandbLogger
+from torch_geometric.transforms import FaceToEdge
+
 import wandb
 from pyvista import PolyData
 from sklearn.neighbors import KDTree, NearestNeighbors
@@ -244,6 +246,12 @@ def compute_edges_from_faces(faces):
     return edge_index
 
 
+def compute_edges_from_faces2(faces):
+    face_to_edge = FaceToEdge()
+
+    return face_to_edge(faces)
+
+
 def get_faces_containing_vertices(f, param):
     faces = []
     for face in f:
@@ -334,9 +342,10 @@ def fix_pathologies(v, f):
         ratio = calculate_inradius_to_circumradius_ratio(v[face])
         if ratio < min:
             min = ratio
-        if ratio > 0.168:
+        if ratio > 0.3:
             f_fixed.append(face)
-
+        if calculate_area(v[face]) < 0.02:
+            f_fixed.append(face)
 
     print(min)
     return np.array(f_fixed)
@@ -346,4 +355,13 @@ def fix_pathologies(v, f):
 
 
 # endregion
+
+def is_vertex_in_boundary(f, vertex_index, faces_threshold=4):
+    t = 0
+    for face in f:
+        if vertex_index in face:
+            t = t+1
+        if t > faces_threshold:
+            return False
+    return True
 

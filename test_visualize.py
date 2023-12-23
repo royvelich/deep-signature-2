@@ -37,7 +37,8 @@ from data.triplet_dataset import CustomTripletDataset
 from deep_signature.generation import QuadraticMonagePatchGenerator2
 from geometry2 import normalize_points
 from models.point_transformer_conv.model import PointTransformerConvNet
-from utils import compute_edges_from_faces, compute_patches_from_mesh, save_glb
+from utils import compute_edges_from_faces, compute_patches_from_mesh, save_glb, is_vertex_in_boundary, \
+    compute_edges_from_faces2
 
 
 def _rescale_k(k: np.ndarray) -> np.ndarray:
@@ -426,11 +427,15 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
     v = np.array(scene.vertices)
     f = np.array(scene.mesh_list[0].faces)
 
+    # edges1 = compute_edges_from_faces(f)
+    # edges2 = compute_edges_from_faces2(torch_geometric.data.Data(pos=torch.tensor(v, dtype=torch.float32), face=torch.tensor(f.T, dtype=torch.int32)))
+    # tripy_faces = tripy.earclip(edges2)
+
     # downsample the mesh
     ratio = 0.05
     # indices = fps(x=torch.tensor(data=v), ratio=ratio)
     m, v_downsampled, f_downsampled, _, _ = igl.decimate(v, f, int(f.shape[0]*ratio))
-
+    # v_downsampled, f_downsampled = v, f
     # f_downsampled = []
     # for i in range(len(f)):
     #    if np.sum(np.isin(f[i], indices)) == 3:
@@ -440,7 +445,7 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
 
     # need to choose for each neighborhood the faces that contain it vertices and organize them in the right order
     # normalized_   patches, faces = compute_patches_from_mesh(v, f, k=30)
-    patches_size = 10
+    patches_size = 30
     GT_radius_size = 30
 
     normalized_patches, faces = compute_patches_from_mesh(v_downsampled, f_downsampled, k=patches_size)
@@ -462,6 +467,10 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
 
     output = []
     for i in range(len(normalized_patches)):
+        # if vertex v[i] contained in less or equal than 4 faces output append 0 value
+        # if is_vertex_in_boundary(f_downsampled, i, 4):
+        #     output.append(np.zeros((1, 2)))
+        #     continue
         output.append(model(Data(x=torch.tensor(normalized_patches[i], dtype=torch.float32),
                                  pos=torch.tensor(normalized_patches[i], dtype=torch.float32),
                                  edge_index=compute_edges_from_faces(faces[i])), global_pooling=True).detach().numpy())
@@ -494,12 +503,33 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
     c_uint8_output = (_get_vertex_colors_from_k(output[:, 0]*output[:, 1]) * 255).astype(np.uint8)
     save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces, colors=c_uint8_output, path=Path(mesh_name+"_"+str(ratio)+'_output0_output1.glb'))
 
+
+    # c_uint8_gt = (_get_vertex_colors_from_k((k1+k2)/2) * 255).astype(np.uint8)
+    #
+    # save_glb(vertices=v, faces=f, colors=c_uint8_gt, path=Path(mesh_name + "_" + str(ratio) + '_mean_curvature_gt.glb'))
+    #
+    #
+    # c_uint8_gt_downsampled = (_get_vertex_colors_from_k((k1_downsampled + k2_downsampled)/2) * 255).astype(np.uint8)
+    # save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces,
+    #          colors=c_uint8_gt_downsampled, path=Path(mesh_name + "_" + str(ratio) + '_mean_curvature_downsampled_gt.glb'))
+    #
+    # c_uint8_gt_downsampled = (_get_vertex_colors_from_k((output[:, 0] + output[:, 1])/2) * 255).astype(np.uint8)
+    # save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces,
+    #          colors=c_uint8_gt_downsampled, path=Path(mesh_name + "_" + str(ratio) + '_mean_curvature_output_gt.glb'))
+
     add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, dis, 0), title='k1')
     add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, dis, 0),
                      title='k2')
     add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1 * k2, position=(2 * dis, dis, 0),
                      title='k1*k2')
 
+    print("k1 and k2 correlation:"+str(calculate_correlation(k1, k2)))
+    print("mean k1:"+str(np.mean(k1)))
+    print("mean k2:"+str(np.mean(k2)))
+    print("k1_downsampled and k2_downsampled correlation:"+str(calculate_correlation(k1_downsampled, k2_downsampled)))
+    print("mean k1_downsampled:" + str(np.mean(k1_downsampled)))
+    print("mean k2_downsampled:" + str(np.mean(k2_downsampled)))
+    print("output[:,0] and output[:,1] correlation:"+str(calculate_correlation(output[:, 0], output[:, 1])))
 
 
     # if dataset_reg_and_unreg:

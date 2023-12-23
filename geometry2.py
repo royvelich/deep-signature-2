@@ -168,7 +168,7 @@ class Patch(Mesh):
 
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
         if downsample:
-           indices = self.downsample(ratio=random.uniform(0.3,0.32))
+           indices = self.downsample(ratio=random.uniform(0.1,0.12))
         else:
             indices = np.arange(len(self._v))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates

@@ -19,10 +19,10 @@ device = torch.device("cuda" if is_available() else "cpu")
 grid_size = 100
 limit = 1
 
-# patch_generator_anc_pos = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=True)
-# patch_generator_neg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=True)
-patch_generator_anc_pos = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
-patch_generator_neg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
+patch_generator_anc_pos = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=True)
+patch_generator_neg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=True)
+# patch_generator_anc_pos = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
+# patch_generator_neg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
 if dataset_reg_and_unreg:
     # patch_generator_anc_pos_reg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=False)
     # patch_generator_neg_reg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=False)

@@ -30,7 +30,8 @@ def main_loop():
         combine_reg_and_non_reg_patches = True
 
     else:
-        file_path = "triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
+        # file_path = "triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
+        file_path = "generated_triplet_data/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
         os.environ["WANDB_MODE"] = "offline"
 
 
@@ -84,7 +85,7 @@ def main_loop():
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'-{epoch:02d}',
+        filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'_w_sup-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=10

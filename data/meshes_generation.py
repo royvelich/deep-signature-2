@@ -20,12 +20,12 @@ grid_size = 30
 limit = 1
 
 shape_type = "saddle"
-downsample = True
+downsample = False
 
 meshes_generator = PeakSaddleGenerator(limit=limit, grid_size=grid_size, downsample=downsample)
 output = []
 mesh = meshes_generator.generate(grid_size_delta=0, shape=shape_type)
-mesh.set_faces(fix_pathologies(mesh.v, mesh.f))
+# mesh.set_faces(fix_pathologies(mesh.v, mesh.f))
 
 
 

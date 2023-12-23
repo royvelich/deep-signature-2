@@ -1,3 +1,5 @@
+import igl
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,7 +9,8 @@ from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_p
 import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
-    loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2, loss__pearson_correlation_k1_k2, loss_contrastive_plus_pearson_correlation_k1_k2
+    loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2, loss__pearson_correlation_k1_k2, \
+    loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised
 from vars import LR, WEIGHT_DECAY
 from visualize.vis_utils import log_visualization
 
@@ -116,6 +119,11 @@ class PointTransformerConvNet(pl.LightningModule):
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
         loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
+
+        if batch_idx % 10 == 0: # can change it just to patches that have >N vertices
+            d1, d2, k1, k2 = igl.principal_curvature(np.array(batch[0].pos), batch[0].face, radius=30)
+            output_supervised = self.forward(batch[0], global_pooling=False)
+            loss = loss + loss_gaussian_curvature_supervised(output_supervised, [torch.tensor(k1),torch.tensor(k2)])
 
         self.log('train_loss', loss.item(), on_step=False, on_epoch=True)
         return loss
