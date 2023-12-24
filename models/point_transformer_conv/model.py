@@ -123,7 +123,7 @@ class PointTransformerConvNet(pl.LightningModule):
         if batch_idx % 1 == 0: # can change it just to patches that have >N vertices
             t = min(3, len(batch))
             for i in range(t):
-                d1, d2, k1, k2 = igl.principal_curvature(np.array(batch[i].pos), batch[i].face, radius=30)
+                d1, d2, k1, k2 = igl.principal_curvature(np.array(batch[i].pos.cpu().numpy()), batch[i].face, radius=30)
                 output_supervised = self.forward(batch[i], global_pooling=False)
                 loss = loss + loss_gaussian_curvature_supervised(output_supervised, [torch.tensor(k1),torch.tensor(k2)])
 

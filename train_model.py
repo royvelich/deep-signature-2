@@ -25,7 +25,7 @@ def main_loop():
     num_workers = 1
     combine_reg_and_non_reg_patches = False
     if torch.cuda.is_available():
-        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
+        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
         num_workers = 1
         combine_reg_and_non_reg_patches = True
 
