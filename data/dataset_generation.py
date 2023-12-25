@@ -2,8 +2,17 @@ import random
 
 import torch
 from torch.cuda import is_available
+# in order to fix import errors on server
+import sys
+import os
 
+# Get the current directory of the script
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
+# Add the current directory and its parent directory to the Python path
+sys.path.extend([current_dir, os.path.abspath(os.path.join(current_dir, '..'))])
+
+# till here
 
 from generation import QuadraticMonagePatchGenerator2, SimplexNoisePatchGenerator, InverseFourierPatchGenerator, \
     TorusGenerator

@@ -5,7 +5,7 @@ import matplotlib
 import torch
 from scipy.stats import norm
 
-matplotlib.use('TkAgg')  # Use Tkinter as the backend; you can try other backends as well
+# matplotlib.use('TkAgg')  # Use Tkinter as the backend; you can try other backends as well
 
 def density_function_sampling(mesh_points, density_function, ratio):
     # Create Delaunay triangulation
@@ -61,8 +61,6 @@ def generate_random_gaussian_params(N):
     return gaussians_params
 
 
-# Define parameters for multiple Gaussians (mean, standard deviation)
-gaussians_params = [(30, 5), (70, 10)]  # Two Gaussians with different means and variances
 
 # Example density function using PyTorch
 # def density_function(points):
