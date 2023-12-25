@@ -47,7 +47,7 @@ neg_noise_high = 2.0
 for i in tqdm(range(parts)):
     triplets = []
 
-    for i in tqdm(range(N)):
+    for j in tqdm(range(N)):
         sample_anc, k1_anc, k2_anc, point0_0_anc = patch_generator_anc_pos.generate()
         sample_pos, k1_pos, k2_pos, point0_0_pos = patch_generator_anc_pos.generate(k1=k1_anc, k2=k2_anc)
         if dataset_reg_and_unreg:
