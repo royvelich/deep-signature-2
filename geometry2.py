@@ -32,6 +32,7 @@ from torch_geometric.nn import fps
 # torch
 import torch
 
+from data.dataset_vis import generate_mesh_vis
 
 
 class PrincipalCurvature(Enum):
@@ -172,14 +173,15 @@ class Patch(Mesh):
         else:
             indices = np.arange(len(self._v))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
-        self._v = normalize_points(self._v)
         v = np.stack([self._v[:,0], self._v[:,1]], axis=1)
         # Perform triangulation using Delaunay method
         # self._f = igl.delaunay_triangulation(v)
         self._f = Delaunay(v).simplices
 
-        # self._d1, self._d2, self._k1, self._k2 = igl.principal_curvature(v=v, f=self._f)
+        self._v = normalize_points(self._v)
 
+        # self._d1, self._d2, self._k1, self._k2 = igl.principal_curvature(v=v, f=self._f)
+        # generate_mesh_vis(v=self._v, f=self._f)
 
 
         x = torch.from_numpy(self._v[:,0])

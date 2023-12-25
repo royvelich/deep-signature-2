@@ -15,7 +15,7 @@ import re
 import trimesh.visual as visual
 
 # import pyvista as pv
-from geometry2 import normalize_points
+# from geometry2 import normalize_points
 
 
 def rearange_mesh_faces(faces):
@@ -365,3 +365,42 @@ def is_vertex_in_boundary(f, vertex_index, faces_threshold=4):
             return False
     return True
 
+
+def normalize_points(vertices):
+    """
+    Normalize a set of 3D vertices by translation and rotation according to the covariance matrix principal directions.
+
+    Args:
+        vertices (numpy.ndarray): 3D array of shape (num_points, 3) representing the input vertices.
+
+    Returns:
+        numpy.ndarray: Normalized vertices of shape (num_points, 3).
+    """
+    # Step 1: Compute the centroid
+    centroid = np.mean(vertices, axis=0)
+
+    # Step 2: Compute the covariance matrix
+    centered_points = vertices - centroid
+    covariance_matrix = np.cov(centered_points, rowvar=False)
+
+    # Step 3: Find the principal directions (eigenvectors)
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
+    # Sort eigenvalues in descending order
+    sorted_indices = np.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[sorted_indices]
+    eigenvectors = eigenvectors[:, sorted_indices]
+    normalized_eigenvectors = eigenvectors / np.linalg.norm(eigenvectors)
+    # normalized_eigenvectors = eigenvectors / np.sqrt(eigenvalues)
+    # Rotation matrix to align with principal axes
+    rotation_matrix = normalized_eigenvectors
+
+    # Apply rotation to the centered point cloud
+    normalized_points = np.dot(centered_points, rotation_matrix)
+
+    #
+    #
+    # # Step 4: Normalize the points
+    # normalized_points = np.dot(centered_points, normalized_eigenvectors)
+
+
+    return normalized_points

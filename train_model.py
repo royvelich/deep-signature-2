@@ -25,7 +25,7 @@ def main_loop():
     num_workers = 1
     combine_reg_and_non_reg_patches = False
     if torch.cuda.is_available():
-        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
+        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
         num_workers = 1
         combine_reg_and_non_reg_patches = True
 
@@ -88,7 +88,7 @@ def main_loop():
         filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'_w_sup-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
-        every_n_epochs=10
+        every_n_epochs=5
     )
     # visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
     trainer = Trainer(num_nodes=1,

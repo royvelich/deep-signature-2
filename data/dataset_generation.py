@@ -24,10 +24,10 @@ patch_generator_neg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid
 # patch_generator_anc_pos = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
 # patch_generator_neg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
 if dataset_reg_and_unreg:
-    # patch_generator_anc_pos_reg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=False)
-    # patch_generator_neg_reg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=False)
-    patch_generator_anc_pos_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
-    patch_generator_neg_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
+    patch_generator_anc_pos_reg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=False)
+    patch_generator_neg_reg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=False)
+    # patch_generator_anc_pos_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
+    # patch_generator_neg_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
 # patch_generator_neg = InverseFourierPatchGenerator(limit=limit, grid_size=grid_size, scale=0.5)
 N = 5 # how many triplet of patches to generate
 
