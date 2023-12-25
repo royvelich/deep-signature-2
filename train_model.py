@@ -25,7 +25,7 @@ def main_loop():
     num_workers = 1
     combine_reg_and_non_reg_patches = False
     if torch.cuda.is_available():
-        file_path = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
+        file_path = "/home/gal.yona/deep-signature-2/triplets_dataset/triplets_size_30_N_10000_all_monge_patch_non_uniform_sampling_part0.pkl"
         num_workers = 1
         combine_reg_and_non_reg_patches = True
 
@@ -85,7 +85,7 @@ def main_loop():
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'_w_sup-{epoch:02d}',
+        filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'_train_non_uniform_samples-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=5
