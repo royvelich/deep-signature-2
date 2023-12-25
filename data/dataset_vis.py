@@ -2,10 +2,9 @@ import pickle
 from pathlib import Path
 
 import numpy as np
-import pywavefront
 
 from utils import save_glb
-from geometry2 import Patch
+
 
 def generate_sample_vis(file_path:str="vase-lion100K"):
 
