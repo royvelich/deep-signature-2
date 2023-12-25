@@ -38,8 +38,8 @@ if dataset_reg_and_unreg:
     # patch_generator_anc_pos_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
     # patch_generator_neg_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
 # patch_generator_neg = InverseFourierPatchGenerator(limit=limit, grid_size=grid_size, scale=0.5)
-parts = 100
-N = 1000 # how many triplet of patches to generate
+parts = 1
+N = 10000 # how many triplet of patches to generate
 
 neg_noise_low = 0.5
 neg_noise_high = 2.0
