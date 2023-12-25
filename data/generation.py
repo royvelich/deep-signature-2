@@ -12,7 +12,7 @@ from scipy.interpolate import Rbf
 # pyvista
 
 # surface-diff-inv
-from data.geometry2 import Patch, Torus
+from geometry2 import Patch, Torus
 
 # noise
 from noise import snoise3
