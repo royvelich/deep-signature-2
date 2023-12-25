@@ -77,7 +77,7 @@ for i in tqdm(range(N)):
 
 # Define the file path to save the triplets
 # file_path = "../generated_triplet_data/triplets_size_"+str(grid_size)+"_N_"+str(N)+"_all_monge_patch_normalized_pos_and_rot_non_uniform_sampling.pkl"
-file_path = "../triplets_size_"+str(grid_size)+"_N_"+str(N)+"_all_monge_patch_normalized_pos_and_rot_non_uniform_sampling.pkl"
+file_path = "../triplets_dataset/triplets_size_"+str(grid_size)+"_N_"+str(N)+"_all_monge_patch_non_uniform_sampling.pkl"
 
 if dataset_reg_and_unreg:
     # file_path = "../triplets_size_"+str(grid_size)+"_N_"+str(N)+"_all_monge_patch_normalized_pos_and_rot_80_per_fps_sampling_reg_and_unreg.pkl"
