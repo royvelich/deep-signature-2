@@ -188,20 +188,20 @@ class Patch(Mesh):
         # generate_mesh_vis(v=self._v, f=self._f)
 
 
-        x = torch.from_numpy(self._v[:,0])
-        y = torch.from_numpy(self._v[:,1])
-        z = torch.from_numpy(self._v[:,2])
+        # x = torch.from_numpy(self._v[:,0])
+        # y = torch.from_numpy(self._v[:,1])
+        # z = torch.from_numpy(self._v[:,2])
 
         # calculate second moments
-        xx = x ** 2
-        yy = y ** 2
-        zz = z ** 2
-        xy = x * y
-        yz = y * z
-        zx = z * x
-
-        # will be our input to the model
-        self.v_second_moments = torch.stack([x, y, z, xx, yy, zz, xy, yz, zx], axis=1)
+        # xx = x ** 2
+        # yy = y ** 2
+        # zz = z ** 2
+        # xy = x * y
+        # yz = y * z
+        # zx = z * x
+        #
+        # # will be our input to the model
+        # self.v_second_moments = torch.stack([x, y, z, xx, yy, zz, xy, yz, zx], axis=1)
 
     def plot(self, show_principal_directions: bool = True, show_grid_points: bool = False, grid_step: Optional[int] = None, scalar_field: Optional[ScalarField] = None):
         if scalar_field is ScalarField.K1:
