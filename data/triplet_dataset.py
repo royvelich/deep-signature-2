@@ -74,5 +74,5 @@ class CustomTripletDataset(Dataset):
                 edges = self.compute_edges_from_faces(batch[i][j].f)
                 # data.append(Data(x=batch[i][j].v_second_moments.to(torch.float32), pos=torch.tensor(batch[i][j].v, dtype=torch.float32), edge_index=edges))
                 # add face to enable supervised learning, can remove if using just unsup learning to decrease overhead
-                data.append(Data(x=batch[i][j].v_second_moments.to(torch.float32), pos=torch.tensor(batch[i][j].v, dtype=torch.float32), edge_index=edges, face=batch[i][j].f))
+                data.append(Data(x=batch[i][j].v.to(torch.float32), pos=torch.tensor(batch[i][j].v, dtype=torch.float32), edge_index=edges, face=batch[i][j].f))
         return Batch.from_data_list(data)
