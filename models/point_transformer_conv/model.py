@@ -120,14 +120,14 @@ class PointTransformerConvNet(pl.LightningModule):
         positive_output = positive_output[:negative_output.size(0)]
         loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
 
-        if batch_idx % 10 == 0: # can change it just to patches that have >N vertices
-            t = min(2, len(batch))
-            random_indices = np.random.choice(len(batch), t, replace=False)
-
-            for i in random_indices:
-                d1, d2, k1, k2 = igl.principal_curvature(np.array(batch[i].pos.cpu().numpy()), batch[i].face, radius=30)
-                output_supervised = self.forward(batch[i], global_pooling=False)
-                loss = loss + loss_gaussian_curvature_supervised(output_supervised, [torch.tensor(k1).to(device),torch.tensor(k2).to(device)])
+        # if batch_idx % 10 == 0: # can change it just to patches that have >N vertices
+        #     t = min(2, len(batch))
+        #     random_indices = np.random.choice(len(batch), t, replace=False)
+        #
+        #     for i in random_indices:
+        #         d1, d2, k1, k2 = igl.principal_curvature(np.array(batch[i].pos.cpu().numpy()), batch[i].face, radius=30)
+        #         output_supervised = self.forward(batch[i], global_pooling=False)
+        #         loss = loss + loss_gaussian_curvature_supervised(output_supervised, [torch.tensor(k1).to(device),torch.tensor(k2).to(device)])
 
         self.log('train_loss', loss.item(), on_step=False, on_epoch=True)
         return loss
