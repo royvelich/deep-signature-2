@@ -186,10 +186,10 @@ class QuadraticMonagePatchGenerator2(PatchGenerator):
 
         # calculated to be the index of the vertex with (x,y) closest to (0,0) and positive
         point0_0_index = int((curr_grid_size** 2 + curr_grid_size)/2)
-
+        curvature_limit = 3
         if k1==0:
-            k1 = np.random.uniform(low=-1, high=1)
-            k2 = np.random.uniform(low=-1, high=1)
+            k1 = np.random.uniform(low=-curvature_limit, high=curvature_limit)
+            k2 = np.random.uniform(low=-curvature_limit, high=curvature_limit)
 
         x_grid, y_grid = np.meshgrid(x, y)
         z_grid = k1 * x_grid ** 2 / 2 + k2 * y_grid ** 2 / 2
@@ -238,8 +238,8 @@ class PeakSaddleGenerator(PatchGenerator):
         if shape == "peak":
             z_grid = x_grid ** 2 + y_grid ** 2
         elif shape == "squashed_peak":
-            z_grid = 1.5*x_grid ** 2 + 0.5*y_grid ** 2
+            z_grid = 3*x_grid ** 2 + 0.3*y_grid ** 2
         else:
-            z_grid =  0.5*x_grid ** 2 - 1*y_grid ** 2
+            z_grid =  2*x_grid ** 2 - 0.3*y_grid ** 2
 
         return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample)

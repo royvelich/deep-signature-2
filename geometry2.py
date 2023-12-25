@@ -32,7 +32,8 @@ from torch_geometric.nn import fps
 # torch
 import torch
 
-from data.dataset_vis import generate_mesh_vis
+# from data.dataset_vis import generate_mesh_vis
+from data.non_uniform_sampling import non_uniform_sampling
 
 
 class PrincipalCurvature(Enum):
@@ -167,9 +168,13 @@ class Patch(Mesh):
         y = y_grid.ravel()
         z = z_grid.ravel()
 
+        # self._v = np.stack([x, y, z], axis=1)  # Use only x and y coordinates
+        # normalization needs to be before downsample
+        # self._v = normalize_points(self._v)
+        # x, y, z = self._v[:,0], self._v[:,1], self._v[:,2]
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
         if downsample:
-           indices = self.downsample(ratio=random.uniform(0.1,0.12))
+           indices = self.downsample_non_uniform(ratio=random.uniform(0.1,0.8))
         else:
             indices = np.arange(len(self._v))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
@@ -178,7 +183,6 @@ class Patch(Mesh):
         # self._f = igl.delaunay_triangulation(v)
         self._f = Delaunay(v).simplices
 
-        self._v = normalize_points(self._v)
 
         # self._d1, self._d2, self._k1, self._k2 = igl.principal_curvature(v=v, f=self._f)
         # generate_mesh_vis(v=self._v, f=self._f)
@@ -315,6 +319,11 @@ class Patch(Mesh):
     def downsample(self, ratio: float) -> Mesh:
         v = torch.tensor(data=self._v)
         indices = fps(x=v, ratio=ratio)
+        return indices
+
+    def downsample_non_uniform(self, ratio: float) -> Mesh:
+        v = torch.tensor(data=self._v)
+        indices = non_uniform_sampling(len(v),  ratio=ratio)
         return indices
 
     def _directional_derivative_at_point(self, point: np.ndarray, direction: np.ndarray, scalar_field: np.ndarray, h: float = 1e-8, max_attempts: int = 8) -> np.ndarray:

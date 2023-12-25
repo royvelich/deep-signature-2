@@ -16,7 +16,7 @@ import pickle
 dataset_reg_and_unreg = False
 device = torch.device("cuda" if is_available() else "cpu")
 
-grid_size = 100
+grid_size = 30
 limit = 1
 
 patch_generator_anc_pos = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=True)
@@ -31,8 +31,8 @@ if dataset_reg_and_unreg:
 # patch_generator_neg = InverseFourierPatchGenerator(limit=limit, grid_size=grid_size, scale=0.5)
 N = 5 # how many triplet of patches to generate
 
-neg_noise_low = 0.1
-neg_noise_high = 1.0
+neg_noise_low = 0.5
+neg_noise_high = 2.0
 
 triplets = []
 
@@ -67,7 +67,8 @@ for i in tqdm(range(N)):
         triplets.append((sample_anc, sample_pos, sample_neg, sample_anc_reg, sample_pos_reg, sample_neg_reg))
 
 # Define the file path to save the triplets
-file_path = "../triplets_size_"+str(grid_size)+"_N_"+str(N)+"_all_monge_patch_normalized_pos_and_rot_80_per_fps_sampling.pkl"
+# file_path = "../generated_triplet_data/triplets_size_"+str(grid_size)+"_N_"+str(N)+"_all_monge_patch_normalized_pos_and_rot_non_uniform_sampling.pkl"
+file_path = "../triplets_size_"+str(grid_size)+"_N_"+str(N)+"_all_monge_patch_normalized_pos_and_rot_non_uniform_sampling.pkl"
 
 if dataset_reg_and_unreg:
     # file_path = "../triplets_size_"+str(grid_size)+"_N_"+str(N)+"_all_monge_patch_normalized_pos_and_rot_80_per_fps_sampling_reg_and_unreg.pkl"

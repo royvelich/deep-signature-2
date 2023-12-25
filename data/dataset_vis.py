@@ -5,12 +5,11 @@ import numpy as np
 import pywavefront
 
 from utils import save_glb
-
+from geometry2 import Patch
 
 def generate_sample_vis(file_path:str="vase-lion100K"):
 
-    file_path = "../generated_triplet_data/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
-
+    file_path = "../generated_triplet_data/triplets_size_30_N_5_all_monge_patch_normalized_pos_and_rot_non_uniform_sampling.pkl"
     # Load the triplets from the file
     with open(file_path, 'rb') as f:
         data = pickle.load(f)
@@ -33,7 +32,7 @@ def generate_mesh_vis(v, f):
              path=Path("patch_generated.glb"))
 
 
-# generate_sample_vis()
+generate_sample_vis()
 
 
 
