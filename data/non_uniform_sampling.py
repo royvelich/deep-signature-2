@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 import matplotlib
 import torch
-from scipy.stats import norm
+from scipy.stats import norm, multivariate_normal
+
 
 # matplotlib.use('TkAgg')  # Use Tkinter as the backend; you can try other backends as well
 
@@ -45,7 +46,44 @@ def non_uniform_sampling(N, ratio):
 
     return sampled_items
 
+def generate_random_2d_gaussian_params(N):
+    mean = np.random.randint(0, N, size=2)
+    covariance = np.random.randint(1, N/2, size=2)
+    return mean, covariance
 
+def generate_random_2d_gaussian_params_set(N):
+    gaussian_params_set = []
+    num_gaussians = np.random.randint(50, 150)
+    for i in range(num_gaussians):
+        mean, covariance = generate_random_2d_gaussian_params(N)
+        gaussian_params_set.append((mean, covariance))
+    return gaussian_params_set
+
+def non_uniform_2d_sampling(grid_size, ratio):
+    gaussian_params_set = generate_random_2d_gaussian_params_set(grid_size)
+    K = int(grid_size * grid_size * ratio)
+
+    # Step 1: Define N indices
+    indices = np.arange(grid_size)
+    x, y = np.meshgrid(indices, indices)
+
+    # Step 2: Compose a 2D PDF by summing multiple 2D Gaussians
+    probabilities = np.zeros((grid_size, grid_size))
+    for mean, covariance in gaussian_params_set:
+        mvn = multivariate_normal(mean=mean, cov=np.diag(covariance))
+        pos = np.column_stack((x.ravel(), y.ravel()))
+        probabilities += mvn.pdf(pos).reshape(grid_size, grid_size)
+
+    # Normalize the composed PDF
+    probabilities /= probabilities.sum()
+
+    # Step 3: Sample K items without replacement based on the non-uniform 2D PDF
+    flat_indices = np.arange(grid_size * grid_size)
+    sampled_flat_indices = np.random.choice(flat_indices, size=K, replace=False, p=probabilities.flatten())
+    # sampled_items = np.column_stack(np.unravel_index(sampled_flat_indices, (grid_size, grid_size)))
+
+
+    return sampled_flat_indices
 
 def generate_random_gaussian_param(N):
     mean = np.random.randint(0, N)
@@ -88,3 +126,7 @@ def vis_example():
     plt.show()
 
 # vis_example()
+# N = 100
+# ratio = 0.2
+# sampled_items_2d = non_uniform_2d_sampling(N, ratio)
+# print(sampled_items_2d)

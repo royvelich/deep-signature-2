@@ -16,10 +16,10 @@ import pickle
 
 from utils import save_glb, fix_pathologies
 
-grid_size = 30
+grid_size = 300
 limit = 1
 
-shape_type = "peak"
+shape_type = "peak3_non_uniform"
 downsample = True
 
 meshes_generator = PeakSaddleGenerator(limit=limit, grid_size=grid_size, downsample=downsample)
@@ -30,7 +30,7 @@ for i in tqdm(range(10)):
 
 
 
-    path = "../mesh_different_sampling/non_uniform/"+shape_type+str(grid_size)
+    path = "../mesh_different_sampling/non_uniform/same_ratio/"+shape_type+str(grid_size)
     file_path = Path(path+".glb")
 
 

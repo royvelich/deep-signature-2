@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import random
+from math import sqrt
 from pathlib import Path
 from typing import List, Tuple, Optional, Dict
 from enum import Enum
@@ -33,7 +34,7 @@ from torch_geometric.nn import fps
 import torch
 
 # from data.dataset_vis import generate_mesh_vis
-from data.non_uniform_sampling import non_uniform_sampling
+from data.non_uniform_sampling import non_uniform_sampling, non_uniform_2d_sampling
 
 
 class PrincipalCurvature(Enum):
@@ -173,8 +174,10 @@ class Patch(Mesh):
         # self._v = normalize_points(self._v)
         # x, y, z = self._v[:,0], self._v[:,1], self._v[:,2]
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
+        # ratio = 0.5
+        ratio = random.uniform(0.003,0.008)
         if downsample:
-           indices = self.downsample_non_uniform(ratio=random.uniform(0.1,0.8))
+           indices = self.downsample_non_uniform(ratio=ratio)
         else:
             indices = np.arange(len(self._v))
         self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y coordinates
@@ -323,7 +326,7 @@ class Patch(Mesh):
 
     def downsample_non_uniform(self, ratio: float) -> Mesh:
         v = torch.tensor(data=self._v)
-        indices = non_uniform_sampling(len(v),  ratio=ratio)
+        indices = non_uniform_2d_sampling(int(sqrt(len(v))),  ratio=ratio)
         return indices
 
     def _directional_derivative_at_point(self, point: np.ndarray, direction: np.ndarray, scalar_field: np.ndarray, h: float = 1e-8, max_attempts: int = 8) -> np.ndarray:

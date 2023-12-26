@@ -237,9 +237,12 @@ class PeakSaddleGenerator(PatchGenerator):
 
         if shape == "peak":
             z_grid = x_grid ** 2 + y_grid ** 2
+        elif shape == "peak2":
+            z_grid = 7*x_grid ** 2 + y_grid ** 2
+
         elif shape == "squashed_peak":
             z_grid = 3*x_grid ** 2 + 0.3*y_grid ** 2
         else:
-            z_grid =  2*x_grid ** 2 - 0.3*y_grid ** 2
+            z_grid = 0.5*x_grid ** 2 - 2*y_grid ** 2
 
         return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample)

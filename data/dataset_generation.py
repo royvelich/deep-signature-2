@@ -25,7 +25,7 @@ import pickle
 dataset_reg_and_unreg = False
 device = torch.device("cuda" if is_available() else "cpu")
 
-grid_size = 30
+grid_size = 300
 limit = 1
 
 patch_generator_anc_pos = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=True)
@@ -39,7 +39,7 @@ if dataset_reg_and_unreg:
     # patch_generator_neg_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
 # patch_generator_neg = InverseFourierPatchGenerator(limit=limit, grid_size=grid_size, scale=0.5)
 parts = 1
-N = 10000 # how many triplet of patches to generate
+N = 30000 # how many triplet of patches to generate
 
 neg_noise_low = 0.5
 neg_noise_high = 2.0
