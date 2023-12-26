@@ -32,8 +32,8 @@ def map_patch(model, mesh_name:str="vase-lion100K"):
 
 
 def map_patches_to_2d():
-    model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\images\pointtransformer\width128_trained_reg_plus_unreg_patches_k1k2\grid_size_30_reg_patches\model_point_transformer_3_layers_width_128-epoch=29.ckpt"
-    # model_path = "C:/Users\galyo\Downloads\model_point_transformer_3_layers_width_128_w_sup-epoch=19.ckpt"
+    # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\images\pointtransformer\width128_trained_reg_plus_unreg_patches_k1k2\grid_size_30_reg_patches\model_point_transformer_3_layers_width_128-epoch=29.ckpt"
+    model_path = "C:/Users\galyo\Downloads\model_point_transformer_3_layers_width_128_train_non_uniform_samples-epoch=39.ckpt"
     model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
     model.eval()
     const_to_improve_aspect_ratio = 10
@@ -68,8 +68,8 @@ def map_patches_to_2d():
     # output_points5 = output_points5.reshape(-1, 2)
     # Plotting for visualization
     # aspect ratio true to get a square figure
-    plt.scatter(output_points[:, 0]*const_to_improve_aspect_ratio, output_points[:, 1], c='blue', label='Peak Points - x ** 2 + y ** 2')
-    plt.scatter(output_points2[:, 0]*const_to_improve_aspect_ratio, output_points2[:, 1], c='red', label='Saddle Points2 - 2*x ** 2 - 0.3*y ** 2')
+    plt.scatter(output_points[:, 0], output_points[:, 1], c='blue', label='Peak Points - x ** 2 + y ** 2')
+    plt.scatter(output_points2[:, 0], output_points2[:, 1], c='red', label='Saddle Points2 - 2*x ** 2 - 0.3*y ** 2')
     # plt.scatter(output_points3[:, 0], output_points3[:, 1], c='green', label='Squashed Peak Points')
     # plt.scatter(output_points4[:, 0], output_points4[:, 1], c='yellow', label='Saddle Points - 0.5*x ** 2 - y_grid ** 2')
     # plt.scatter(output_points5[:, 0], output_points5[:, 1], c='black', label='Peak Points2')
