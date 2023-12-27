@@ -19,12 +19,12 @@ from utils import save_glb, fix_pathologies
 grid_size = 300
 limit = 1
 
-shape_type = "peak3_non_uniform"
+shape_type = "peak3"
 downsample = True
 
 meshes_generator = PeakSaddleGenerator(limit=limit, grid_size=grid_size, downsample=downsample)
 output = []
-for i in tqdm(range(10)):
+for i in tqdm(range(30)):
     mesh = meshes_generator.generate(grid_size_delta=0, shape=shape_type)
     # mesh.set_faces(fix_pathologies(mesh.v, mesh.f))
 
