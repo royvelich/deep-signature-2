@@ -128,6 +128,11 @@ def contrastive_tuplet_loss(a,p,n):
     return loss
     # return torch.log(1 + torch.exp(torch.linalg.matrix_norm(a-p)**2 - torch.linalg.matrix_norm(a-n)**2))/a.size(0)
 
+def k1_greater_k2_loss(output):
+    k1 = output[:,0]
+    k2 = output[:,1]
+    return torch.exp(k2-k1).mean()
+
 def loss_contrastive_plus_pc(a,p,n):
     return (1/a.size(0))*(contrastive_tuplet_loss(a,p,n) + calculate_pearson_loss_vectorized(torch.stack([a,p,n], dim=0)))
 
@@ -149,6 +154,9 @@ def loss__pearson_correlation_k1_k2(a,p,n, device='cpu'):
 
 def loss_contrastive_plus_pearson_correlation_k1_k2(a,p,n, device='cpu'):
     return (5*contrastive_tuplet_loss(a,p,n) +0.2*calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device))
+
+def loss_contrastive_plus_pearson_correlation_k1__greater_k2(a,p,n, device='cpu'):
+    return (5*contrastive_tuplet_loss(a,p,n) +0.2*calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device) + 0.1*k1_greater_k2_loss(torch.cat([a,p,n], dim=1).T))
 
 def loss_gaussian_curvature_supervised(output, principal_curvatures):
     return (1/output.size(0))*torch.norm(output[:,0]*output[:,1] - principal_curvatures[0]*principal_curvatures[1])**2

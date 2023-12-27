@@ -10,7 +10,8 @@ import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2, loss__pearson_correlation_k1_k2, \
-    loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised, contrastive_tuplet_loss
+    loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised, contrastive_tuplet_loss, \
+    loss_contrastive_plus_pearson_correlation_k1__greater_k2
 from vars import LR, WEIGHT_DECAY
 from visualize.vis_utils import log_visualization
 
@@ -75,7 +76,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
         self.decoder = MLP(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=2, activation=self.activation)
 
-        self.loss_func = contrastive_tuplet_loss
+        self.loss_func = loss_contrastive_plus_pearson_correlation_k1__greater_k2
         # self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
 
 
