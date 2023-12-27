@@ -39,6 +39,7 @@ def main_loop():
 
     # Load the triplets from the file
     with open(file_path, 'rb') as f:
+        f.seek(0)  # Move the file pointer to the beginning of the file
         data = pickle.load(f)
 
     if combine_reg_and_non_reg_patches:
