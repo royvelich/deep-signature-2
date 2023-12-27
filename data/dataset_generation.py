@@ -1,3 +1,4 @@
+import argparse
 import random
 
 import torch
@@ -22,11 +23,28 @@ from generation import QuadraticMonagePatchGenerator2, SimplexNoisePatchGenerato
 from tqdm import tqdm
 import pickle
 
+
+
+
 dataset_reg_and_unreg = False
 device = torch.device("cuda" if is_available() else "cpu")
 
-grid_size = 300
-limit = 1
+parser = argparse.ArgumentParser(description='Generate triplets of patches')
+parser.add_argument('-N', type=int, default=10000, help='Number of triplets to generate')
+parser.add_argument('-grid_size', type=int, default=300, help='Number of triplets to generate')
+parser.add_argument('-parts', type=int, default=1, help='Number of triplets to generate')
+parser.add_argument('-limit', type=int, default=1, help='Number of triplets to generate')
+parser.add_argument('-neg_noise_low', type=float, default=0.5, help='Number of triplets to generate')
+parser.add_argument('-neg_noise_high', type=float, default=2.0, help='Number of triplets to generate')
+
+# Parse the command-line arguments
+args = parser.parse_args()
+N = args.N
+parts = args.parts
+grid_size = args.grid_size
+limit = args.limit
+neg_noise_low = args.neg_noise_low
+neg_noise_high = args.neg_noise_high
 
 patch_generator_anc_pos = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=True)
 patch_generator_neg = QuadraticMonagePatchGenerator2(limit=limit, grid_size=grid_size, downsample=True)
@@ -38,11 +56,10 @@ if dataset_reg_and_unreg:
     # patch_generator_anc_pos_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
     # patch_generator_neg_reg = TorusGenerator(limit=limit, grid_size=grid_size, downsample=False)
 # patch_generator_neg = InverseFourierPatchGenerator(limit=limit, grid_size=grid_size, scale=0.5)
-parts = 1
-N = 10000 # how many triplet of patches to generate
 
-neg_noise_low = 0.5
-neg_noise_high = 2.0
+
+
+
 
 for i in tqdm(range(parts)):
     triplets = []
