@@ -53,7 +53,7 @@ def generate_random_2d_gaussian_params(N):
 
 def generate_random_2d_gaussian_params_set(N):
     gaussian_params_set = []
-    num_gaussians = np.random.randint(150, 200)
+    num_gaussians = np.random.randint(250, 300)
     for i in range(num_gaussians):
         mean, covariance = generate_random_2d_gaussian_params(N)
         gaussian_params_set.append((mean, covariance))
