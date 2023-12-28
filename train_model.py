@@ -5,7 +5,7 @@ import torch.cuda
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from models.point_transformer_conv.model import PointTransformerConvNet
 from utils import init_wandb, custom_euclidean_transform
@@ -83,13 +83,20 @@ def main_loop():
     # model.eval()
 
     # training
-    logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay)
+    logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
         filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'_train_non_uniform_samples_without_k1_k2_loss-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=5
+    )
+    early_stop_callback = EarlyStopping(
+        monitor='val_loss',
+        min_delta=0.00,
+        patience=3,
+        verbose=False,
+        mode='min'
     )
     # visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
     trainer = Trainer(num_nodes=1,
@@ -100,7 +107,8 @@ def main_loop():
                       max_epochs=max_epochs,
                       logger=logger,
                       # callbacks=[visualizer_callback, checkpoint_callback])
-                      callbacks=[checkpoint_callback])
+                      callbacks=[checkpoint_callback, early_stop_callback]
+                      )
     trainer.fit(model, train_dataloaders=train_loader,val_dataloaders=val_loader)
 
 if __name__ == "__main__":

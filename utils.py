@@ -147,7 +147,7 @@ def calculate_pearson_corr_matrix(k1, k2, dk1_1, dk1_2, dk2_1, dk2_2, dk1_22, dk
     return pearson_corr_matrix
 
 
-def init_wandb(lr=0.001,max_epochs=100, weight_decay=0.001):
+def init_wandb(lr=0.001,max_epochs=100, weight_decay=0.001, dataset_path = ""):
     # Set a custom temporary directory for WandB
     wandb_dir = "./wandb_tmp_dir"
     os.makedirs(wandb_dir, exist_ok=True)
@@ -159,8 +159,7 @@ def init_wandb(lr=0.001,max_epochs=100, weight_decay=0.001):
                config={
                    "learning_rate": lr,
                    "architecture": "Point Transformer Net Mean pool",
-                   "dataset": "100000 triplets of patches anc,pos,neg - monge patches fps sampled +"
-                              "10000 triplets - regular sampled",
+                   "dataset": dataset_path,
                    "epochs": max_epochs,
                    "weight_decay": weight_decay
                })
