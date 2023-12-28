@@ -23,9 +23,11 @@ def main_loop():
     lr = LR
     weight_decay = WEIGHT_DECAY
     num_workers = 1
-    combine_reg_and_non_reg_patches = False
+    combine_reg_and_non_reg_patches = True
+    server_dir = "/home/gal.yona/deep-signature-2/"
     if torch.cuda.is_available():
-        file_path = "/home/gal.yona/deep-signature-2/triplets_dataset/triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
+        data_file_name = "triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
+        file_path = server_dir + "triplets_dataset/" + data_file_name
         num_workers = 1
         # combine_reg_and_non_reg_patches = True
 
@@ -43,11 +45,16 @@ def main_loop():
         data = pickle.load(f)
 
     if combine_reg_and_non_reg_patches:
-        file_path2 = "/home/gal.yona/deep-signature-2/triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
+        file_path2 = server_dir + "triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
         with open(file_path2, 'rb') as f:
             data2 = pickle.load(f)
+        file_path3 = server_dir + "triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
+        with open(file_path3, 'rb') as f:
+            data3 = pickle.load(f)
 
-        data = data + data2
+
+
+        data = data + data2 + data3
 
     # Create custom dataset
     custom_dataset = CustomTripletDataset(data)
@@ -89,7 +96,7 @@ def main_loop():
         filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'_train_non_uniform_samples_without_k1_k2_loss-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
-        every_n_epochs=5
+        every_n_epochs=3
     )
     early_stop_callback = EarlyStopping(
         monitor='val_loss',

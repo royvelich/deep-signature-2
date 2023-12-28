@@ -269,7 +269,7 @@ def compute_patches_from_mesh(v, f, k=10):
     distances, indices = nbrs.kneighbors(v)
     normalized_input = []
     for i in range(len(v)):
-        normalized_input.append(normalize_points(vertices=v[indices[i]]))
+        normalized_input.append(normalize_points(vertices=v[indices[i]], center_point=v[i]))
 
 
     # Compute faces for each patch in normalized_input, use f only faces containing vertices from each patch
@@ -365,7 +365,7 @@ def is_vertex_in_boundary(f, vertex_index, faces_threshold=4):
     return True
 
 
-def normalize_points(vertices):
+def normalize_points(vertices, center_point):
     """
     Normalize a set of 3D vertices by translation and rotation according to the covariance matrix principal directions.
 
@@ -376,10 +376,10 @@ def normalize_points(vertices):
         numpy.ndarray: Normalized vertices of shape (num_points, 3).
     """
     # Step 1: Compute the centroid
-    centroid = np.mean(vertices, axis=0)
+    # centroid = np.mean(vertices, axis=0)
 
     # Step 2: Compute the covariance matrix
-    centered_points = vertices - centroid
+    centered_points = vertices - center_point
     covariance_matrix = np.cov(centered_points, rowvar=False)
 
     # Step 3: Find the principal directions (eigenvectors)
