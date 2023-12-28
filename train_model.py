@@ -48,13 +48,13 @@ def main_loop():
         file_path2 = server_dir + "triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
         with open(file_path2, 'rb') as f:
             data2 = pickle.load(f)
-        file_path3 = server_dir + "triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
-        with open(file_path3, 'rb') as f:
-            data3 = pickle.load(f)
+        # file_path3 = server_dir + "triplets_data_size_50_N_100000_all_monge_patch_normalized_pos_and_rot.pkl"
+        # with open(file_path3, 'rb') as f:
+        #     data3 = pickle.load(f)
 
 
 
-        data = data + data2 + data3
+        data = data + data2
 
     # Create custom dataset
     custom_dataset = CustomTripletDataset(data)
@@ -90,7 +90,7 @@ def main_loop():
     # model.eval()
 
     # training
-    logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path)
+    logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
         filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'_train_non_uniform_samples_without_k1_k2_loss-{epoch:02d}',
