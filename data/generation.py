@@ -2,8 +2,10 @@
 from abc import ABC, abstractmethod
 
 # numpy
+from typing import Tuple
+
 import numpy as np
-from numpy import vectorize
+from numpy import vectorize, ndarray
 
 # scipy
 from scipy.ndimage import gaussian_filter
@@ -175,7 +177,8 @@ class QuadraticMonagePatchGenerator2(PatchGenerator):
         super().__init__(limit=limit, grid_size=grid_size)
         self.downsample = downsample
 
-    def generate(self, k1=0, k2=0,grid_size_delta=0) -> Patch:
+    def generate(self, k1=0, k2=0,grid_size_delta=0) -> tuple[
+        Patch, ndarray | int | float | complex, ndarray | int | float | complex, int]:
         if grid_size_delta != 0:
             curr_grid_size = self._grid_size+grid_size_delta
         else:
@@ -196,6 +199,36 @@ class QuadraticMonagePatchGenerator2(PatchGenerator):
 
         return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample), k1, k2,point0_0_index
 
+class QuadraticMonageParabolicPlanarPatchGenerator(PatchGenerator):
+    def __init__(self, limit: float, grid_size: int, downsample: bool = True):
+        super().__init__(limit=limit, grid_size=grid_size)
+        self.downsample = downsample
+
+    def generate(self, k1=0, k2=0) -> tuple[Patch, ndarray | int | float | complex, ndarray | int | float | complex, int]:
+        curr_grid_size = self._grid_size
+
+        x = np.linspace(-self._limit, self._limit, curr_grid_size)
+        y = np.linspace(-self._limit, self._limit, curr_grid_size)
+
+        # calculated to be the index of the vertex with (x,y) closest to (0,0) and positive
+        point0_0_index = int((curr_grid_size** 2 + curr_grid_size)/2)
+        curvature_limit = 3
+        k1_or_k2_zero = np.random.uniform(0,1)
+
+        if k1_or_k2_zero < 0.35:
+            k1 = np.random.uniform(low=-curvature_limit, high=curvature_limit)
+            k2 = 0
+        elif k1_or_k2_zero < 0.7:
+            k1 = 0
+            k2 = np.random.uniform(low=-curvature_limit, high=curvature_limit)
+        else:
+            k1 = 0
+            k2 = 0
+
+        x_grid, y_grid = np.meshgrid(x, y)
+        z_grid = k1 * x_grid ** 2 / 2 + k2 * y_grid ** 2 / 2
+
+        return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample), k1, k2,point0_0_index
 
 class TorusGenerator(PatchGenerator):
     def __init__(self, limit: float, grid_size: int, downsample: bool = True):
