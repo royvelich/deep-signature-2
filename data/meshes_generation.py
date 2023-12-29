@@ -23,12 +23,12 @@ meshes_num = 1
 shape_type = "peak"
 downsample = True
 
-# meshes_generator = PeakSaddleGenerator(limit=limit, grid_size=grid_size, downsample=downsample)
-meshes_generator = QuadraticMonageParabolicPlanarPatchGenerator(limit=limit, grid_size=grid_size, downsample=True)
+meshes_generator = PeakSaddleGenerator(limit=limit, grid_size=grid_size, downsample=downsample)
+# meshes_generator = QuadraticMonageParabolicPlanarPatchGenerator(limit=limit, grid_size=grid_size, downsample=True)
 output = []
 for i in tqdm(range(meshes_num)):
-    # mesh = meshes_generator.generate(grid_size_delta=0, shape=shape_type)
-    mesh, _, _, _ = meshes_generator.generate()
+    mesh = meshes_generator.generate(grid_size_delta=0, shape=shape_type)
+    # mesh, _, _, _ = meshes_generator.generate()
     # mesh.set_faces(fix_pathologies(mesh.v, mesh.f))
 
 

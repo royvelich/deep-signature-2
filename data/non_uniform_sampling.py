@@ -48,7 +48,7 @@ def non_uniform_sampling(N, ratio):
 
 def generate_random_2d_gaussian_params(N):
     mean = np.random.randint(0, N, size=2)
-    covariance = np.random.randint(1, N/2, size=2)
+    covariance = np.random.randint(N/30, N/2, size=2)
     return mean, covariance
 
 def generate_random_2d_gaussian_params_set(N):
