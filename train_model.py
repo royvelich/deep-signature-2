@@ -48,7 +48,7 @@ def main_loop():
         file_path2 = server_dir + "triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
         with open(file_path2, 'rb') as f:
             data2 = pickle.load(f)
-        file_path3 = server_dir + "triplets_dataset/triplets_size_300_N_1000_all_monge_patch_non_uniform_sampling_with_parabolic_patches"
+        file_path3 = server_dir + "triplets_dataset/triplets_size_300_N_1000_all_monge_patch_non_uniform_sampling_with_parabolic_patches.pkl"
         with open(file_path3, 'rb') as f:
             data3 = pickle.load(f)
 
