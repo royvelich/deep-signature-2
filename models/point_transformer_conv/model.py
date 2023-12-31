@@ -82,7 +82,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
 
     def forward(self, data, global_pooling=True):
-        x = data.pos # x,y,z coordinates of each point
+        x = data.x # x,y,z coordinates of each point
         # edge_index = radius_graph(x, r=0.5, batch=None, loop=True, max_num_neighbors=32)
 
         # Apply initial embedding
@@ -105,6 +105,9 @@ class PointTransformerConvNet(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
+
+        batch.x = self.apply_random_rotations_to_batch(batch)
+        batch.x = self.append_moments(batch.x)
 
         output = self.forward(batch)
         device = output.device
@@ -135,7 +138,8 @@ class PointTransformerConvNet(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-
+        batch.x = self.apply_random_rotations_to_batch(batch)
+        batch.x = self.append_moments(batch.x)
         output = self.forward(batch)
         device = output.device
 
@@ -206,3 +210,36 @@ class PointTransformerConvNet(pl.LightningModule):
         # Step 2: Normalize the features to have zero mean and unit variance
         normalized_features = (features - torch.unsqueeze(mean_values,dim=1)) / torch.unsqueeze(std_values,dim=1)
         return normalized_features
+
+    def append_moments(self, x: torch.Tensor) -> torch.Tensor:
+        second_order_moments = torch.einsum('bi,bj->bij', x, x)
+
+        # Get the upper triangular indices
+        rows, cols = torch.triu_indices(second_order_moments.shape[1], second_order_moments.shape[2])
+
+        # Extract the upper triangular part for each MxM matrix
+        upper_triangular_values = second_order_moments[:, rows, cols]
+
+        appended_x = torch.cat((x, upper_triangular_values.view(x.shape[0], -1)), dim=1)
+        return appended_x
+
+
+    def random_rotation(self, x: torch.Tensor) -> torch.Tensor:
+        # Generate a random rotation matrix
+        rotation_matrix = torch.randn((3, 3), device=x.device)
+        # Make sure the rotation matrix is orthogonal
+        q, r = torch.linalg.qr(rotation_matrix)
+        d = torch.diag(r).sign()
+        d = torch.diag_embed(d)
+        rotation_matrix = torch.mm(q, d)
+
+        # Apply the rotation to the input features
+        rotated_x = torch.mm(x, rotation_matrix)
+        return rotated_x
+
+    def apply_random_rotations_to_batch(self, batch):
+        rotated_x = []
+        for i in range(len(batch)):
+            rotated_x.append(self.random_rotation(batch[i].x))
+        rotated_x = torch.cat(rotated_x, dim=0)
+        return rotated_x

@@ -23,13 +23,13 @@ def main_loop():
     lr = LR
     weight_decay = WEIGHT_DECAY
     num_workers = 1
-    combine_reg_and_non_reg_patches = True
+    combine_reg_and_non_reg_patches = False
     server_dir = "/home/gal.yona/deep-signature-2/"
     if torch.cuda.is_available():
         data_file_name = "triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
         file_path = server_dir + "triplets_dataset/" + data_file_name
         num_workers = 1
-        # combine_reg_and_non_reg_patches = True
+        combine_reg_and_non_reg_patches = True
 
     else:
         # file_path = "triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
@@ -43,7 +43,8 @@ def main_loop():
     with open(file_path, 'rb') as f:
         f.seek(0)  # Move the file pointer to the beginning of the file
         data = pickle.load(f)
-
+    file_path2 = ''
+    file_path3 = ''
     if combine_reg_and_non_reg_patches:
         file_path2 = server_dir + "triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
         with open(file_path2, 'rb') as f:
@@ -81,7 +82,7 @@ def main_loop():
     # model = STNkd(k=9)
     num_layers = 3
     hidden_channels = 128
-    in_channels = 3
+    in_channels = 9
     out_channels = 2
     model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_layers=num_layers)
     # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"

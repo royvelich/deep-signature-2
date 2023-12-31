@@ -261,15 +261,45 @@ def get_faces_containing_vertices(f, param):
             faces.append(face_curr)
     return faces
 
+def calculate_bounding_box(vertices):
+    # Initialize min and max values for each dimension
+    min_values = np.inf * np.ones(3)
+    max_values = -np.inf * np.ones(3)
 
-def compute_patches_from_mesh(v, f, k=10):
-    nbrs = NearestNeighbors(n_neighbors=k, algorithm='kd_tree').fit(v)
+    # Iterate through each vertex
+    for vertex in vertices:
+        # Update min and max values for each dimension
+        min_values = np.minimum(min_values, vertex)
+        max_values = np.maximum(max_values, vertex)
 
-    # Find k-nearest neighbors
-    distances, indices = nbrs.kneighbors(v)
+    # Calculate the bounding box size
+    bounding_box_size = max_values - min_values
+
+    # Return the bounding box as a tuple of (min_point, max_point) and size
+    return tuple(min_values), tuple(max_values), tuple(bounding_box_size)
+
+def calculate_radius(vertices):
+    # Calculate the bounding box and size
+    min_point, max_point, bounding_box_size = calculate_bounding_box(vertices)
+
+    # Use the maximum dimension of the bounding box as the radius
+    radius = max(bounding_box_size) / 10.0
+
+    return radius
+
+def compute_patches_from_mesh(v, f, k=10, is_radius=False):
+    if is_radius:
+        radius = calculate_radius(v)
+        nbrs = NearestNeighbors(radius=radius, algorithm='kd_tree').fit(v)
+        indices = nbrs.radius_neighbors(v, return_distance=False)
+
+    else:
+        nbrs = NearestNeighbors(n_neighbors=k, algorithm='kd_tree').fit(v)
+        # Find k-nearest neighbors
+        distances, indices = nbrs.kneighbors(v)
     normalized_input = []
     for i in range(len(v)):
-        normalized_input.append(normalize_points(vertices=v[indices[i]], center_point=v[i]))
+        normalized_input.append(normalize_points_just_translation(vertices=v[indices[i]], center_point=v[i]))
 
 
     # Compute faces for each patch in normalized_input, use f only faces containing vertices from each patch
@@ -365,7 +395,7 @@ def is_vertex_in_boundary(f, vertex_index, faces_threshold=4):
     return True
 
 
-def normalize_points(vertices, center_point):
+def normalize_points_translation_and_rotation(vertices, center_point):
     """
     Normalize a set of 3D vertices by translation and rotation according to the covariance matrix principal directions.
 
@@ -403,3 +433,28 @@ def normalize_points(vertices, center_point):
 
 
     return normalized_points
+
+def normalize_points_just_translation(vertices, center_point):
+    """
+    Normalize a set of 3D vertices by translation and rotation according to the covariance matrix principal directions.
+
+    Args:
+        vertices (numpy.ndarray): 3D array of shape (num_points, 3) representing the input vertices.
+
+    Returns:
+        numpy.ndarray: Normalized vertices of shape (num_points, 3).
+    """
+    # Step 1: Compute the centroid
+    # centroid = np.mean(vertices, axis=0)
+
+    # Step 2: Compute the covariance matrix
+    centered_points = vertices - center_point
+
+
+    #
+    #
+    # # Step 4: Normalize the points
+    # normalized_points = np.dot(centered_points, normalized_eigenvectors)
+
+
+    return centered_points
