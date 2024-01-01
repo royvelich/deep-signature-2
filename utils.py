@@ -283,7 +283,7 @@ def calculate_radius(vertices):
     min_point, max_point, bounding_box_size = calculate_bounding_box(vertices)
 
     # Use the maximum dimension of the bounding box as the radius
-    radius = max(bounding_box_size) / 10.0
+    radius = max(bounding_box_size) / 5.0
 
     return radius
 
@@ -299,6 +299,7 @@ def compute_patches_from_mesh(v, f, k=10, is_radius=False):
         distances, indices = nbrs.kneighbors(v)
     normalized_input = []
     for i in range(len(v)):
+        # normalized_input.append(v[indices[i]])
         normalized_input.append(normalize_points_just_translation(vertices=v[indices[i]], center_point=v[i]))
 
 
@@ -431,6 +432,45 @@ def normalize_points_translation_and_rotation(vertices, center_point):
     # # Step 4: Normalize the points
     # normalized_points = np.dot(centered_points, normalized_eigenvectors)
 
+
+    return normalized_points
+
+
+def normalize_points_translation_and_rotation_torch(vertices, center_point):
+    """
+    Normalize a set of 3D vertices by translation and rotation according to the covariance matrix principal directions.
+
+    Args:
+        vertices (torch.Tensor): 3D tensor of shape (num_points, 3) representing the input vertices.
+        center_point (torch.Tensor): 1D tensor of shape (3,) representing the center point.
+
+    Returns:
+        torch.Tensor: Normalized vertices of shape (num_points, 3).
+    """
+    # Step 1: Compute the centroid
+    # centroid = torch.mean(vertices, dim=0)
+
+    # Step 2: Compute the covariance matrix
+    centered_points = vertices - center_point
+    covariance_matrix = torch.matmul(centered_points.t(), centered_points) / centered_points.size(0)
+
+    # Step 3: Find the principal directions (eigenvectors)
+    eigenvalues, eigenvectors = torch.eig(covariance_matrix, eigenvectors=True)
+    # Sort eigenvalues in descending order
+    _, sorted_indices = torch.sort(eigenvalues[:, 0], descending=True)
+    eigenvectors = eigenvectors[:, sorted_indices]
+    normalized_eigenvectors = eigenvectors / torch.norm(eigenvectors, dim=0)
+    # normalized_eigenvectors = eigenvectors / torch.sqrt(eigenvalues)
+    # Rotation matrix to align with principal axes
+    rotation_matrix = normalized_eigenvectors
+
+    # Apply rotation to the centered point cloud
+    normalized_points = torch.matmul(centered_points, rotation_matrix)
+
+    #
+    #
+    # # Step 4: Normalize the points
+    # normalized_points = torch.matmul(centered_points, normalized_eigenvectors)
 
     return normalized_points
 

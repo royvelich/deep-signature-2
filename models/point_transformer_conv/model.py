@@ -13,6 +13,7 @@ from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised, contrastive_tuplet_loss, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2, loss_contrastive_plus_k1__greater_k2, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss
+from utils import normalize_points_translation_and_rotation, normalize_points_translation_and_rotation_torch
 from vars import LR, WEIGHT_DECAY
 from visualize.vis_utils import log_visualization
 
@@ -82,6 +83,8 @@ class PointTransformerConvNet(pl.LightningModule):
 
 
     def forward(self, data, global_pooling=True):
+
+        # x = self.append_moments(data.x) # x,y,z,xx,xy,xz,yy,yz,zz coordinates of each point
         x = data.x # x,y,z coordinates of each point
         # edge_index = radius_graph(x, r=0.5, batch=None, loop=True, max_num_neighbors=32)
 
@@ -105,8 +108,8 @@ class PointTransformerConvNet(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-
-        batch.x = self.apply_random_rotations_to_batch(batch)
+        batch.x = self.normalize_patches(batch)
+        # batch.x = self.apply_random_rotations_to_batch(batch)
         batch.x = self.append_moments(batch.x)
 
         output = self.forward(batch)
@@ -138,7 +141,8 @@ class PointTransformerConvNet(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        batch.x = self.apply_random_rotations_to_batch(batch)
+        batch.x = self.normalize_patches(batch)
+        # batch.x = self.apply_random_rotations_to_batch(batch)
         batch.x = self.append_moments(batch.x)
         output = self.forward(batch)
         device = output.device
@@ -241,5 +245,13 @@ class PointTransformerConvNet(pl.LightningModule):
         rotated_x = []
         for i in range(len(batch)):
             rotated_x.append(self.random_rotation(batch[i].x))
+        rotated_x = torch.cat(rotated_x, dim=0)
+        return rotated_x
+
+    def normalize_patches(self, batch):
+        rotated_x = []
+        for i in range(len(batch)):
+            mid_point = torch.argmin(torch.abs(batch[i].x[:,0])+torch.abs(batch[i].x[:,1]), dim=0)
+            rotated_x.append(normalize_points_translation_and_rotation_torch(batch[i].x, batch[i].x[mid_point]))
         rotated_x = torch.cat(rotated_x, dim=0)
         return rotated_x
