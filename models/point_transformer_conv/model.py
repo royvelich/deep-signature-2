@@ -13,7 +13,8 @@ from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised, contrastive_tuplet_loss, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2, loss_contrastive_plus_k1__greater_k2, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss
-from utils import normalize_points_translation_and_rotation, normalize_points_translation_and_rotation_torch
+from utils import normalize_points_translation_and_rotation, \
+    torch_normalize_points_translation_and_rotation
 from vars import LR, WEIGHT_DECAY
 from visualize.vis_utils import log_visualization
 
@@ -251,7 +252,8 @@ class PointTransformerConvNet(pl.LightningModule):
     def normalize_patches(self, batch):
         rotated_x = []
         for i in range(len(batch)):
-            mid_point = torch.argmin(torch.abs(batch[i].x[:,0])+torch.abs(batch[i].x[:,1]), dim=0)
-            rotated_x.append(normalize_points_translation_and_rotation_torch(batch[i].x, batch[i].x[mid_point]))
+            # take the point with the smallest distance to the origin as the center
+            mid_point = torch.argmin(torch.sqrt((batch[i].x[:,0])**2+(batch[i].x[:,1])**2), dim=0)
+            rotated_x.append(torch_normalize_points_translation_and_rotation(batch[i].x, batch[i].x[mid_point]))
         rotated_x = torch.cat(rotated_x, dim=0)
         return rotated_x

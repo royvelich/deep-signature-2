@@ -436,7 +436,7 @@ def normalize_points_translation_and_rotation(vertices, center_point):
     return normalized_points
 
 
-def normalize_points_translation_and_rotation_torch(vertices, center_point):
+def torch_normalize_points_translation_and_rotation(vertices, center_point):
     """
     Normalize a set of 3D vertices by translation and rotation according to the covariance matrix principal directions.
 
@@ -455,9 +455,11 @@ def normalize_points_translation_and_rotation_torch(vertices, center_point):
     covariance_matrix = torch.matmul(centered_points.t(), centered_points) / centered_points.size(0)
 
     # Step 3: Find the principal directions (eigenvectors)
-    eigenvalues, eigenvectors = torch.eig(covariance_matrix, eigenvectors=True)
+    eigenvalues, eigenvectors = torch.linalg.eig(covariance_matrix)
+    eigenvalues = eigenvalues.real
+    eigenvectors = eigenvectors.real
     # Sort eigenvalues in descending order
-    _, sorted_indices = torch.sort(eigenvalues[:, 0], descending=True)
+    _, sorted_indices = torch.sort(eigenvalues, descending=True)
     eigenvectors = eigenvectors[:, sorted_indices]
     normalized_eigenvectors = eigenvectors / torch.norm(eigenvectors, dim=0)
     # normalized_eigenvectors = eigenvectors / torch.sqrt(eigenvalues)
