@@ -29,7 +29,7 @@ def main_loop():
         data_file_name = "triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
         file_path = server_dir + "triplets_dataset/" + data_file_name
         num_workers = 1
-        combine_reg_and_non_reg_patches = True
+        combine_reg_and_non_reg_patches = False
 
     else:
         # file_path = "triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
@@ -46,16 +46,16 @@ def main_loop():
     file_path2 = ''
     file_path3 = ''
     if combine_reg_and_non_reg_patches:
-        # file_path2 = server_dir + "triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
-        # with open(file_path2, 'rb') as f:
-        #     data2 = pickle.load(f)
+        file_path2 = server_dir + "triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
+        with open(file_path2, 'rb') as f:
+            data2 = pickle.load(f)
         file_path3 = server_dir + "triplets_dataset/triplets_size_300_N_1000_all_monge_patch_non_uniform_sampling_with_parabolic_patches.pkl"
         with open(file_path3, 'rb') as f:
             data3 = pickle.load(f)
 
 
 
-        data = data + data3
+        data = data + data2 + data3
 
     # Create custom dataset
     custom_dataset = CustomTripletDataset(data)
