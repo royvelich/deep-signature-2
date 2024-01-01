@@ -29,7 +29,7 @@ def main_loop():
         data_file_name = "triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
         file_path = server_dir + "triplets_dataset/" + data_file_name
         num_workers = 1
-        combine_reg_and_non_reg_patches = False
+        combine_reg_and_non_reg_patches = True
 
     else:
         # file_path = "triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
