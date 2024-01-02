@@ -109,8 +109,8 @@ class PointTransformerConvNet(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-        batch.x = self.normalize_patches(batch)
-        # batch.x = self.apply_random_rotations_to_batch(batch)
+        # batch.x = self.normalize_patches(batch)
+        batch.x = self.apply_random_rotations_to_batch(batch)
         batch.x = self.append_moments(batch.x)
 
         output = self.forward(batch)
@@ -142,8 +142,8 @@ class PointTransformerConvNet(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        batch.x = self.normalize_patches(batch)
-        # batch.x = self.apply_random_rotations_to_batch(batch)
+        # batch.x = self.normalize_patches(batch)
+        batch.x = self.apply_random_rotations_to_batch(batch)
         batch.x = self.append_moments(batch.x)
         output = self.forward(batch)
         device = output.device
