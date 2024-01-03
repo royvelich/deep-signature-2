@@ -13,6 +13,7 @@ from pyvista import PolyData
 from sklearn.neighbors import KDTree, NearestNeighbors
 import re
 import trimesh.visual as visual
+from sklearn.decomposition import PCA
 
 # import pyvista as pv
 # from geometry2 import normalize_points
@@ -300,7 +301,7 @@ def compute_patches_from_mesh(v, f, k=10, is_radius=False):
     normalized_input = []
     for i in range(len(v)):
         # normalized_input.append(v[indices[i]])
-        normalized_input.append(normalize_points_just_translation(vertices=v[indices[i]], center_point=v[i]))
+        normalized_input.append(normalize_points_translation_and_rotation(vertices=v[indices[i]], center_point=v[i]))
 
 
     # Compute faces for each patch in normalized_input, use f only faces containing vertices from each patch
@@ -455,7 +456,13 @@ def torch_normalize_points_translation_and_rotation(vertices, center_point):
     covariance_matrix = torch.matmul(centered_points.t(), centered_points) / centered_points.size(0)
 
     # Step 3: Find the principal directions (eigenvectors)
-    eigenvalues, eigenvectors = torch.linalg.eig(covariance_matrix)
+    # eigenvalues, eigenvectors = torch.linalg.eig(covariance_matrix)
+    pca_result = torch.pca_lowrank(centered_points)
+
+    # Extract eigenvectors and eigenvalues
+    eigenvectors = pca_result.U
+    eigenvalues = pca_result.S
+
     eigenvalues = eigenvalues.real
     eigenvectors = eigenvectors.real
     # Sort eigenvalues in descending order
@@ -469,12 +476,69 @@ def torch_normalize_points_translation_and_rotation(vertices, center_point):
     # Apply rotation to the centered point cloud
     normalized_points = torch.matmul(centered_points, rotation_matrix)
 
-    #
-    #
-    # # Step 4: Normalize the points
-    # normalized_points = torch.matmul(centered_points, normalized_eigenvectors)
-
     return normalized_points
+
+def random_rotation( x: torch.Tensor) -> torch.Tensor:
+    # Generate a random rotation matrix
+    rotation_matrix = torch.randn((3, 3), device=x.device)
+    # Make sure the rotation matrix is orthogonal
+    q, r = torch.linalg.qr(rotation_matrix)
+    d = torch.diag(r).sign()
+    d = torch.diag_embed(d)
+    rotation_matrix = torch.mm(q, d)
+
+    # Apply the rotation to the input features
+    rotated_x = torch.mm(x, rotation_matrix)
+    # visualize_pointclouds(x, rotated_x)
+    return rotated_x
+
+def random_rotation_numpy( x: np.ndarray) -> np.ndarray:
+    # Generate a random rotation matrix
+    rotation_matrix = np.random.randn(3, 3)
+    # Make sure the rotation matrix is orthogonal
+    q, r = np.linalg.qr(rotation_matrix)
+    d = np.diag(np.sign(np.diag(r)))
+    rotation_matrix = np.matmul(q, d)
+
+    # Apply the rotation to the input features
+    rotated_x = np.matmul(x, rotation_matrix)
+    # visualize_pointclouds(x, rotated_x)
+    return rotated_x
+
+def normalize_point_cloud(x, center_point):
+    """
+    Normalize a 3D point cloud tensor in terms of translation and rotation using PCA.
+
+    Parameters:
+    - x: torch.Tensor, shape (N, 3), where N is the number of points in the point cloud.
+    - center_point: torch.Tensor, shape (3,), representing the center point for normalization.
+
+    Returns:
+    - normalized_x: torch.Tensor, shape (N, 3), the normalized point cloud.
+    """
+    mean = torch.mean(x, dim=0)
+
+    # Translate the point cloud to the origin
+    # translated_x = x - center_point
+    translated_x = x - mean
+
+    # Convert PyTorch tensor to NumPy array for PCA (scikit-learn supports NumPy)
+    translated_np = translated_x.cpu().numpy()
+
+    # Apply PCA to find the principal components (rotation matrix)
+    pca = PCA(n_components=3)
+    pca.fit(translated_np)
+    rotation_matrix = pca.components_.T
+    rotation_matrix[:, 2] = [0, 0, 1]
+
+    # Rotate the translated point cloud using the rotation matrix
+    rotated_x = torch.matmul(translated_x, torch.from_numpy(rotation_matrix).to(translated_x.device))
+
+    # Return the normalized point cloud (translated and rotated)
+    normalized_x = rotated_x
+
+    return normalized_x
+
 
 def normalize_points_just_translation(vertices, center_point):
     """
