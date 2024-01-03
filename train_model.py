@@ -21,6 +21,7 @@ from visualize.visualize__results_on_mesh import VisualizerCallback
 
 def main_loop():
     max_epochs = 1000
+    batch_size = 32
     lr = LR
     weight_decay = WEIGHT_DECAY
     num_workers = 1
@@ -41,6 +42,7 @@ def main_loop():
         file_path = "data/spherical_monge_patches_100_N_10.pkl"
         file_path2 = "data/hyperbolic_monge_patches_100_N_10.pkl"
         file_path3 = "data/parabolic_monge_patches_100_N_10.pkl"
+        batch_size = 8
 
 
 
@@ -81,8 +83,8 @@ def main_loop():
     train_dataset, val_dataset = random_split(custom_dataset, [num_train_samples, num_val_samples])
 
     # Create DataLoaders for train and validation sets
-    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=num_workers, collate_fn=custom_dataset.batch_collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=num_workers, collate_fn=custom_dataset.batch_collate_fn)  # No need to shuffle validation data
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=custom_dataset.batch_collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=custom_dataset.batch_collate_fn)  # No need to shuffle validation data
 
 
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
