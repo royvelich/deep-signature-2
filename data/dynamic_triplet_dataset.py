@@ -13,7 +13,7 @@ from utils import random_rotation, random_rotation_numpy
 
 
 class DynamicTripletDataset(Dataset):
-    def __init__(self, data_spherical_patches, data_hyperbolic_patches, data_parabolic_patches, transform=None, k = 20):
+    def __init__(self, data_spherical_patches, data_hyperbolic_patches, data_parabolic_patches, transform=None, k = 10):
         self.data_spherical_patches = data_spherical_patches
         self.data_hyperbolic_patches = data_hyperbolic_patches
         self.data_parabolic_patches = data_parabolic_patches
