@@ -9,7 +9,7 @@ from torch_geometric.nn import knn_graph
 
 from data.non_uniform_sampling import non_uniform_2d_sampling
 from utils import random_rotation, random_rotation_numpy
-from visualize_pointclouds import visualize_pointclouds
+# from visualize_pointclouds import visualize_pointclouds
 
 
 class DynamicTripletDataset(Dataset):
