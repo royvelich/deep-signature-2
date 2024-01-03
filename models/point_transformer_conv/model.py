@@ -82,7 +82,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
         self.decoder = MLP(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=2, activation=self.activation)
 
-        self.loss_func = loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss
+        self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
         # self.loss_func = contrastive_tuplet_loss
 
 

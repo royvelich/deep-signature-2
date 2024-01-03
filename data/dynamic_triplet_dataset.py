@@ -74,18 +74,18 @@ class DynamicTripletDataset(Dataset):
             rand_indice = torch.randint(0, len(sampled_indices), (1,))
             sampled_indices[rand_indice] = mid_point_indice
 
-        origin= patch.v
+        # origin= patch.v
         # translate to origin
         patch.v = patch.v - patch.v[mid_point_indice]
-        origin_after_Trans = patch.v
+        # origin_after_Trans = patch.v
 
         # rotate
         patch.v = random_rotation_numpy(patch.v)
-        origin_after_rot = patch.v
+        # origin_after_rot = patch.v
 
         # sampling
         patch.v = patch.v[sampled_indices]
-        origin_after_sample = patch.v
+        # origin_after_sample = patch.v
         # visualize_pointclouds(origin, origin_after_Trans, origin_after_rot, origin_after_sample)
         return patch
 
