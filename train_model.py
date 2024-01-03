@@ -21,7 +21,7 @@ from visualize.visualize__results_on_mesh import VisualizerCallback
 
 def main_loop():
     max_epochs = 1000
-    batch_size = 32
+    batch_size = 16
     lr = LR
     weight_decay = WEIGHT_DECAY
     num_workers = 1
