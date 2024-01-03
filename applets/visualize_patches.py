@@ -9,6 +9,9 @@ from core.geometry import ScalarField
 # pyvista
 import pyvista as pv
 
+# numpy
+import numpy as np
+
 # surface-diff-inv
 from core.geometry import Mesh
 
@@ -37,6 +40,16 @@ if __name__ == "__main__":
 
     patch_generator = QuadraticMonagePatchGenerator(limit=args.limit, grid_size=args.grid_size, coeff_limit=args.coeff_limit)
     patch = patch_generator.generate()
-    patch = patch.downsample2(ratio=0.005)
+
+    patch1 = patch.downsample2(ratio=1)
+    patch2 = patch.downsample2(ratio=1)
+
+    # patch1 = patch1.rotate(axis=np.array([1, 0, 1]), angle=np.pi / 4)
+    patch2 = patch2.rotate(axis=np.array([0, 0, 1]), angle=0.3)
+
+    # patch1 = patch1.canonical_form()
+    patch2_canonical = patch2.canonical_form()
+    # patch2_rotated_canonical = patch2_rotated.canonical_form()
+
     # Mesh.plot_meshes(meshes=[patch], show_principal_directions=False, scalar_field=None, show_grid_points=False)
-    Mesh.plot_meshes(meshes=[patch], show_principal_directions=False, show_edges=True)
+    Mesh.plot_meshes(meshes=[patch2, patch2_canonical], colors=['red', 'blue'], show_principal_directions=False, show_edges=True)

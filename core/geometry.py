@@ -6,6 +6,7 @@ from enum import Enum
 
 # trimesh
 import trimesh
+from trimesh import Trimesh
 
 # pymesh
 import pymesh
@@ -16,6 +17,7 @@ import igl
 # scipy
 from scipy.spatial import cKDTree
 from scipy.stats import norm
+from scipy.spatial.transform import Rotation
 
 # pyvista
 import pyvista as pv
@@ -25,6 +27,7 @@ import numpy as np
 
 # sklearn
 from sklearn.neighbors import KDTree
+from sklearn.decomposition import PCA
 
 # torch-geometric
 from torch_geometric.nn import fps
@@ -116,12 +119,13 @@ class Mesh:
             plotter: pv.Plotter,
             scalars: Optional[np.ndarray] = None,
             show_edges: bool = False,
-            show_principal_directions: bool = False):
+            show_principal_directions: bool = False,
+            color: str = 'red'):
         # pyvista_mesh = pv.PolyData(self._v, self._pyvista_f)
         # plotter.add_mesh(mesh=pyvista_mesh, scalars=scalars, show_edges=show_edges)
 
         pyvista_mesh = pv.PolyData(self._v)
-        plotter.add_mesh(mesh=pyvista_mesh, color='red', point_size=5)
+        plotter.add_mesh(mesh=pyvista_mesh, color=color, point_size=5)
 
         # if show_principal_directions is True:
         #     pyvista_mesh['d1'] = self._d1
@@ -134,6 +138,47 @@ class Mesh:
         #     plotter.add_mesh(glyphs1, color='red', opacity=1)
         #     plotter.add_mesh(glyphs2, color='blue', opacity=1)
 
+    def rotate(self, axis: np.ndarray, angle: float) -> Mesh:
+        """
+        Rotate a set of points by a given angle around a specified axis using quaternions.
+
+        Parameters:
+        points (np.ndarray): An array of points, shape (K, 3).
+        axis (List[float]): A 3D vector specifying the axis of rotation.
+        theta (float): The rotation angle in radians.
+
+        Returns:
+        np.ndarray: The rotated points, shape (K, 3).
+        """
+        # Normalize the axis and create a rotation vector
+        axis = axis / np.linalg.norm(axis)
+        rotvec = axis * angle
+
+        # Create a rotation object from the rotation vector
+        rotation = Rotation.from_rotvec(rotvec)
+
+        # Apply the rotation to all points
+        rotated_v = rotation.apply(self._v)
+
+        return Mesh(v=rotated_v, f=self._f)
+
+    def canonical_form(self) -> Mesh:
+        mesh = trimesh.Trimesh(vertices=self._v, faces=self._f)
+        mesh.apply_transform(mesh.principal_inertia_transform)
+
+        # canonical_v = self._v
+        # # Compute the center of mass
+        # center_of_mass = np.mean(a=canonical_v, axis=0)
+        #
+        # # Translate the mesh so that the center of mass is at the origin
+        # canonical_v -= center_of_mass
+        #
+        # # Perform PCA to find the main axes of the data
+        # pca = PCA(n_components=3)
+        # pca.fit(canonical_v)
+        # canonical_v = pca.transform(canonical_v)
+        return Mesh(v=mesh.vertices, f=mesh.faces)
+
     @staticmethod
     def from_file(file_path: Path) -> Mesh:
         v, f = igl.read_triangle_mesh(filename=str(file_path), dtypef=np.float64)
@@ -142,18 +187,20 @@ class Mesh:
     @staticmethod
     def plot_meshes(
             meshes: List[Mesh],
+            colors: List[str],
             window_size: Tuple[int, int] = (1000, 1000),
             shape: Optional[Tuple[int, int]] = None,
             **kwargs):
         mesh_count = len(meshes)
-        plotter = pv.Plotter(shape=shape if shape is not None else (1, mesh_count), window_size=window_size)
-        for index, mesh in enumerate(meshes):
-            if shape is None:
-                plotter.subplot(0, index)
-            else:
-                plotter.subplot(index // shape[0], index % shape[0])
+        # plotter = pv.Plotter(shape=shape if shape is not None else (1, mesh_count), window_size=window_size)
+        plotter = pv.Plotter(window_size=window_size)
+        for index, (mesh, color) in enumerate(zip(meshes, colors)):
+            # if shape is None:
+            #     plotter.subplot(0, index)
+            # else:
+            #     plotter.subplot(index // shape[0], index % shape[0])
 
-            mesh.plot(plotter=plotter, **kwargs)
+            mesh.plot(plotter=plotter, color=color, **kwargs)
         plotter.add_axes()
         plotter.show_grid()
         plotter.view_xz()
