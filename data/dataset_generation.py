@@ -129,6 +129,6 @@ else:
 
         outputs.append(sample)
 
-    file_path = "./spherical_monge_patches_" + str(grid_size) + "_N_" + str(N) + ".pkl"
+    file_path = "./"+str(patch_type)+"_monge_patches_" + str(grid_size) + "_N_" + str(N) + ".pkl"
     with open(file_path, 'wb') as f:
         pickle.dump(outputs, f)
