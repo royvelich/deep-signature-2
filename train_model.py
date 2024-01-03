@@ -7,6 +7,7 @@ from torch.utils.data import random_split
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
+from data.dynamic_triplet_dataset import DynamicTripletDataset
 from models.point_transformer_conv.model import PointTransformerConvNet
 from utils import init_wandb, custom_euclidean_transform
 
@@ -19,7 +20,7 @@ from visualize.visualize__results_on_mesh import VisualizerCallback
 
 
 def main_loop():
-    max_epochs = 100
+    max_epochs = 1000
     lr = LR
     weight_decay = WEIGHT_DECAY
     num_workers = 1
@@ -27,14 +28,19 @@ def main_loop():
     server_dir = "/home/gal.yona/deep-signature-2/"
     if torch.cuda.is_available():
         data_file_name = "triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
-        file_path = server_dir + "triplets_dataset/" + data_file_name
+        # file_path = server_dir + "triplets_dataset/" + data_file_name
+        file_path = server_dir+"data/spherical_monge_patches_100_N_20000.pkl"
+        file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_20000.pkl"
+        file_path3 = server_dir+"data/planar_monge_patches_100_N_20000.pkl"
         num_workers = 1
-        combine_reg_and_non_reg_patches = True
+        # combine_reg_and_non_reg_patches = True
 
     else:
-        # file_path = "triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
-        file_path = "generated_triplet_data/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
+        # file_path = "generated_triplet_data/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
         os.environ["WANDB_MODE"] = "offline"
+        file_path = "data/spherical_monge_patches_100_N_10.pkl"
+        file_path2 = "data/hyperbolic_monge_patches_100_N_10.pkl"
+        file_path3 = "data/parabolic_monge_patches_100_N_10.pkl"
 
 
 
@@ -42,25 +48,27 @@ def main_loop():
     # Load the triplets from the file
     with open(file_path, 'rb') as f:
         f.seek(0)  # Move the file pointer to the beginning of the file
-        data = pickle.load(f)
-    file_path2 = ''
-    file_path3 = ''
-    if combine_reg_and_non_reg_patches:
-        file_path2 = server_dir + "triplets_data_size_50_N_10000_all_monge_patch_normalized_pos_and_rot.pkl"
-        with open(file_path2, 'rb') as f:
-            data2 = pickle.load(f)
-        file_path3 = server_dir + "triplets_dataset/triplets_size_300_N_1000_all_monge_patch_non_uniform_sampling_with_parabolic_patches.pkl"
-        with open(file_path3, 'rb') as f:
-            data3 = pickle.load(f)
+        data_spherical = pickle.load(f)
+    with open(file_path2, 'rb') as f:
+        f.seek(0)
+        data_hyperbolic = pickle.load(f)
+    with open(file_path3, 'rb') as f:
+        f.seek(0)
+        data_parabolic = pickle.load(f)
 
 
 
-        data = data + data2 + data3
+
+
 
     # Create custom dataset
-    custom_dataset = CustomTripletDataset(data)
+    # custom_dataset = CustomTripletDataset(data)
+    custom_dataset = DynamicTripletDataset(data_spherical, data_hyperbolic, data_parabolic)
     # release memory
-    del data
+    del data_spherical
+    del data_hyperbolic
+    del data_parabolic
+
     # Define the ratio for train and validation split (e.g., 80% for training, 20% for validation)
     train_ratio = 0.8
 
@@ -80,7 +88,7 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    num_layers = 3
+    num_layers = 16
     hidden_channels = 128
     in_channels = 9
     out_channels = 2
@@ -99,13 +107,13 @@ def main_loop():
         save_on_train_epoch_end=True,
         every_n_epochs=3
     )
-    early_stop_callback = EarlyStopping(
-        monitor='val_loss',
-        min_delta=0.00,
-        patience=7,
-        verbose=False,
-        mode='min'
-    )
+    # early_stop_callback = EarlyStopping(
+    #     monitor='val_loss',
+    #     min_delta=0.00,
+    #     patience=7,
+    #     verbose=False,
+    #     mode='min'
+    # )
     # visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
     trainer = Trainer(num_nodes=1,
                       gradient_clip_val=1.0,

@@ -112,7 +112,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-        batch.x = self.normalize_patches(batch)
+        # batch.x = self.normalize_patches(batch)
         # batch.x = self.apply_random_rotations_to_batch(batch)
         batch.x = self.append_moments(batch.x)
 
@@ -145,7 +145,7 @@ class PointTransformerConvNet(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        batch.x = self.normalize_patches(batch)
+        # batch.x = self.normalize_patches(batch)
         # batch.x = self.apply_random_rotations_to_batch(batch)
         batch.x = self.append_moments(batch.x)
         output = self.forward(batch)
@@ -243,7 +243,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
         # Apply the rotation to the input features
         rotated_x = torch.mm(x, rotation_matrix)
-        visualize_pointclouds(x, rotated_x)
+        # visualize_pointclouds(x, rotated_x)
         return rotated_x
 
     def apply_random_rotations_to_batch(self, batch):
@@ -262,7 +262,7 @@ class PointTransformerConvNet(pl.LightningModule):
             rotated_x_curr = normalize_point_cloud(batch[i].x, batch[i].x[mid_point])
             rotated_x.append(rotated_x_curr)
 
-        visualize_pointclouds(rotated_x[0], rotated_x[1])
+        # visualize_pointclouds(rotated_x[0], rotated_x[1])
 
         rotated_x = torch.cat(rotated_x, dim=0)
         return rotated_x

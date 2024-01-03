@@ -37,7 +37,7 @@ parser.add_argument('-parts', type=int, default=1, help='Number of triplets to g
 parser.add_argument('-limit', type=int, default=1, help='Number of triplets to generate')
 parser.add_argument('-neg_noise_low', type=float, default=0.5, help='Number of triplets to generate')
 parser.add_argument('-neg_noise_high', type=float, default=2.0, help='Number of triplets to generate')
-parser.add_argument('-patch_type', type=str, default='spherical', help='Number of triplets to generate')
+parser.add_argument('-patch_type', type=str, default='parabolic', help='Number of triplets to generate')
 
 # Parse the command-line arguments
 args = parser.parse_args()
