@@ -13,7 +13,7 @@ from utils import random_rotation, random_rotation_numpy
 
 
 class DynamicTripletDataset(Dataset):
-    def __init__(self, data_spherical_patches, data_hyperbolic_patches, data_parabolic_patches, transform=None, k = 10):
+    def __init__(self, data_spherical_patches, data_hyperbolic_patches, data_parabolic_patches, transform=None, k = 6):
         self.data_spherical_patches = data_spherical_patches
         self.data_hyperbolic_patches = data_hyperbolic_patches
         self.data_parabolic_patches = data_parabolic_patches
@@ -66,7 +66,7 @@ class DynamicTripletDataset(Dataset):
         # non-uniform sampling and translation to origin(suppose to be point N/2,N/2, make sure she is sampled as well) with random rotation
         N = patch.v.shape[0]
         grid_size = int(np.sqrt(N))
-        ratio = np.random.uniform(0.01, 0.08)
+        ratio = np.random.uniform(0.01, 0.05)
         sampled_indices = non_uniform_2d_sampling(grid_size, ratio=ratio)
         # add 0,0 point to sampled indices - check if it working properly
         mid_point_indice = N // 2 - grid_size//2 - 1
