@@ -14,11 +14,14 @@ from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2, loss_contrastive_plus_k1__greater_k2, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss
 from utils import normalize_points_translation_and_rotation, \
-    torch_normalize_points_translation_and_rotation
+    torch_normalize_points_translation_and_rotation, normalize_point_cloud
 from vars import LR, WEIGHT_DECAY
 from visualize.vis_utils import log_visualization
 
 # Taken from https://github.com/vsitzmann/siren
+from visualize_pointclouds import visualize_pointclouds
+
+
 class Sine(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -109,8 +112,8 @@ class PointTransformerConvNet(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-        # batch.x = self.normalize_patches(batch)
-        batch.x = self.apply_random_rotations_to_batch(batch)
+        batch.x = self.normalize_patches(batch)
+        # batch.x = self.apply_random_rotations_to_batch(batch)
         batch.x = self.append_moments(batch.x)
 
         output = self.forward(batch)
@@ -142,8 +145,8 @@ class PointTransformerConvNet(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        # batch.x = self.normalize_patches(batch)
-        batch.x = self.apply_random_rotations_to_batch(batch)
+        batch.x = self.normalize_patches(batch)
+        # batch.x = self.apply_random_rotations_to_batch(batch)
         batch.x = self.append_moments(batch.x)
         output = self.forward(batch)
         device = output.device
@@ -192,8 +195,8 @@ class PointTransformerConvNet(pl.LightningModule):
         return output_anc, output_pos, output_neg
 
     def configure_optimizers(self, lr=LR,weight_decay=WEIGHT_DECAY):
-        optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=lr)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=1.0)
         return [optimizer], [scheduler]
 
 
@@ -240,6 +243,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
         # Apply the rotation to the input features
         rotated_x = torch.mm(x, rotation_matrix)
+        visualize_pointclouds(x, rotated_x)
         return rotated_x
 
     def apply_random_rotations_to_batch(self, batch):
@@ -254,6 +258,11 @@ class PointTransformerConvNet(pl.LightningModule):
         for i in range(len(batch)):
             # take the point with the smallest distance to the origin as the center
             mid_point = torch.argmin(torch.sqrt((batch[i].x[:,0])**2+(batch[i].x[:,1])**2), dim=0)
-            rotated_x.append(torch_normalize_points_translation_and_rotation(batch[i].x, batch[i].x[mid_point]))
+            # rotated_x_curr = torch_normalize_points_translation_and_rotation(batch[i].x, batch[i].x[mid_point])
+            rotated_x_curr = normalize_point_cloud(batch[i].x, batch[i].x[mid_point])
+            rotated_x.append(rotated_x_curr)
+
+        visualize_pointclouds(rotated_x[0], rotated_x[1])
+
         rotated_x = torch.cat(rotated_x, dim=0)
         return rotated_x

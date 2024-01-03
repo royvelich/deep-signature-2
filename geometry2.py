@@ -358,6 +358,25 @@ class Patch(Mesh):
         else:
             return self._directional_derivative(direction_field=self._d2_grid, scalar_field=scalar_field, h=h)
 
+class Patch2(Mesh):
+    def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray,downsample=True):
+        self._x_grid = x_grid
+        self._y_grid = y_grid
+        self._z_grid = z_grid
+
+        x = x_grid.ravel()
+        y = y_grid.ravel()
+        z = z_grid.ravel()
+
+        # self._v = np.stack([x, y, z], axis=1)  # Use only x and y coordinates
+        # normalization needs to be before downsample
+        # self._v = normalize_points(self._v)
+        # x, y, z = self._v[:,0], self._v[:,1], self._v[:,2]
+
+        self._v = np.stack([x, y, z], axis=1)  # Use only x and y coordinates
+
+
+
 
 class Torus(Mesh):
     def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray,downsample=True):

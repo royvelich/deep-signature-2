@@ -115,7 +115,7 @@ def main_loop():
                       max_epochs=max_epochs,
                       logger=logger,
                       # callbacks=[visualizer_callback, checkpoint_callback])
-                      callbacks=[checkpoint_callback, early_stop_callback]
+                      callbacks=[checkpoint_callback]
                       )
     trainer.fit(model, train_dataloaders=train_loader,val_dataloaders=val_loader)
 
