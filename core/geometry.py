@@ -12,10 +12,10 @@ import pymesh
 
 # igl
 import igl
-import numpy
 
 # scipy
 from scipy.spatial import cKDTree
+from scipy.stats import norm
 
 # pyvista
 import pyvista as pv
@@ -34,6 +34,12 @@ import torch
 
 # surface-diff-inv
 from core.utils import pyvista_faces_to_standard_faces, standard_faces_to_pyvista_faces
+
+# open3d
+import open3d as o3d
+
+# scipy
+from scipy.spatial import Delaunay
 
 
 class PrincipalCurvature(Enum):
@@ -75,6 +81,7 @@ class Mesh:
         self._f = f
         self._pyvista_f = standard_faces_to_pyvista_faces(standard_f=f)
         self._d1, self._d2, self._k1, self._k2 = igl.principal_curvature(v=v, f=f)
+        pass
 
     @property
     def v(self) -> np.ndarray:
@@ -110,19 +117,22 @@ class Mesh:
             scalars: Optional[np.ndarray] = None,
             show_edges: bool = False,
             show_principal_directions: bool = False):
-        pyvista_mesh = pv.PolyData(self._v, self._pyvista_f)
-        plotter.add_mesh(mesh=pyvista_mesh, scalars=scalars, show_edges=show_edges)
+        # pyvista_mesh = pv.PolyData(self._v, self._pyvista_f)
+        # plotter.add_mesh(mesh=pyvista_mesh, scalars=scalars, show_edges=show_edges)
 
-        if show_principal_directions is True:
-            pyvista_mesh['d1'] = self._d1
-            pyvista_mesh['d2'] = self._d2
-            factor = 0.03 * (np.abs(np.max(self._v) - np.min(self._v)))
-            tolerance = 0.02
+        pyvista_mesh = pv.PolyData(self._v)
+        plotter.add_mesh(mesh=pyvista_mesh, color='red', point_size=5)
 
-            glyphs1 = pyvista_mesh.glyph(orient='d1', scale=False, factor=factor, tolerance=tolerance)
-            glyphs2 = pyvista_mesh.glyph(orient='d2', scale=False, factor=factor, tolerance=tolerance)
-            plotter.add_mesh(glyphs1, color='red', opacity=1)
-            plotter.add_mesh(glyphs2, color='blue', opacity=1)
+        # if show_principal_directions is True:
+        #     pyvista_mesh['d1'] = self._d1
+        #     pyvista_mesh['d2'] = self._d2
+        #     factor = 0.03 * (np.abs(np.max(self._v) - np.min(self._v)))
+        #     tolerance = 0.001
+        #
+        #     glyphs1 = pyvista_mesh.glyph(orient='d1', scale=False, factor=factor, tolerance=tolerance)
+        #     glyphs2 = pyvista_mesh.glyph(orient='d2', scale=False, factor=factor, tolerance=tolerance)
+        #     plotter.add_mesh(glyphs1, color='red', opacity=1)
+        #     plotter.add_mesh(glyphs2, color='blue', opacity=1)
 
     @staticmethod
     def from_file(file_path: Path) -> Mesh:
@@ -304,11 +314,45 @@ class Patch(Mesh):
 
         return np.stack(([k1], [k2], [dk1_1], [dk1_2], [dk1_22], [dk2_1], [dk2_2], [dk2_11]))
 
+    def _generate_random_gaussian_param(self, N):
+        mean = np.random.randint(0, N)
+        std_dev = np.random.randint(10, N // 4)
+        return mean, std_dev
+
+    def _generate_random_gaussian_params(self, N):
+        gaussians_params = []
+        gaussian_num = np.random.randint(5, 20)
+        for i in range(gaussian_num):
+            mean, std_dev = self._generate_random_gaussian_param(N)
+            gaussians_params.append((mean, std_dev))
+        return gaussians_params
+
+    def downsample2(self, ratio: float):
+        # Step 1: Define N indices
+        indices = np.arange(self._v.shape[0])
+
+        # Step 2: Compose a PDF by summing multiple Gaussians
+        probabilities = np.zeros(self._v.shape[0])
+        gaussians_params = self._generate_random_gaussian_params(N=self._v.shape[0])
+        for mean, std_dev in gaussians_params:
+            probabilities += norm.pdf(indices, loc=mean, scale=std_dev)
+
+        # Normalize the composed PDF
+        probabilities /= probabilities.sum()
+
+        # Step 3: Sample K items without replacement based on the non-uniform PDF
+        sampled_items = np.random.choice(indices, size=int(ratio * self._v.shape[0]), replace=False, p=probabilities)
+
+        v = self._v[sampled_items]
+        f = Delaunay(v[:, :2]).simplices
+        return Mesh(v=v, f=f)
+
     def downsample(self, ratio: float) -> Mesh:
         v = torch.tensor(data=self._v)
         indices = fps(x=v, ratio=ratio)
         v = v[indices].cpu().detach().numpy()
-        return Mesh.from_vertices(v=v)
+        f = Delaunay(v[:, :2]).simplices
+        return Mesh(v=v, f=f)
 
     def _directional_derivative_at_point(self, point: np.ndarray, direction: np.ndarray, scalar_field: np.ndarray, h: float = 1e-8, max_attempts: int = 8) -> np.ndarray:
         _, idx = self._tree.query(point)

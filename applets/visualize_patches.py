@@ -37,4 +37,6 @@ if __name__ == "__main__":
 
     patch_generator = QuadraticMonagePatchGenerator(limit=args.limit, grid_size=args.grid_size, coeff_limit=args.coeff_limit)
     patch = patch_generator.generate()
-    Mesh.plot_meshes(meshes=[patch], show_principal_directions=True, scalar_field=ScalarField.K1)
+    patch = patch.downsample2(ratio=0.005)
+    # Mesh.plot_meshes(meshes=[patch], show_principal_directions=False, scalar_field=None, show_grid_points=False)
+    Mesh.plot_meshes(meshes=[patch], show_principal_directions=False, show_edges=True)
