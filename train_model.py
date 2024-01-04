@@ -90,11 +90,12 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    num_layers = 16
+    num_point_transformer_layers = 1
+    num_encoder_decoder_layers = 8
     hidden_channels = 128
     in_channels = 9
     out_channels = 2
-    model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_layers=num_layers)
+    model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
     # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
 
     # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
@@ -104,7 +105,7 @@ def main_loop():
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_'+str(num_layers)+'_layers_width_'+str(hidden_channels)+'_train_non_uniform_samples_also_with_planar_patches-{epoch:02d}',
+        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_train_non_uniform_samples_also_with_planar_patches-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=3

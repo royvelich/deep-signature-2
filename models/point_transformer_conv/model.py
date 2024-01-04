@@ -62,25 +62,25 @@ class MLP(nn.Module):
         return x
 
 class PointTransformerConvNet(pl.LightningModule):
-    def __init__(self, in_channels, out_channels=8, hidden_channels=64, num_layers=3):
+    def __init__(self, in_channels, out_channels=8, hidden_channels=64, num_point_transformer_layers=3, num_encoder_decoder_layers=8):
         super(PointTransformerConvNet, self).__init__()
 
         self.save_hyperparameters()  # Saves all hyperparameters for logging
         self.activation = Sine()
 
-        self.encoder = MLP(input_dim=in_channels, hidden_dim=hidden_channels, output_dim=hidden_channels, num_layers=2, activation=self.activation)
+        self.encoder = MLP(input_dim=in_channels, hidden_dim=hidden_channels, output_dim=hidden_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
         self.conv_layers = nn.ModuleList([
-            PointTransformerConv(hidden_channels, hidden_channels) for _ in range(num_layers)
+            PointTransformerConv(hidden_channels, hidden_channels) for _ in range(num_point_transformer_layers)
         ])
 
         self.hidden_bns = nn.ModuleList()
-        for _ in range(num_layers):  # Last layer doesn't need BN and activation
+        for _ in range(num_point_transformer_layers):  # Last layer doesn't need BN and activation
             self.hidden_bns.append(nn.BatchNorm1d(hidden_channels))
 
         self.pooling = global_mean_pool  # You can use other pooling functions if needed
         # self.pooling = global_add_pool  # You can use other pooling functions if needed
 
-        self.decoder = MLP(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=2, activation=self.activation)
+        self.decoder = MLP(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
 
         self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
         # self.loss_func = contrastive_tuplet_loss
