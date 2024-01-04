@@ -120,16 +120,16 @@ def sanity_check_pc():
 # sanity_check_pc()
 
 def contrastive_tuplet_loss(a,p,n):
-    loss = torch.log(1 + torch.exp(torch.linalg.matrix_norm(a-p)**2 - torch.linalg.matrix_norm(a-n)**2))/a.size(0)
+    loss = torch.log(1 + torch.exp(torch.linalg.matrix_norm(a-p) - torch.linalg.matrix_norm(a-n)))/a.size(0)
     # print("contrastive loss:", loss)
     # if torch.isnan(loss):
     #     print("loss is NaN")
     #     return torch.tensor(100.0)
-    print("loss:"+str(loss.item()))
-    if loss.item() == float('inf') or torch.isnan(loss):
-        print("a:"+str(a[0])+" "+str(a[1]))
-        print("p:"+str(p[0])+" "+str(p[1]))
-        print("n:"+str(n[0])+" "+str(n[1]))
+    # print("loss:"+str(loss.item()))
+    # if loss.item() == float('inf') or torch.isnan(loss):
+    #     print("a:"+str(a[0])+" "+str(a[1]))
+    #     print("p:"+str(p[0])+" "+str(p[1]))
+    #     print("n:"+str(n[0])+" "+str(n[1]))
     return loss
     # return torch.log(1 + torch.exp(torch.linalg.matrix_norm(a-p)**2 - torch.linalg.matrix_norm(a-n)**2))/a.size(0)
 
