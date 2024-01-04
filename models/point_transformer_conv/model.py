@@ -118,8 +118,8 @@ class PointTransformerConvNet(pl.LightningModule):
 
         self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
 
-        self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
-        # self.loss_func = contrastive_tuplet_loss
+        # self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
+        self.loss_func = contrastive_tuplet_loss
 
 
     def forward(self, data, global_pooling=True):
