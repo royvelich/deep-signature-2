@@ -125,7 +125,7 @@ def contrastive_tuplet_loss(a,p,n):
     # if torch.isnan(loss):
     #     print("loss is NaN")
     #     return torch.tensor(100.0)
-    print("loss:"+loss.item())
+    print("loss:"+str(loss.item()))
     return loss
     # return torch.log(1 + torch.exp(torch.linalg.matrix_norm(a-p)**2 - torch.linalg.matrix_norm(a-n)**2))/a.size(0)
 
