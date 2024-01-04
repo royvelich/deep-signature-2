@@ -9,7 +9,7 @@ from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_p
 import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
-    loss_contrastive_plus_codazzi_and_pearson_correlation_k1_k2, loss__pearson_correlation_k1_k2, \
+    loss__pearson_correlation_k1_k2, \
     loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised, contrastive_tuplet_loss, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2, loss_contrastive_plus_k1__greater_k2, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss
