@@ -52,9 +52,9 @@ def calculate_pearson_k1_k2_loss_vectorized(matrix, device):
     # correlation_matrix = torch.nn.functional.cosine_similarity(matrix.T.unsqueeze(0), matrix.T.unsqueeze(1), dim=2)
     correlation_matrix = torch.corrcoef(matrix.T)
 
-    nan_mask = torch.isnan(correlation_matrix)
-    # Replace NaN elements with 0
-    correlation_matrix[nan_mask] = 0
+    # nan_mask = torch.isnan(correlation_matrix)
+    # # Replace NaN elements with 0
+    # correlation_matrix[nan_mask] = 0
 
     # Create an identity matrix
     identity = torch.eye(num_columns)
@@ -122,9 +122,9 @@ def sanity_check_pc():
 def contrastive_tuplet_loss(a,p,n):
     loss = torch.log(1 + torch.exp(torch.linalg.matrix_norm(a-p)**2 - torch.linalg.matrix_norm(a-n)**2))/a.size(0)
     # print("contrastive loss:", loss)
-    if torch.isnan(loss):
-        print("loss is NaN")
-        return torch.tensor(100.0)
+    # if torch.isnan(loss):
+    #     print("loss is NaN")
+    #     return torch.tensor(100.0)
     return loss
     # return torch.log(1 + torch.exp(torch.linalg.matrix_norm(a-p)**2 - torch.linalg.matrix_norm(a-n)**2))/a.size(0)
 
