@@ -30,6 +30,42 @@ class Sine(torch.nn.Module):
         # See paper sec. 3.2, final paragraph, and supplement Sec. 1.5 for discussion of factor 30
         return torch.sin(input)
 
+class MLPWithSkipConnections(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers, activation=nn.ReLU()):
+        super(MLPWithSkipConnections, self).__init__()
+        self.num_layers = num_layers
+        self.activation = activation
+
+        # Input layer
+        self.input_layer = nn.Linear(input_dim, hidden_dim)
+        self.input_bn = nn.BatchNorm1d(hidden_dim)
+
+        # Hidden layers
+        self.hidden_layers = nn.ModuleList()
+        self.hidden_bns = nn.ModuleList()
+
+        for _ in range(num_layers - 2):
+            self.hidden_layers.append(nn.Linear(hidden_dim, hidden_dim))
+            self.hidden_bns.append(nn.BatchNorm1d(hidden_dim))
+
+        # Output layer
+        self.output_layer = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x):
+        # Input layer
+        input_skip = x
+        x = self.activation(self.input_bn(self.input_layer(x)))
+
+        # Hidden layers with skip connections
+        for i in range(self.num_layers - 2):
+            # Skip connection
+            residual = x
+            x = self.activation(self.hidden_bns[i](self.hidden_layers[i](x)))
+            x += residual  # Skip connection
+
+        # Output layer
+        x = self.output_layer(x)
+        return x
 
 class MLP(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, num_layers, activation=nn.ReLU()):
@@ -68,7 +104,7 @@ class PointTransformerConvNet(pl.LightningModule):
         self.save_hyperparameters()  # Saves all hyperparameters for logging
         self.activation = Sine()
 
-        self.encoder = MLP(input_dim=in_channels, hidden_dim=hidden_channels, output_dim=hidden_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
+        self.encoder = MLPWithSkipConnections(input_dim=in_channels, hidden_dim=hidden_channels, output_dim=hidden_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
         self.conv_layers = nn.ModuleList([
             PointTransformerConv(hidden_channels, hidden_channels) for _ in range(num_point_transformer_layers)
         ])
@@ -80,7 +116,7 @@ class PointTransformerConvNet(pl.LightningModule):
         self.pooling = global_mean_pool  # You can use other pooling functions if needed
         # self.pooling = global_add_pool  # You can use other pooling functions if needed
 
-        self.decoder = MLP(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
+        self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
 
         # self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
         self.loss_func = contrastive_tuplet_loss
