@@ -24,9 +24,9 @@ def calculate_outputs(model, data):
 
 if torch.cuda.is_available():
     server_dir = "/home/gal.yona/deep-signature-2/"
-    file_path = server_dir+"data/spherical_monge_patches_100_N_20000.pkl"
-    file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_20000.pkl"
-    file_path3 = server_dir+"data/parabolic_monge_patches_100_N_20000.pkl"
+    file_path = server_dir+"data/spherical_monge_patches_100_N_500.pkl"
+    file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_500.pkl"
+    file_path3 = server_dir+"data/parabolic_monge_patches_100_N_500.pkl"
 
 else:
     file_path = "data/spherical_monge_patches_100_N_10.pkl"
