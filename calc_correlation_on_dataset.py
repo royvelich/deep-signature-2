@@ -4,13 +4,14 @@ import numpy as np
 import torch
 from torch_geometric.data import Data
 from torch_geometric.nn import knn_graph
+from tqdm import tqdm
 
 from models.point_transformer_conv.model import PointTransformerConvNet
 
 
 def calculate_outputs(model, data):
     outputs = []
-    for i in range(len(data)):
+    for i in tqdm(range(len(data))):
         # data[i] = data[i].cuda()
         outputs.append(model(Data(x=torch.tensor(data[i].v, dtype=torch.float32),
                                   pos=torch.tensor(data[i].v, dtype=torch.float32),
