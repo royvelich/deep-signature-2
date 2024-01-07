@@ -1,13 +1,13 @@
 import pickle
 
 import numpy as np
-import pyvista as pv
+# import pyvista as pv
 import torch
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+# from mpl_toolkits.mplot3d import Axes3D
 import open3d as o3d
 
-from utils import normalize_point_cloud, normalize_points_translation_and_rotation
+# from utils import normalize_point_cloud, normalize_points_translation_and_rotation
 
 
 def visualize_pointclouds(pointcloud1, pointcloud2, pointcloud3=None, pointcloud4 = None, labels=None, title=None):
