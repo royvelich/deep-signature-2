@@ -33,6 +33,9 @@ def main_loop():
         file_path = server_dir+"data/spherical_monge_patches_100_N_500.pkl"
         file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_500.pkl"
         file_path3 = server_dir+"data/parabolic_monge_patches_100_N_500.pkl"
+        # file_path = server_dir+"data/spherical_monge_patches_100_N_20000.pkl"
+        # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_20000.pkl"
+        # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_20000.pkl"
         num_workers = 1
         # combine_reg_and_non_reg_patches = True
 
@@ -105,7 +108,7 @@ def main_loop():
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_train_non_uniform_samples_also_with_planar_patches-{epoch:02d}',
+        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_non_uniform_samples_normalize-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=3

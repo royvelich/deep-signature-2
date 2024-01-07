@@ -126,8 +126,8 @@ class PointTransformerConvNet(pl.LightningModule):
 
     def forward(self, data, global_pooling=True):
 
-        x = self.append_moments(data.x) # x,y,z,xx,xy,xz,yy,yz,zz coordinates of each point
-        # x = data.x # x,y,z coordinates of each point
+        # x = self.append_moments(data.x) # x,y,z,xx,xy,xz,yy,yz,zz coordinates of each point
+        x = data.x # x,y,z coordinates of each point
         # edge_index = radius_graph(x, r=0.5, batch=None, loop=True, max_num_neighbors=32)
 
         # Apply initial embedding
@@ -170,7 +170,7 @@ class PointTransformerConvNet(pl.LightningModule):
         positive_output = positive_output[:negative_output.size(0)]
         # loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
-        loss_pearson = self.loss_func_pearson_corelation(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
+        loss_pearson = self.loss_func_pearson_corelation(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
         loss = 2*loss_tuplet + loss_pearson
 
         self.log('train_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
@@ -198,7 +198,7 @@ class PointTransformerConvNet(pl.LightningModule):
         positive_output = positive_output[:negative_output.size(0)]
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_pearson = self.loss_func_pearson_corelation(
-            torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
+            torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
         loss = 3 * loss_tuplet + loss_pearson
 
         self.log('train_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
