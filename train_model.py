@@ -30,12 +30,12 @@ def main_loop():
     if torch.cuda.is_available():
         # data_file_name = "triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
         # file_path = server_dir + "triplets_dataset/" + data_file_name
-        file_path = server_dir+"data/spherical_monge_patches_100_N_500.pkl"
-        file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_500.pkl"
-        file_path3 = server_dir+"data/parabolic_monge_patches_100_N_500.pkl"
-        # file_path = server_dir+"data/spherical_monge_patches_100_N_20000.pkl"
-        # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_20000.pkl"
-        # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_20000.pkl"
+        # file_path = server_dir+"data/spherical_monge_patches_100_N_500.pkl"
+        # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_500.pkl"
+        # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_500.pkl"
+        file_path = server_dir+"data/spherical_monge_patches_100_N_20000.pkl"
+        file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_20000.pkl"
+        file_path3 = server_dir+"data/parabolic_monge_patches_100_N_20000.pkl"
         num_workers = 1
         # combine_reg_and_non_reg_patches = True
 
