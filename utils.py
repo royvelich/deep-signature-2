@@ -300,8 +300,9 @@ def compute_patches_from_mesh(v, f, k=10, is_radius=False):
         distances, indices = nbrs.kneighbors(v)
     normalized_input = []
     for i in range(len(v)):
-        # normalized_input.append(v[indices[i]])
+        # normalized_input.append(normalize_points_just_translation(v[indices[i]], center_point=v[i]))
         normalized_input.append(normalize_points_translation_and_rotation(vertices=v[indices[i]], center_point=v[i]))
+        # normalized_input.append(v[indices[i]]- v[i])
 
 
     # Compute faces for each patch in normalized_input, use f only faces containing vertices from each patch
@@ -332,6 +333,24 @@ def save_glb(vertices: np.ndarray, faces: np.ndarray, colors: np.ndarray = None,
     # Save to a file
     with open(str(path), "wb") as f:
         f.write(glb_file)
+
+@staticmethod
+def save_obj(vertices: np.ndarray, faces: np.ndarray, colors: np.ndarray = None, path: Path = ''):
+    # Create a mesh with vertex colors
+    mesh = trimesh.Trimesh(
+        vertices=vertices,
+        faces=faces,
+        vertex_colors=colors,
+        # visual=TextureVisuals(uv=uv, image=image),
+        visual=visual.ColorVisuals(vertex_colors=colors),
+        process=False
+    )
+
+    # Export to glTF (non-binary)
+    obj_file = mesh.export(file_obj=str(path), file_type="obj")
+
+
+
 
 @staticmethod
 def unregularize_a_regularize_mesh(v : np.ndarray, f : np.ndarray):
@@ -418,7 +437,7 @@ def normalize_points_translation_and_rotation(vertices, center_point):
     eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
     # Sort eigenvalues in descending order
     sorted_indices = np.argsort(eigenvalues)[::-1]
-    eigenvalues = eigenvalues[sorted_indices]
+    # eigenvalues = eigenvalues[sorted_indices]
     eigenvectors = eigenvectors[:, sorted_indices]
     normalized_eigenvectors = eigenvectors / np.linalg.norm(eigenvectors)
     # normalized_eigenvectors = eigenvectors / np.sqrt(eigenvalues)
@@ -427,6 +446,15 @@ def normalize_points_translation_and_rotation(vertices, center_point):
 
     # Apply rotation to the centered point cloud
     normalized_points = np.dot(centered_points, rotation_matrix)
+
+    if np.mean(normalized_points, axis=0)[0] < 0:
+        normalized_points[:, 0] = -normalized_points[:, 0]
+
+    if np.mean(normalized_points, axis=0)[1] < 0:
+        normalized_points[:, 1] = -normalized_points[:, 1]
+
+    if np.mean(normalized_points, axis=0)[2] < 0:
+        normalized_points[:, 2] = -normalized_points[:, 2]
 
     #
     #
@@ -437,46 +465,46 @@ def normalize_points_translation_and_rotation(vertices, center_point):
     return normalized_points
 
 
-def torch_normalize_points_translation_and_rotation(vertices, center_point):
-    """
-    Normalize a set of 3D vertices by translation and rotation according to the covariance matrix principal directions.
-
-    Args:
-        vertices (torch.Tensor): 3D tensor of shape (num_points, 3) representing the input vertices.
-        center_point (torch.Tensor): 1D tensor of shape (3,) representing the center point.
-
-    Returns:
-        torch.Tensor: Normalized vertices of shape (num_points, 3).
-    """
-    # Step 1: Compute the centroid
-    # centroid = torch.mean(vertices, dim=0)
-
-    # Step 2: Compute the covariance matrix
-    centered_points = vertices - center_point
-    covariance_matrix = torch.matmul(centered_points.t(), centered_points) / centered_points.size(0)
-
-    # Step 3: Find the principal directions (eigenvectors)
-    # eigenvalues, eigenvectors = torch.linalg.eig(covariance_matrix)
-    pca_result = torch.pca_lowrank(centered_points)
-
-    # Extract eigenvectors and eigenvalues
-    eigenvectors = pca_result.U
-    eigenvalues = pca_result.S
-
-    eigenvalues = eigenvalues.real
-    eigenvectors = eigenvectors.real
-    # Sort eigenvalues in descending order
-    _, sorted_indices = torch.sort(eigenvalues, descending=True)
-    eigenvectors = eigenvectors[:, sorted_indices]
-    normalized_eigenvectors = eigenvectors / torch.norm(eigenvectors, dim=0)
-    # normalized_eigenvectors = eigenvectors / torch.sqrt(eigenvalues)
-    # Rotation matrix to align with principal axes
-    rotation_matrix = normalized_eigenvectors
-
-    # Apply rotation to the centered point cloud
-    normalized_points = torch.matmul(centered_points, rotation_matrix)
-
-    return normalized_points
+# def torch_normalize_points_translation_and_rotation(vertices, center_point):
+#     """
+#     Normalize a set of 3D vertices by translation and rotation according to the covariance matrix principal directions.
+#
+#     Args:
+#         vertices (torch.Tensor): 3D tensor of shape (num_points, 3) representing the input vertices.
+#         center_point (torch.Tensor): 1D tensor of shape (3,) representing the center point.
+#
+#     Returns:
+#         torch.Tensor: Normalized vertices of shape (num_points, 3).
+#     """
+#     # Step 1: Compute the centroid
+#     # centroid = torch.mean(vertices, dim=0)
+#
+#     # Step 2: Compute the covariance matrix
+#     centered_points = vertices - center_point
+#     covariance_matrix = torch.matmul(centered_points.t(), centered_points) / centered_points.size(0)
+#
+#     # Step 3: Find the principal directions (eigenvectors)
+#     # eigenvalues, eigenvectors = torch.linalg.eig(covariance_matrix)
+#     pca_result = torch.pca_lowrank(centered_points)
+#
+#     # Extract eigenvectors and eigenvalues
+#     eigenvectors = pca_result.U
+#     eigenvalues = pca_result.S
+#
+#     eigenvalues = eigenvalues.real
+#     eigenvectors = eigenvectors.real
+#     # Sort eigenvalues in descending order
+#     _, sorted_indices = torch.sort(eigenvalues, descending=True)
+#     eigenvectors = eigenvectors[:, sorted_indices]
+#     normalized_eigenvectors = eigenvectors / torch.norm(eigenvectors, dim=0)
+#     # normalized_eigenvectors = eigenvectors / torch.sqrt(eigenvalues)
+#     # Rotation matrix to align with principal axes
+#     rotation_matrix = normalized_eigenvectors
+#
+#     # Apply rotation to the centered point cloud
+#     normalized_points = torch.matmul(centered_points, rotation_matrix)
+#
+#     return normalized_points
 
 def random_rotation( x: torch.Tensor) -> torch.Tensor:
     # Generate a random rotation matrix
@@ -505,7 +533,7 @@ def random_rotation_numpy( x: np.ndarray) -> np.ndarray:
     # visualize_pointclouds(x, rotated_x)
     return rotated_x
 
-def normalize_point_cloud(x, center_point):
+def normalize_point_cloud(x, center_point=None):
     """
     Normalize a 3D point cloud tensor in terms of translation and rotation using PCA.
 
@@ -516,11 +544,12 @@ def normalize_point_cloud(x, center_point):
     Returns:
     - normalized_x: torch.Tensor, shape (N, 3), the normalized point cloud.
     """
-    mean = torch.mean(x, dim=0)
-
-    # Translate the point cloud to the origin
-    # translated_x = x - center_point
-    translated_x = x - mean
+    if center_point==None:
+        mean = torch.mean(x, dim=0)
+        # Translate the point cloud to the origin
+        translated_x = x - mean
+    else:
+        translated_x = x - center_point
 
     # Convert PyTorch tensor to NumPy array for PCA (scikit-learn supports NumPy)
     translated_np = translated_x.cpu().numpy()
@@ -529,13 +558,43 @@ def normalize_point_cloud(x, center_point):
     pca = PCA(n_components=3)
     pca.fit(translated_np)
     rotation_matrix = pca.components_.T
-    rotation_matrix[:, 2] = [0, 0, 1]
+    # rotation_matrix[:, 2] = [0, 0, 1]
 
     # Rotate the translated point cloud using the rotation matrix
     rotated_x = torch.matmul(translated_x, torch.from_numpy(rotation_matrix).to(translated_x.device))
 
     # Return the normalized point cloud (translated and rotated)
     normalized_x = rotated_x
+
+    return normalized_x
+
+def normalize_point_cloud_numpy(x, center_point=None):
+    """
+    numpy version of normalize_point_cloud
+
+    """
+    if center_point is None:
+        mean = np.mean(x, axis=0)
+        # Translate the point cloud to the origin
+        translated_x = x - mean
+    else:
+        translated_x = x - center_point
+
+
+    # Apply PCA to find the principal components (rotation matrix)
+    pca = PCA(n_components=3)
+    pca.fit(translated_x)
+    rotation_matrix = pca.components_.T
+    for i in range(3):
+        if rotation_matrix[i, i] < 0:
+            rotation_matrix[:, i] *= -1
+    # rotation_matrix[:, 2] = [0, 0, 1]
+
+
+    # Rotate the translated point cloud using the rotation matrix
+    normalized_x = np.matmul(translated_x, rotation_matrix)
+
+
 
     return normalized_x
 

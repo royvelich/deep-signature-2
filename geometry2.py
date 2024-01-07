@@ -175,7 +175,8 @@ class Patch(Mesh):
         # x, y, z = self._v[:,0], self._v[:,1], self._v[:,2]
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
         # ratio = 0.5
-        ratio = random.uniform(0.003,0.008)
+        ratio = np.random.uniform(0.03, 0.05)
+        # ratio = 0.05
         if downsample:
            indices = self.downsample_non_uniform(ratio=ratio)
         else:

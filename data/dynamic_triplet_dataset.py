@@ -8,8 +8,11 @@ from torch_geometric.data import Data, Batch
 from torch_geometric.nn import knn_graph
 
 from data.non_uniform_sampling import non_uniform_2d_sampling
-from utils import random_rotation, random_rotation_numpy
+from utils import random_rotation, random_rotation_numpy, normalize_point_cloud_numpy, \
+    normalize_points_translation_and_rotation
+
 # from visualize_pointclouds import visualize_pointclouds
+from visualize_pointclouds import visualize_pointclouds
 
 
 class DynamicTripletDataset(Dataset):
@@ -36,43 +39,61 @@ class DynamicTripletDataset(Dataset):
         # case 6: anc,pos parabolic, neg hyperbolic
         rand_case = torch.randint(1,7,(1,))
         if rand_case == 1:
-            patch1, patch2, patch3 = copy.deepcopy(self.data_spherical_patches[idx]), copy.deepcopy(self.data_spherical_patches[idx]), copy.deepcopy(self.data_hyperbolic_patches[idx])
+            patch_anc_pos, patch_neg = copy.deepcopy(self.data_spherical_patches[idx]),  copy.deepcopy(self.data_hyperbolic_patches[idx])
         elif rand_case == 2:
-            patch1, patch2, patch3 = copy.deepcopy(self.data_hyperbolic_patches[idx]), copy.deepcopy(self.data_hyperbolic_patches[idx]), copy.deepcopy(self.data_spherical_patches[idx])
+            patch_anc_pos, patch_neg = copy.deepcopy(self.data_hyperbolic_patches[idx]),  copy.deepcopy(self.data_spherical_patches[idx])
         elif rand_case == 3:
-            patch1, patch2, patch3 = copy.deepcopy(self.data_parabolic_patches[idx]), copy.deepcopy(self.data_parabolic_patches[idx]), copy.deepcopy(self.data_spherical_patches[idx])
+            patch_anc_pos, patch_neg = copy.deepcopy(self.data_parabolic_patches[idx]), copy.deepcopy(self.data_spherical_patches[idx])
         elif rand_case == 4:
-            patch1, patch2, patch3 = copy.deepcopy(self.data_spherical_patches[idx]), copy.deepcopy(self.data_spherical_patches[idx]), copy.deepcopy(self.data_parabolic_patches[idx])
+            patch_anc_pos, patch_neg = copy.deepcopy(self.data_spherical_patches[idx]), copy.deepcopy(self.data_parabolic_patches[idx])
         elif rand_case == 5:
-            patch1, patch2, patch3 = copy.deepcopy(self.data_hyperbolic_patches[idx]), copy.deepcopy(self.data_hyperbolic_patches[idx]), copy.deepcopy(self.data_parabolic_patches[idx])
+            patch_anc_pos, patch_neg = copy.deepcopy(self.data_hyperbolic_patches[idx]), copy.deepcopy(self.data_parabolic_patches[idx])
         elif rand_case == 6:
-            patch1, patch2, patch3 = copy.deepcopy(self.data_parabolic_patches[idx]), copy.deepcopy(self.data_parabolic_patches[idx]), copy.deepcopy(self.data_hyperbolic_patches[idx])
+            patch_anc_pos, patch_neg = copy.deepcopy(self.data_parabolic_patches[idx]),  copy.deepcopy(self.data_hyperbolic_patches[idx])
         else:
             raise ValueError('rand_case is not in range 1-6')
 
         # if self.transform is not None:
-        #     patch1 = self.transform(patch1)
+        #     patch_anc_pos = self.transform(patch_anc_pos)
         #     patch2 = self.transform(patch2)
-        #     patch3 = self.transform(patch3)
+        #     patch_neg = self.transform(patch_neg)
         # else:
-        patch1 = self.default_transform(patch1)
-        patch2 = self.default_transform(patch2)
-        patch3 = self.default_transform(patch3)
+        # visualize_pointclouds(patch_anc_pos.v, patch_neg.v)
 
-        item = patch1,patch2,patch3
+        patch_anc_pos = self.default_transform(patch_anc_pos)
+        patch_neg = self.default_transform(patch_neg)
+
+        patch_anc = self.default_non_uniform_sampling(copy.deepcopy(patch_anc_pos))
+        patch_pos = self.default_non_uniform_sampling(patch_anc_pos)
+        patch_neg = self.default_non_uniform_sampling(patch_neg)
+
+        item = patch_anc,patch_pos,patch_neg
+        # visualize_pointclouds(patch_anc.v, patch_pos.v, patch_neg.v)
+
         return item
 
     def default_transform(self, patch):
         # non-uniform sampling and translation to origin(suppose to be point N/2,N/2, make sure she is sampled as well) with random rotation
         N = patch.v.shape[0]
         grid_size = int(np.sqrt(N))
-        ratio = np.random.uniform(0.01, 0.05)
-        sampled_indices = non_uniform_2d_sampling(grid_size, ratio=ratio)
+
         # add 0,0 point to sampled indices - check if it working properly
         mid_point_indice = N // 2 - grid_size//2 - 1
-        if mid_point_indice not in sampled_indices:
-            rand_indice = torch.randint(0, len(sampled_indices), (1,))
-            sampled_indices[rand_indice] = mid_point_indice
+
+        center_point = patch.v[mid_point_indice]
+
+        # origin = patch.v
+        # normalize after sampling
+        patch.v = normalize_points_translation_and_rotation(patch.v, center_point=center_point)
+        # origin_after_sample_and_normazlize = patch.v
+        # visualize_pointclouds(patch.v, origin)
+        return patch
+
+    def transform_random_rotations(self, patch):
+        N = patch.v.shape[0]
+        grid_size = int(np.sqrt(N))
+        ratio = np.random.uniform(0.01, 0.05)
+        mid_point_indice = N // 2 - grid_size // 2 - 1
 
         # origin= patch.v
         # translate to origin
@@ -83,12 +104,21 @@ class DynamicTripletDataset(Dataset):
         patch.v = random_rotation_numpy(patch.v)
         # origin_after_rot = patch.v
 
-        # sampling
-        patch.v = patch.v[sampled_indices]
-        # origin_after_sample = patch.v
         # visualize_pointclouds(origin, origin_after_Trans, origin_after_rot, origin_after_sample)
         return patch
 
+    def default_non_uniform_sampling(self, patch):
+        N = patch.v.shape[0]
+        grid_size = int(np.sqrt(N))
+        ratio = np.random.uniform(0.01, 0.05)
+        sampled_indices = non_uniform_2d_sampling(grid_size, ratio=ratio)
+        mid_point_indice = N // 2 - grid_size//2 - 1
+        if mid_point_indice not in sampled_indices:
+            rand_indice = torch.randint(0, len(sampled_indices), (1,))
+            sampled_indices[rand_indice] = mid_point_indice
+
+        patch.v = patch.v[sampled_indices]
+        return patch
 
     # Define a custom collate function to handle variable-sized tensors in each triplet
     def padding_collate_fn(self, batch):

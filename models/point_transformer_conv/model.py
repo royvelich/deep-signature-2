@@ -14,7 +14,7 @@ from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2, loss_contrastive_plus_k1__greater_k2, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss
 from utils import normalize_points_translation_and_rotation, \
-    torch_normalize_points_translation_and_rotation, normalize_point_cloud
+    normalize_point_cloud
 from vars import LR, WEIGHT_DECAY
 from visualize.vis_utils import log_visualization
 
@@ -118,7 +118,9 @@ class PointTransformerConvNet(pl.LightningModule):
 
         self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
 
-        self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
+        # self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
+        self.loss_func_contrastive = contrastive_tuplet_loss
+        self.loss_func_pearson_corelation = loss__pearson_correlation_k1_k2
         # self.loss_func = contrastive_tuplet_loss
 
 
@@ -166,17 +168,13 @@ class PointTransformerConvNet(pl.LightningModule):
         # make the size of the anchor and positive the same as the negative
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
-        loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
+        # loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
+        loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
+        loss_pearson = self.loss_func_pearson_corelation(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
+        loss = 2*loss_tuplet + loss_pearson
 
-        # if batch_idx % 10 == 0: # can change it just to patches that have >N vertices
-        #     t = min(2, len(batch))
-        #     random_indices = np.random.choice(len(batch), t, replace=False)
-        #
-        #     for i in random_indices:
-        #         d1, d2, k1, k2 = igl.principal_curvature(np.array(batch[i].pos.cpu().numpy()), batch[i].face, radius=30)
-        #         output_supervised = self.forward(batch[i], global_pooling=False)
-        #         loss = loss + loss_gaussian_curvature_supervised(output_supervised, [torch.tensor(k1).to(device),torch.tensor(k2).to(device)])
-
+        self.log('train_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
+        self.log('train_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
         self.log('train_loss', loss.item(), on_step=False, on_epoch=True)
         return loss
 
@@ -198,8 +196,13 @@ class PointTransformerConvNet(pl.LightningModule):
         # make the size of the anchor and positive the same as the negative
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
-        loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
+        loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
+        loss_pearson = self.loss_func_pearson_corelation(
+            torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
+        loss = 3 * loss_tuplet + loss_pearson
 
+        self.log('train_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
+        self.log('train_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
         self.log('val_loss', loss.item(), on_step=False, on_epoch=True)
         # if batch_idx == 0:
         #     self.logger.experiment.log({"visuals - output0 and 1 on patch": wandb.Image(log_visualization(self, batch[0]))})

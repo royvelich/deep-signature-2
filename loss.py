@@ -163,7 +163,7 @@ def loss__pearson_correlation_k1_k2(a,p,n, device='cpu'):
     return (calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device))
 
 def loss_contrastive_plus_pearson_correlation_k1_k2(a,p,n, device='cpu'):
-    return (5*contrastive_tuplet_loss(a,p,n) +0.5*calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device))
+    return (2*contrastive_tuplet_loss(a,p,n) +calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device))
 
 def loss_contrastive_plus_pearson_correlation_k1__greater_k2(a,p,n, device='cpu'):
     return (5*contrastive_tuplet_loss(a,p,n) +0.2*calculate_pearson_k1_k2_loss_vectorized(torch.cat([a,p,n], dim=1).T, device) + 0.1*k1_greater_k2_loss(torch.cat([a,p,n], dim=1).T))
