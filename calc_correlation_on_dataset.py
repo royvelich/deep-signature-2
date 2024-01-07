@@ -68,8 +68,8 @@ with open(file_path3, 'rb') as f:
     data_parabolic = pickle.load(f)
 
 
-model_path = "C:/Users\galyo\Downloads\model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
-# model_path = "/home/gal.yona/deep-signature-2/checkpoints/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=344.ckpt"
+# model_path = "C:/Users\galyo\Downloads\model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
+model_path = "/home/gal.yona/deep-signature-2/checkpoints/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=344.ckpt"
 model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
 model.eval()
 # outputs1 = calculate_outputs_with_model(model, data_spherical)
