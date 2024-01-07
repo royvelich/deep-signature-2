@@ -12,7 +12,6 @@ from utils import random_rotation, random_rotation_numpy, normalize_point_cloud_
     normalize_points_translation_and_rotation
 
 # from visualize_pointclouds import visualize_pointclouds
-from visualize_pointclouds import visualize_pointclouds
 
 
 class DynamicTripletDataset(Dataset):
