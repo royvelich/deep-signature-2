@@ -12,7 +12,7 @@ from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss__pearson_correlation_k1_k2, \
     loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised, contrastive_tuplet_loss, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2, loss_contrastive_plus_k1__greater_k2, \
-    loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss
+    loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss, calculate_pearson_k1_k2_loss_vectorized
 from utils import normalize_points_translation_and_rotation, \
     normalize_point_cloud
 from vars import LR, WEIGHT_DECAY
@@ -120,7 +120,7 @@ class PointTransformerConvNet(pl.LightningModule):
 
         # self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
         self.loss_func_contrastive = contrastive_tuplet_loss
-        self.loss_func_pearson_corelation = loss__pearson_correlation_k1_k2
+        self.loss_func_pearson_corelation = calculate_pearson_k1_k2_loss_vectorized
         # self.loss_func = contrastive_tuplet_loss
 
 
