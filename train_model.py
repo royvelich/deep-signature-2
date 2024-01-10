@@ -102,7 +102,7 @@ def main_loop():
     # want to train model from trained weights
 
     # model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
-    model_path = "/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
+    model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
 
     model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
     # model.eval()
