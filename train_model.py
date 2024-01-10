@@ -30,12 +30,12 @@ def main_loop():
     if torch.cuda.is_available():
         # data_file_name = "triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
         # file_path = server_dir + "triplets_dataset/" + data_file_name
-        # file_path = server_dir+"data/spherical_monge_patches_100_N_500.pkl"
-        # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_500.pkl"
-        # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_500.pkl"
-        file_path = server_dir+"data/spherical_monge_patches_100_N_20000.pkl"
-        file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_20000.pkl"
-        file_path3 = server_dir+"data/parabolic_monge_patches_100_N_20000.pkl"
+        file_path = server_dir+"data/spherical_monge_patches_100_N_300.pkl"
+        file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_300.pkl"
+        file_path3 = server_dir+"data/parabolic_monge_patches_100_N_300.pkl"
+        # file_path = server_dir+"data/spherical_monge_patches_100_N_20000.pkl"
+        # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_20000.pkl"
+        # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_20000.pkl"
         num_workers = 1
         # combine_reg_and_non_reg_patches = True
         train_ratio = 0.9
@@ -99,10 +99,12 @@ def main_loop():
     hidden_channels = 128
     in_channels = 9
     out_channels = 2
-    model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
-    # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=99.ckpt"
+    # want to train model from trained weights
 
-    # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
+    # model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
+    model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
+
+    model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
     # model.eval()
 
     # training
