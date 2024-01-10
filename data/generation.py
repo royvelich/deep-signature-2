@@ -258,6 +258,9 @@ class QuadraticMonagePatchPointCloudGenerator(PatchGenerator):
 
         return Patch2(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample), k1, k2,point0_0_index
 
+
+
+
 class QuadraticMonageParabolicPlanarPatchGenerator(PatchGenerator):
     def __init__(self, limit: float, grid_size: int, downsample: bool = True):
         super().__init__(limit=limit, grid_size=grid_size)
@@ -327,21 +330,23 @@ class PeakSaddleGenerator(PatchGenerator):
         y = np.linspace(-self._limit, self._limit, curr_grid_size)
         x_grid, y_grid = np.meshgrid(x, y)
 
-        if shape == "peak":
+        if shape == "peak1":
             z_grid = x_grid ** 2 + y_grid ** 2
         elif shape == "peak2":
-            z_grid = 7*x_grid ** 2 + y_grid ** 2
+            z_grid = 3*x_grid ** 2 + y_grid ** 2
         elif shape == "peak3":
             z_grid = 0.5*x_grid ** 2 + 0.5*y_grid ** 2
         elif shape == "peak4":
-            z_grid = -2*x_grid ** 2 - y_grid ** 2
-        elif shape == "saddle":
-            z_grid = 0.6*x_grid ** 2 - 0.6*y_grid ** 2
+            z_grid = 2*x_grid ** 2 + y_grid ** 2
+        elif shape == "saddle1":
+            z_grid = 0.2*x_grid ** 2 - 0.2*y_grid ** 2
         elif shape == "saddle2":
-            z_grid = 0.8*x_grid ** 2 - 2*y_grid ** 2
+            z_grid = -0.8*x_grid ** 2 + 2*y_grid ** 2
         elif shape == "saddle3":
-            z_grid = 0.1*x_grid ** 2 - 6*y_grid ** 2
+            z_grid = x_grid ** 2 - y_grid ** 2
         elif shape == "saddle4":
-            z_grid = 2 * x_grid ** 2 - 2 * y_grid ** 2
+            z_grid = 2 * x_grid ** 2 - 3* y_grid ** 2
+        elif shape == "parabolic1":
+            z_grid = 0.5*x_grid**2
 
         return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample)

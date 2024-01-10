@@ -38,6 +38,7 @@ def main_loop():
         file_path3 = server_dir+"data/parabolic_monge_patches_100_N_20000.pkl"
         num_workers = 1
         # combine_reg_and_non_reg_patches = True
+        train_ratio = 0.9
 
     else:
         # file_path = "generated_triplet_data/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
@@ -46,6 +47,7 @@ def main_loop():
         file_path2 = "data/hyperbolic_monge_patches_100_N_10.pkl"
         file_path3 = "data/parabolic_monge_patches_100_N_10.pkl"
         batch_size = 8
+        train_ratio = 0.8
 
 
 
@@ -75,7 +77,6 @@ def main_loop():
     del data_parabolic
 
     # Define the ratio for train and validation split (e.g., 80% for training, 20% for validation)
-    train_ratio = 0.8
 
     # Calculate the number of samples for train and validation sets
     num_samples = len(custom_dataset)
@@ -108,7 +109,7 @@ def main_loop():
     logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_non_uniform_samples_normalize-{epoch:02d}',
+        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_non_uniform_samples_random_rotations-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=3

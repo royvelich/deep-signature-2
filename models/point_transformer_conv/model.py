@@ -201,8 +201,8 @@ class PointTransformerConvNet(pl.LightningModule):
             torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
         loss = 3 * loss_tuplet + loss_pearson
 
-        self.log('train_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
-        self.log('train_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
+        self.log('val_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
+        self.log('val_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
         self.log('val_loss', loss.item(), on_step=False, on_epoch=True)
         # if batch_idx == 0:
         #     self.logger.experiment.log({"visuals - output0 and 1 on patch": wandb.Image(log_visualization(self, batch[0]))})

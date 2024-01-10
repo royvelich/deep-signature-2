@@ -28,6 +28,7 @@ import pickle
 
 dataset_reg_and_unreg = False
 is_triplets = False
+triplet_file = True
 device = torch.device("cuda" if is_available() else "cpu")
 
 parser = argparse.ArgumentParser(description='Generate triplets of patches')
@@ -122,13 +123,47 @@ if is_triplets:
     # print(triplets)
 
 else:
-    outputs = []
-    patch_generator = QuadraticMonagePatchPointCloudGenerator(limit=limit, grid_size=grid_size, downsample=False)
-    for i in tqdm(range(N)):
-        sample, k1, k2, point0_0 = patch_generator.generate(patch_type=patch_type)
+    if triplet_file:
+        outputs_spherical = []
+        outputs_hyperbolic = []
+        outputs_parabolic = []
 
-        outputs.append(sample)
+        patch_generator = QuadraticMonagePatchPointCloudGenerator(limit=limit, grid_size=grid_size, downsample=False)
 
-    file_path = "./"+str(patch_type)+"_monge_patches_" + str(grid_size) + "_N_" + str(N) + ".pkl"
-    with open(file_path, 'wb') as f:
-        pickle.dump(outputs, f)
+        for i in tqdm(range(N)):
+            sample_spherical, k1, k2, point0_0 = patch_generator.generate(patch_type="spherical")
+            if random.uniform(0,1)>0.5:
+                sample_hyperbolic, k1, k2, point0_0 = patch_generator.generate(patch_type="hyperbolic", k1=k1, k2=-k2)
+            else:
+                sample_hyperbolic, k1, k2, point0_0 = patch_generator.generate(patch_type="hyperbolic", k1=-k1, k2=k2)
+            if random.uniform(0,1)<=0.5:
+                sample_parabolic, k1, k2, point0_0 = patch_generator.generate(patch_type="parabolic", k1=-k1, k2=0)
+            else:
+                sample_parabolic, k1, k2, point0_0 = patch_generator.generate(patch_type="parabolic", k1=0, k2=-k2)
+
+            outputs_spherical.append(sample_spherical)
+            outputs_hyperbolic.append(sample_hyperbolic)
+            outputs_parabolic.append(sample_parabolic)
+
+        file_path_spherical = "./spherical_monge_patches_" + str(grid_size) + "_N_" + str(N) + ".pkl"
+        file_path_hyperbolic = "./hyperbolic_monge_patches_" + str(grid_size) + "_N_" + str(N) + ".pkl"
+        file_path_parabolic = "./parabolic_monge_patches_" + str(grid_size) + "_N_" + str(N) + ".pkl"
+
+        with open(file_path_spherical, 'wb') as f:
+            pickle.dump(outputs_spherical, f)
+        with open(file_path_hyperbolic, 'wb') as f:
+            pickle.dump(outputs_hyperbolic, f)
+        with open(file_path_parabolic, 'wb') as f:
+            pickle.dump(outputs_parabolic, f)
+
+    else:
+        outputs= []
+        patch_generator = QuadraticMonagePatchPointCloudGenerator(limit=limit, grid_size=grid_size, downsample=False)
+        for i in tqdm(range(N)):
+            sample, k1, k2, point0_0 = patch_generator.generate(patch_type=patch_type)
+
+            outputs.append(sample)
+
+        file_path = "./"+str(patch_type)+"_monge_patches_" + str(grid_size) + "_N_" + str(N) + ".pkl"
+        with open(file_path, 'wb') as f:
+            pickle.dump(outputs, f)

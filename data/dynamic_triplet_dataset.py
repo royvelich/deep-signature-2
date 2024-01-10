@@ -59,8 +59,11 @@ class DynamicTripletDataset(Dataset):
         # else:
         # visualize_pointclouds(patch_anc_pos.v, patch_neg.v)
 
-        patch_anc_pos = self.default_transform(patch_anc_pos)
-        patch_neg = self.default_transform(patch_neg)
+        # patch_anc_pos = self.default_transform(patch_anc_pos)
+        # patch_neg = self.default_transform(patch_neg)
+
+        patch_anc_pos = self.transform_random_rotations(patch_anc_pos)
+        patch_neg = self.transform_random_rotations(patch_neg)
 
         patch_anc = self.default_non_uniform_sampling(copy.deepcopy(patch_anc_pos))
         patch_pos = self.default_non_uniform_sampling(patch_anc_pos)
