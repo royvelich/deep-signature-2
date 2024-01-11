@@ -154,7 +154,7 @@ def init_wandb(lr=0.001,max_epochs=100, weight_decay=0.001, dataset_path = ""):
     os.makedirs(wandb_dir, exist_ok=True)
     os.environ["WANDB_TEMP"] = wandb_dir
 
-    wandb.login(key="fbd4729419e01772f8a97c41e71e422c6311e896")
+    # wandb.login(key="fbd4729419e01772f8a97c41e71e422c6311e896")
     wandb.init(project="train_on_patches",
                # entity="geometric-dl",
                config={
