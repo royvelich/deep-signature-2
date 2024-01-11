@@ -1,4 +1,4 @@
-name: deep-signature-2-windows
+name: deep-signature-2-ubuntu
 channels:
   - pyg
   - nvidia
@@ -29,6 +29,7 @@ dependencies:
   - pyvista
   - shapely
   - notebook
+  - mesa-libgl-cos6-x86_64
 #  - fvcore
 #  - iopath
 #  - pytorch3d
@@ -49,3 +50,4 @@ dependencies:
       - trimesh
       - libigl
       - sympy
+      - lightning
