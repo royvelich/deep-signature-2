@@ -104,7 +104,7 @@ def main_loop():
     # model = STNkd(k=9)
     num_point_transformer_layers = 1
     num_encoder_decoder_layers = 8
-    hidden_channels = 128
+    hidden_channels = 512
     in_channels = 9
     out_channels = 2
     # want to train model from trained weights
