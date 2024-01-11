@@ -36,9 +36,9 @@ def main_loop():
         # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_300.pkl"
         # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_300.pkl"
 
-        file_path = "/rg/kimmel_prj/gal.yona/prj/Github/deep-signature-2/data/spherical_monge_patches_100_N_10000.pkl"
-        file_path2 = "/rg/kimmel_prj/gal.yona/prj/Github/deep-signature-2/data/hyperbolic_monge_patches_100_N_10000.pkl"
-        file_path3 = "/rg/kimmel_prj/gal.yona/prj/Github/deep-signature-2/data/parabolic_monge_patches_100_N_10000.pkl"
+        file_path = "./data/spherical_monge_patches_100_N_10000.pkl"
+        file_path2 = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
+        file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
         num_workers = 4
         # combine_reg_and_non_reg_patches = True
         train_ratio = 0.9
