@@ -132,14 +132,20 @@ else:
 
         for i in tqdm(range(N)):
             sample_spherical, k1, k2, point0_0 = patch_generator.generate(patch_type="spherical")
-            if random.uniform(0,1)>0.5:
+            rand_num = random.uniform(0,1)
+            if rand_num<0.3:
                 sample_hyperbolic, k1, k2, point0_0 = patch_generator.generate(patch_type="hyperbolic", k1=k1, k2=-k2)
-            else:
+            elif rand_num<0.6 and rand_num>=0.3:
                 sample_hyperbolic, k1, k2, point0_0 = patch_generator.generate(patch_type="hyperbolic", k1=-k1, k2=k2)
-            if random.uniform(0,1)<=0.5:
-                sample_parabolic, k1, k2, point0_0 = patch_generator.generate(patch_type="parabolic", k1=-k1, k2=0)
             else:
+                sample_hyperbolic, k1, k2, point0_0 = patch_generator.generate(patch_type="hyperbolic")
+            rand_num2 = random.uniform(0,1)
+            if rand_num2<=0.3:
+                sample_parabolic, k1, k2, point0_0 = patch_generator.generate(patch_type="parabolic", k1=-k1, k2=0)
+            elif rand_num2<=0.6 and rand_num2>0.3:
                 sample_parabolic, k1, k2, point0_0 = patch_generator.generate(patch_type="parabolic", k1=0, k2=-k2)
+            else:
+                sample_parabolic, k1, k2, point0_0 = patch_generator.generate(patch_type="parabolic")
 
             outputs_spherical.append(sample_spherical)
             outputs_hyperbolic.append(sample_hyperbolic)

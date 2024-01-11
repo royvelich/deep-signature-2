@@ -11,11 +11,11 @@ from data.non_uniform_sampling import non_uniform_2d_sampling
 from utils import random_rotation, random_rotation_numpy, normalize_point_cloud_numpy, \
     normalize_points_translation_and_rotation
 
-# from visualize_pointclouds import visualize_pointclouds
+# from visualize_pointclouds import visualize_pointclouds2
 
 
 class DynamicTripletDataset(Dataset):
-    def __init__(self, data_spherical_patches, data_hyperbolic_patches, data_parabolic_patches, transform=None, k = 6):
+    def __init__(self, data_spherical_patches, data_hyperbolic_patches, data_parabolic_patches, transform=None, k = 12):
         self.data_spherical_patches = data_spherical_patches
         self.data_hyperbolic_patches = data_hyperbolic_patches
         self.data_parabolic_patches = data_parabolic_patches
@@ -62,15 +62,16 @@ class DynamicTripletDataset(Dataset):
         # patch_anc_pos = self.default_transform(patch_anc_pos)
         # patch_neg = self.default_transform(patch_neg)
 
-        patch_anc_pos = self.transform_random_rotations(patch_anc_pos)
+        patch_anc = self.transform_random_rotations(copy.deepcopy(patch_anc_pos))
+        patch_pos = self.transform_random_rotations(patch_anc_pos)
         patch_neg = self.transform_random_rotations(patch_neg)
 
-        patch_anc = self.default_non_uniform_sampling(copy.deepcopy(patch_anc_pos))
-        patch_pos = self.default_non_uniform_sampling(patch_anc_pos)
+        patch_anc = self.default_non_uniform_sampling(patch_anc)
+        patch_pos = self.default_non_uniform_sampling(patch_pos)
         patch_neg = self.default_non_uniform_sampling(patch_neg)
 
         item = patch_anc,patch_pos,patch_neg
-        # visualize_pointclouds(patch_anc.v, patch_pos.v, patch_neg.v)
+        # visualize_pointclouds2(patch_anc.v, patch_pos.v, patch_neg.v)
 
         return item
 

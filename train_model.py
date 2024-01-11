@@ -43,7 +43,8 @@ def main_loop():
         num_workers = 4
         # combine_reg_and_non_reg_patches = True
         train_ratio = 0.9
-        batch_size = 64
+        batch_size = 128
+        devices = -1 # takes the number of available GPUs
 
 
     else:
@@ -54,6 +55,7 @@ def main_loop():
         file_path3 = "data/parabolic_monge_patches_100_N_10.pkl"
         batch_size = 8
         train_ratio = 0.8
+        devices = 1
 
 
 
@@ -140,10 +142,10 @@ def main_loop():
     # )
     # visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
     trainer = Trainer(num_nodes=1,
-                      devices=-1,
+                      devices=devices,
                       gradient_clip_val=1.0,
                       # log_every_n_steps=1,
-                      accelerator='gpu',
+                      accelerator='auto',
                       # overfit_batches=1.0,
                       max_epochs=max_epochs,
                       logger=logger,

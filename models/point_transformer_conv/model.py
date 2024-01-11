@@ -170,7 +170,7 @@ class PointTransformerConvNet(pl.LightningModule):
         # loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_pearson = self.loss_func_pearson_corelation(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
-        loss = 2*loss_tuplet + loss_pearson
+        loss = 3*loss_tuplet + loss_pearson
 
         self.log('train_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
         self.log('train_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
