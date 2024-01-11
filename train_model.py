@@ -16,7 +16,9 @@ from models.pointnet.model import STNkd, PointNet_FC
 from vars import LR, WEIGHT_DECAY
 from visualize.visualize__results_on_mesh import VisualizerCallback
 
-
+# Get the current working directory
+current_directory = os.getcwd()
+print("Current working directory: ", current_directory)
 
 
 def main_loop():
