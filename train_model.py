@@ -2,6 +2,7 @@ import os
 import pickle
 
 import torch.cuda
+from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from pytorch_lightning import Trainer
@@ -113,7 +114,16 @@ def main_loop():
     # model.eval()
 
     # training
-    logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
+    # logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
+    logger = WandbLogger(project="train_on_patches",
+               # entity="geometric-dl",
+               config={
+                   "learning_rate": lr,
+                   "architecture": "Point Transformer Net Mean pool",
+                   "dataset": "sphere, hyperbolic, parabolic 10000 patches each",
+                   "epochs": max_epochs,
+                   "weight_decay": weight_decay
+               })
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
         filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_non_uniform_samples_random_rotations-{epoch:02d}',
