@@ -16,7 +16,6 @@ from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
 from utils import normalize_points_translation_and_rotation, \
     normalize_point_cloud
 from vars import LR, WEIGHT_DECAY
-from visualize.vis_utils import log_visualization
 
 # Taken from https://github.com/vsitzmann/siren
 # from visualize_pointclouds import visualize_pointclouds
