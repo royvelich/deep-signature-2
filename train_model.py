@@ -30,15 +30,18 @@ def main_loop():
     if torch.cuda.is_available():
         # data_file_name = "triplets_size_300_N_5000_all_monge_patch_non_uniform_sampling_part0.pkl"
         # file_path = server_dir + "triplets_dataset/" + data_file_name
-        file_path = server_dir+"data/spherical_monge_patches_100_N_300.pkl"
-        file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_300.pkl"
-        file_path3 = server_dir+"data/parabolic_monge_patches_100_N_300.pkl"
-        # file_path = server_dir+"data/spherical_monge_patches_100_N_20000.pkl"
-        # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_20000.pkl"
-        # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_20000.pkl"
-        num_workers = 1
+        # file_path = server_dir+"data/spherical_monge_patches_100_N_300.pkl"
+        # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_300.pkl"
+        # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_300.pkl"
+
+        file_path = "/rg/kimmel_prj/gal.yona/prj/Github/deep-signature-2/data/spherical_monge_patches_100_N_10000.pkl"
+        file_path2 = "/rg/kimmel_prj/gal.yona/prj/Github/deep-signature-2/data/hyperbolic_monge_patches_100_N_10000.pkl"
+        file_path3 = "/rg/kimmel_prj/gal.yona/prj/Github/deep-signature-2/data/parabolic_monge_patches_100_N_10000.pkl"
+        num_workers = 4
         # combine_reg_and_non_reg_patches = True
         train_ratio = 0.9
+        batch_size = 64
+
 
     else:
         # file_path = "generated_triplet_data/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
@@ -101,10 +104,10 @@ def main_loop():
     out_channels = 2
     # want to train model from trained weights
 
-    # model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
-    model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
-
-    model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
+    model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
+    # model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
+    #
+    # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
     # model.eval()
 
     # training
@@ -125,9 +128,10 @@ def main_loop():
     # )
     # visualizer_callback = VisualizerCallback(radius=0.5, sample=data[0][0])
     trainer = Trainer(num_nodes=1,
+                      devices=-1,
                       gradient_clip_val=1.0,
                       # log_every_n_steps=1,
-                      accelerator='auto',
+                      accelerator='gpu',
                       # overfit_batches=1.0,
                       max_epochs=max_epochs,
                       logger=logger,
