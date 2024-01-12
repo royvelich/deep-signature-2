@@ -36,8 +36,6 @@ def map_patch(model, v):
 def map_patches_to_2d():
 
 
-    model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
-    model.eval()
     if torch.cuda.is_available():
         dataset_eliptical_path = "./data/spherical_monge_patches_100_N_10000.pkl"
         dataset_hyperbolic_path = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
@@ -50,6 +48,8 @@ def map_patches_to_2d():
         dataset_parabolic_path = "data/parabolic_monge_patches_100_N_10.pkl"
         model_path = "C:/Users\galyo\Downloads\model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=92.ckpt"
 
+    model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('auto'))
+    model.eval()
 
 
 
