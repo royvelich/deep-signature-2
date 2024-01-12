@@ -104,8 +104,8 @@ def map_patches_to_2d():
 
     plt.gca().set_aspect('equal', adjustable='box')
     plt.legend(loc='upper right', bbox_to_anchor=(0.0, 1.0))
-
-    plt.show()
+    plt.savefig('map_patches_to_2d.png', dpi=300)
+    # plt.show()
 
 
 map_patches_to_2d()
