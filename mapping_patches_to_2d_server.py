@@ -84,9 +84,9 @@ def map_patches_to_2d():
         curr_hyperbolic_points = torch.tensor(data_hyperbolic[i].v[curr_hyperbolic_patch_indices], dtype=torch.float32).to(model.device)
         # curr_parabolic_points = torch.tensor(data_parabolic[i].v[curr_parabolic_patch_indices], dtype=torch.float32).to(model.device)
 
-        output_points_eliptical.append(map_patch(model, curr_eliptical_points).detach().numpy())
-        output_points_hyperbolic.append(map_patch(model, curr_hyperbolic_points).detach().numpy())
-        # output_points_parabolic.append(map_patch(model, curr_parabolic_points).detach().numpy())
+        output_points_eliptical.append(map_patch(model, curr_eliptical_points).cpu().detach().numpy())
+        output_points_hyperbolic.append(map_patch(model, curr_hyperbolic_points).cpu().detach().numpy())
+        # output_points_parabolic.append(map_patch(model, curr_parabolic_points).cpu().detach().numpy())
 
 
     output_points_eliptical = np.array(output_points_eliptical).squeeze()
