@@ -56,6 +56,7 @@ def main_loop():
         batch_size = 8
         train_ratio = 0.8
         devices = 1
+        logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
 
 
 
@@ -109,14 +110,14 @@ def main_loop():
     out_channels = 2
     # want to train model from trained weights
 
-    model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
+    # model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
     # model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
+    model_path = "./checkpoints/model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=116.ckpt"
     #
-    # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
+    model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
     # model.eval()
 
     # training
-    # logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
     logger = WandbLogger(project="train_on_patches",
                # entity="geometric-dl",
                config={
@@ -144,6 +145,7 @@ def main_loop():
     trainer = Trainer(num_nodes=1,
                       devices=devices,
                       gradient_clip_val=1.0,
+                      num_sanity_val_steps=0,
                       # log_every_n_steps=1,
                       accelerator='auto',
                       # overfit_batches=1.0,

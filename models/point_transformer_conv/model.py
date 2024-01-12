@@ -121,6 +121,8 @@ class PointTransformerConvNet(pl.LightningModule):
         self.loss_func_contrastive = contrastive_tuplet_loss
         self.loss_func_pearson_corelation = calculate_pearson_k1_k2_loss_vectorized
         # self.loss_func = contrastive_tuplet_loss
+        self.outputs_list_train = []
+        self.outputs_list_val = []
 
 
     def forward(self, data, global_pooling=True):
@@ -167,6 +169,7 @@ class PointTransformerConvNet(pl.LightningModule):
         # make the size of the anchor and positive the same as the negative
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
+        self.outputs_list_train.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
         # loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_pearson = self.loss_func_pearson_corelation(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
@@ -195,6 +198,8 @@ class PointTransformerConvNet(pl.LightningModule):
         # make the size of the anchor and positive the same as the negative
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
+        self.outputs_list_val.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
+
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_pearson = self.loss_func_pearson_corelation(
             torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
@@ -241,9 +246,19 @@ class PointTransformerConvNet(pl.LightningModule):
     def on_train_epoch_end(self):
         # Get the current learning rate from the optimizer
         current_lr = self.optimizers().param_groups[0]['lr']
+        corr_mat = torch.corrcoef(torch.cat(self.outputs_list_train, dim=0).T)
 
         # Log the learning rate
         self.log('learning_rate', current_lr, on_step=False, on_epoch=True)
+        self.log('train_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True)
+
+        # Reset the outputs list
+        self.outputs_list_train = []
+
+    def on_validation_epoch_end(self):
+        corr_mat = torch.corrcoef(torch.cat(self.outputs_list_val, dim=0).T)
+        self.log('val_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True)
+        self.outputs_list_val = []
 
 
     def normalize_features(self, features):
