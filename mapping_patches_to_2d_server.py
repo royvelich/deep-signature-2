@@ -12,7 +12,7 @@ from models.point_transformer_conv.model import PointTransformerConvNet
 from utils import  normalize_points_translation_and_rotation
 
 
-matplotlib.use('Qt5Agg')  # Use Tkinter as the backend; you can try other backends as well
+# matplotlib.use('Qt5Agg')  # Use Tkinter as the backend; you can try other backends as well
 
 def find_outliers(output_points):
     output_points = np.array(output_points)
