@@ -29,6 +29,7 @@ def map_patch(model, v):
 
     center_point_indice = np.argmin(v[:,0]**2+v[:,1]**2+v[:,2]**2)
     v = normalize_points_translation_and_rotation(vertices=v, center_point=v[center_point_indice])
+    v = torch.tensor(v, dtype=torch.float32).to(model.device)
     output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=knn_graph(torch.tensor(v), k=12, batch=None, loop=False), global_pooling=True))
     return output
 
@@ -80,9 +81,9 @@ def map_patches_to_2d():
         curr_eliptical_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_hyperbolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_parabolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
-        curr_eliptical_points = torch.tensor(data_spherical[i].v[curr_eliptical_patch_indices], dtype=torch.float32).to(model.device)
-        curr_hyperbolic_points = torch.tensor(data_hyperbolic[i].v[curr_hyperbolic_patch_indices], dtype=torch.float32).to(model.device)
-        # curr_parabolic_points = torch.tensor(data_parabolic[i].v[curr_parabolic_patch_indices], dtype=torch.float32).to(model.device)
+        curr_eliptical_points = data_spherical[i].v[curr_eliptical_patch_indices]
+        curr_hyperbolic_points = data_hyperbolic[i].v[curr_hyperbolic_patch_indices]
+        # curr_parabolic_points = data_parabolic[i].v[curr_parabolic_patch_indices]
 
         output_points_eliptical.append(map_patch(model, curr_eliptical_points).cpu().detach().numpy())
         output_points_hyperbolic.append(map_patch(model, curr_hyperbolic_points).cpu().detach().numpy())
