@@ -35,8 +35,8 @@ def map_patch(model, v):
 
 def map_patches_to_2d():
 
-
-    if torch.cuda.is_available():
+    is_cuda = torch.cuda.is_available()
+    if is_cuda:
         dataset_eliptical_path = "./data/spherical_monge_patches_100_N_10000.pkl"
         dataset_hyperbolic_path = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
         dataset_parabolic_path = "./data/parabolic_monge_patches_100_N_10000.pkl"
@@ -80,9 +80,9 @@ def map_patches_to_2d():
         curr_eliptical_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_hyperbolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_parabolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
-        curr_eliptical_points = data_spherical[i].v[curr_eliptical_patch_indices]
-        curr_hyperbolic_points = data_hyperbolic[i].v[curr_hyperbolic_patch_indices]
-        # curr_parabolic_points = data_parabolic[i].v[curr_parabolic_patch_indices]
+        curr_eliptical_points = torch.tensor(data_spherical[i].v[curr_eliptical_patch_indices], dtype=torch.float32).to(model.device)
+        curr_hyperbolic_points = torch.tensor(data_hyperbolic[i].v[curr_hyperbolic_patch_indices], dtype=torch.float32).to(model.device)
+        # curr_parabolic_points = torch.tensor(data_parabolic[i].v[curr_parabolic_patch_indices], dtype=torch.float32).to(model.device)
 
         output_points_eliptical.append(map_patch(model, curr_eliptical_points).detach().numpy())
         output_points_hyperbolic.append(map_patch(model, curr_hyperbolic_points).detach().numpy())
