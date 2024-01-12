@@ -6,6 +6,7 @@ import torch
 from matplotlib import pyplot as plt
 from torch_geometric.data import Data
 from torch_geometric.nn import knn_graph
+from tqdm import tqdm
 
 from data.non_uniform_sampling import non_uniform_2d_sampling
 from models.point_transformer_conv.model import PointTransformerConvNet
@@ -34,7 +35,6 @@ def map_patch(model, v):
 
 def map_patches_to_2d():
 
-    model_path = "C:/Users\galyo\Downloads\model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=92.ckpt"
 
     model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
     model.eval()
@@ -42,10 +42,13 @@ def map_patches_to_2d():
         dataset_eliptical_path = "./data/spherical_monge_patches_100_N_10000.pkl"
         dataset_hyperbolic_path = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
         dataset_parabolic_path = "./data/parabolic_monge_patches_100_N_10000.pkl"
+        model_path = "./checkpoints/model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=116.ckpt"
+
     else:
         dataset_eliptical_path = "data/spherical_monge_patches_100_N_10.pkl"
         dataset_hyperbolic_path = "data/hyperbolic_monge_patches_100_N_10.pkl"
         dataset_parabolic_path = "data/parabolic_monge_patches_100_N_10.pkl"
+        model_path = "C:/Users\galyo\Downloads\model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=92.ckpt"
 
 
 
@@ -74,7 +77,7 @@ def map_patches_to_2d():
     #     data_parabolic = pickle.load(f)
 
     # assuming same length of all 3 datasets
-    for i in range(len(data_spherical)):
+    for i in tqdm(range(len(data_spherical))):
         curr_eliptical_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_hyperbolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_parabolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
