@@ -77,7 +77,7 @@ def map_patches_to_2d():
     #     data_parabolic = pickle.load(f)
 
     # assuming same length of all 3 datasets
-    for i in tqdm(range(10)):
+    for i in tqdm(range(len(data_spherical))):
         curr_eliptical_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_hyperbolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_parabolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
