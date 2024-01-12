@@ -127,8 +127,8 @@ class PointTransformerConvNet(pl.LightningModule):
 
     def forward(self, data, global_pooling=True):
 
-        # x = self.append_moments(data.x) # x,y,z,xx,xy,xz,yy,yz,zz coordinates of each point
-        x = data.x # x,y,z coordinates of each point
+        x = self.append_moments(data.x) # x,y,z,xx,xy,xz,yy,yz,zz coordinates of each point
+        # x = data.x # x,y,z coordinates of each point
         # edge_index = radius_graph(x, r=0.5, batch=None, loop=True, max_num_neighbors=32)
 
         # Apply initial embedding
@@ -249,15 +249,15 @@ class PointTransformerConvNet(pl.LightningModule):
         corr_mat = torch.corrcoef(torch.cat(self.outputs_list_train, dim=0).T)
 
         # Log the learning rate
-        self.log('learning_rate', current_lr, on_step=False, on_epoch=True)
-        self.log('train_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True)
+        self.log('learning_rate', current_lr, on_step=False, on_epoch=True, sync_dist=True)
+        self.log('train_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True, sync_dist=True)
 
         # Reset the outputs list
         self.outputs_list_train = []
 
     def on_validation_epoch_end(self):
         corr_mat = torch.corrcoef(torch.cat(self.outputs_list_val, dim=0).T)
-        self.log('val_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True)
+        self.log('val_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True, sync_dist=True)
         self.outputs_list_val = []
 
 
