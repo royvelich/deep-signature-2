@@ -2,17 +2,14 @@ import pickle
 
 import matplotlib
 import numpy as np
-import pywavefront
 import torch
 from matplotlib import pyplot as plt
-from matplotlib.widgets import Button
-from pywavefront import Wavefront
 from torch_geometric.data import Data
 from torch_geometric.nn import knn_graph
 
 from data.non_uniform_sampling import non_uniform_2d_sampling
 from models.point_transformer_conv.model import PointTransformerConvNet
-from utils import compute_edges_from_faces, normalize_points_translation_and_rotation
+from utils import  normalize_points_translation_and_rotation
 
 
 matplotlib.use('Qt5Agg')  # Use Tkinter as the backend; you can try other backends as well
