@@ -41,7 +41,7 @@ def map_patches_to_2d():
         dataset_eliptical_path = "./data/spherical_monge_patches_100_N_10000.pkl"
         dataset_hyperbolic_path = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
         dataset_parabolic_path = "./data/parabolic_monge_patches_100_N_10000.pkl"
-        model_path = "./checkpoints/model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=116.ckpt"
+        model_path = "./checkpoints/model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=92.ckpt"
         model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cuda:0'))
 
     else:
@@ -77,7 +77,7 @@ def map_patches_to_2d():
     #     data_parabolic = pickle.load(f)
 
     # assuming same length of all 3 datasets
-    for i in tqdm(range(len(data_spherical))):
+    for i in tqdm(range(10)):
         curr_eliptical_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_hyperbolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
         curr_parabolic_patch_indices = non_uniform_2d_sampling(grid_size=100, ratio=0.05)
@@ -93,8 +93,12 @@ def map_patches_to_2d():
     output_points_eliptical = np.array(output_points_eliptical).squeeze()
     output_points_hyperbolic = np.array(output_points_hyperbolic).squeeze()
     # output_points_parabolic = np.array(output_points_parabolic).squeeze()
+    # save outputs in files
+    with open('output_points_eliptical.pkl', 'wb') as f:
+        pickle.dump(output_points_eliptical, f)
+    with open('output_points_hyperbolic.pkl', 'wb') as f:
+        pickle.dump(output_points_hyperbolic, f)
 
-    fig, ax = plt.subplots()
 
     # Plot the points
     plt.scatter(output_points_eliptical[:, 0], output_points_eliptical[:, 1], c=colors[0], label=labels[0], s=5)
@@ -105,6 +109,35 @@ def map_patches_to_2d():
     plt.gca().set_aspect('equal', adjustable='box')
     plt.legend(loc='upper right', bbox_to_anchor=(0.0, 1.0))
     plt.savefig('map_patches_to_2d.png', dpi=300)
+    # save fig for only  1 output
+    # Create a figure for the eliptical plot
+    fig_eliptical, ax_eliptical = plt.subplots()
+
+    # Plot the eliptical points
+    ax_eliptical.scatter(output_points_eliptical[:, 0], output_points_eliptical[:, 1], c=colors[0], label=labels[0],
+                         s=5)
+
+    # Set aspect ratio and add legend
+    ax_eliptical.set_aspect('equal', adjustable='box')
+    ax_eliptical.legend(loc='upper right', bbox_to_anchor=(0.0, 1.0))
+
+    # Save the eliptical plot
+    fig_eliptical.savefig('map_patches_to_2d_eliptical.png', dpi=300)
+
+    # Create a figure for the hyperbolic plot
+    fig_hyperbolic, ax_hyperbolic = plt.subplots()
+
+    # Plot the hyperbolic points
+    ax_hyperbolic.scatter(output_points_hyperbolic[:, 0], output_points_hyperbolic[:, 1], c=colors[1], label=labels[1],
+                          s=5)
+
+    # Set aspect ratio and add legend
+    ax_hyperbolic.set_aspect('equal', adjustable='box')
+    ax_hyperbolic.legend(loc='upper right', bbox_to_anchor=(0.0, 1.0))
+
+    # Save the hyperbolic plot
+    fig_hyperbolic.savefig('map_patches_to_2d_hyperbolic.png', dpi=300)
+
     # plt.show()
 
 
