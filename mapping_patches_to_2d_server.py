@@ -1,6 +1,5 @@
 import pickle
 
-import matplotlib
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
@@ -11,7 +10,7 @@ from tqdm import tqdm
 from data.non_uniform_sampling import non_uniform_2d_sampling
 from models.point_transformer_conv.model import PointTransformerConvNet
 from utils import  normalize_points_translation_and_rotation
-
+import igl
 
 # matplotlib.use('Qt5Agg')  # Use Tkinter as the backend; you can try other backends as well
 
@@ -25,13 +24,24 @@ def find_outliers(output_points):
             outliers.append(i)
     return outliers
 
-def map_patch(model, v):
+def map_patch_using_model(model, v):
 
     center_point_indice = np.argmin(v[:,0]**2+v[:,1]**2+v[:,2]**2)
     v = normalize_points_translation_and_rotation(vertices=v, center_point=v[center_point_indice])
     v = torch.tensor(v, dtype=torch.float32).to(model.device)
     output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=knn_graph(torch.tensor(v), k=12, batch=None, loop=False), global_pooling=True))
     return output
+
+def map_patch_using_igl(v):
+    f = igl.delaunay_triangulation(np.stack([v[:,0], v[:,1]], axis=1))
+    center_point_indice = np.argmin(v[:,0]**2+v[:,1]**2+v[:,2]**2)
+    v = normalize_points_translation_and_rotation(vertices=v, center_point=v[center_point_indice])
+    v = torch.tensor(v, dtype=torch.float32)
+    v = v.numpy()
+    d1, d2, k1, k2 = igl.principal_curvature(v, f)
+    output = np.array([k1[center_point_indice], k2[center_point_indice]])
+    return output
+
 
 
 def map_patches_to_2d():
@@ -85,9 +95,12 @@ def map_patches_to_2d():
         curr_hyperbolic_points = data_hyperbolic[i].v[curr_hyperbolic_patch_indices]
         # curr_parabolic_points = data_parabolic[i].v[curr_parabolic_patch_indices]
 
-        output_points_eliptical.append(map_patch(model, curr_eliptical_points).cpu().detach().numpy())
-        output_points_hyperbolic.append(map_patch(model, curr_hyperbolic_points).cpu().detach().numpy())
-        # output_points_parabolic.append(map_patch(model, curr_parabolic_points).cpu().detach().numpy())
+        # output_points_eliptical.append(map_patch_using_model(model, curr_eliptical_points).cpu().detach().numpy())
+        # output_points_hyperbolic.append(map_patch_using_model(model, curr_hyperbolic_points).cpu().detach().numpy())
+        # output_points_parabolic.append(map_patch_using_model(model, curr_parabolic_points).cpu().detach().numpy())
+
+        output_points_eliptical.append(map_patch_using_igl(curr_eliptical_points))
+        output_points_hyperbolic.append(map_patch_using_igl(curr_hyperbolic_points))
 
 
     output_points_eliptical = np.array(output_points_eliptical).squeeze()
