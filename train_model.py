@@ -110,11 +110,11 @@ def main_loop():
     out_channels = 2
     # want to train model from trained weights
 
-    # model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
+    model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
     # model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
-    model_path = "./checkpoints/model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=116.ckpt"
+    # model_path = "./checkpoints/model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=116.ckpt"
     #
-    model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
+    # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
     # model.eval()
 
     # training
@@ -129,7 +129,7 @@ def main_loop():
                })
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_non_uniform_samples_random_rotations-{epoch:02d}',
+        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_non_uniform_samples_random_rotations_just_cont_loss-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=3

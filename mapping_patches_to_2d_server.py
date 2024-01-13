@@ -8,6 +8,7 @@ from torch_geometric.nn import knn_graph
 from tqdm import tqdm
 
 from data.non_uniform_sampling import non_uniform_2d_sampling
+from manual_calc_principal_curvatures import compute_principal_curvatures_using_knn_and_polyfit
 from models.point_transformer_conv.model import PointTransformerConvNet
 from utils import  normalize_points_translation_and_rotation
 import igl
@@ -32,14 +33,10 @@ def map_patch_using_model(model, v):
     output = model(Data(x=torch.tensor(v, dtype=torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=knn_graph(torch.tensor(v), k=12, batch=None, loop=False), global_pooling=True))
     return output
 
-def map_patch_using_igl(v):
-    f = igl.delaunay_triangulation(np.stack([v[:,0], v[:,1]], axis=1))
+def map_patch_using_surface_fitting(v):
     center_point_indice = np.argmin(v[:,0]**2+v[:,1]**2+v[:,2]**2)
     v = normalize_points_translation_and_rotation(vertices=v, center_point=v[center_point_indice])
-    v = torch.tensor(v, dtype=torch.float32)
-    v = v.numpy()
-    d1, d2, k1, k2 = igl.principal_curvature(v, f)
-    output = np.array([k1[center_point_indice], k2[center_point_indice]])
+    output = compute_principal_curvatures_using_knn_and_polyfit(v)
     return output
 
 
@@ -75,6 +72,8 @@ def map_patches_to_2d():
     output_points_hyperbolic = []
     # output_points_parabolic = []
 
+
+
     # Load the triplets from the file
     with open(dataset_eliptical_path, 'rb') as f:
         f.seek(0)  # Move the file pointer to the beginning of the file
@@ -99,8 +98,8 @@ def map_patches_to_2d():
         # output_points_hyperbolic.append(map_patch_using_model(model, curr_hyperbolic_points).cpu().detach().numpy())
         # output_points_parabolic.append(map_patch_using_model(model, curr_parabolic_points).cpu().detach().numpy())
 
-        output_points_eliptical.append(map_patch_using_igl(curr_eliptical_points))
-        output_points_hyperbolic.append(map_patch_using_igl(curr_hyperbolic_points))
+        output_points_eliptical.append(map_patch_using_surface_fitting(curr_eliptical_points))
+        output_points_hyperbolic.append(map_patch_using_surface_fitting(curr_hyperbolic_points))
 
 
     output_points_eliptical = np.array(output_points_eliptical).squeeze()

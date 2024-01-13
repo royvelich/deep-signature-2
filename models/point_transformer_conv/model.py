@@ -172,11 +172,12 @@ class PointTransformerConvNet(pl.LightningModule):
         self.outputs_list_train.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
         # loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
-        loss_pearson = self.loss_func_pearson_corelation(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
-        loss = loss_tuplet + loss_pearson
+        # loss_pearson = self.loss_func_pearson_corelation(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
+        # loss = loss_tuplet + loss_pearson
+        loss = loss_tuplet
 
         self.log('train_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
-        self.log('train_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
+        # self.log('train_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
         self.log('train_loss', loss.item(), on_step=False, on_epoch=True)
         return loss
 
@@ -201,12 +202,12 @@ class PointTransformerConvNet(pl.LightningModule):
         self.outputs_list_val.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
 
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
-        loss_pearson = self.loss_func_pearson_corelation(
-            torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
-        loss = 3 * loss_tuplet + loss_pearson
+        # loss_pearson = self.loss_func_pearson_corelation(
+        #     torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
+        loss = loss_tuplet
 
         self.log('val_loss_tuplet', loss_tuplet.item(), on_step=False, on_epoch=True)
-        self.log('val_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
+        # self.log('val_loss_pearson', loss_pearson.item(), on_step=False, on_epoch=True)
         self.log('val_loss', loss.item(), on_step=False, on_epoch=True)
         # if batch_idx == 0:
         #     self.logger.experiment.log({"visuals - output0 and 1 on patch": wandb.Image(log_visualization(self, batch[0]))})
