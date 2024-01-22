@@ -113,6 +113,7 @@ class PointTransformerConvNet(pl.LightningModule):
             self.hidden_bns.append(nn.BatchNorm1d(hidden_channels))
 
         self.pooling = global_mean_pool  # You can use other pooling functions if needed
+        self.pooling = global_max_pool
         # self.pooling = global_add_pool  # You can use other pooling functions if needed
 
         self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)

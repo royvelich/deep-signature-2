@@ -34,8 +34,8 @@ def map_patch_using_model(model, v):
     return output
 
 def map_patch_using_surface_fitting(v):
-    center_point_indice = np.argmin(v[:,0]**2+v[:,1]**2+v[:,2]**2)
-    v = normalize_points_translation_and_rotation(vertices=v, center_point=v[center_point_indice])
+    # center_point_indice = np.argmin(v[:,0]**2+v[:,1]**2+v[:,2]**2)
+    # v = normalize_points_translation_and_rotation(vertices=v, center_point=v[center_point_indice])
     output = compute_principal_curvatures_using_knn_and_polyfit(v)
     return output
 
