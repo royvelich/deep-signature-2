@@ -116,7 +116,8 @@ class PointTransformerConvNet(pl.LightningModule):
         self.pooling = global_max_pool
         # self.pooling = global_add_pool  # You can use other pooling functions if needed
 
-        self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
+        # self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
+        self.decoder_concat_global = MLPWithSkipConnections(input_dim=hidden_channels * 2, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
 
         # self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
         self.loss_func_contrastive = contrastive_tuplet_loss
@@ -141,10 +142,13 @@ class PointTransformerConvNet(pl.LightningModule):
 
         # Apply pooling to aggregate information from vertices
         if global_pooling:
-            x = self.pooling(x, batch=data.batch)
+            # x = self.pooling(x, batch=data.batch)
+            global_features = self.pooling(x, batch=data.batch)
+            # concatenate with global features
+            x = torch.cat([x, global_features[data.batch]], dim=1)
 
         # Apply final linear layer
-        x = self.decoder(x)
+        x = self.decoder_concat_global(x)
 
         return x
 
