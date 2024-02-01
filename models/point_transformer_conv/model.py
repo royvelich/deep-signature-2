@@ -176,7 +176,7 @@ class PointTransformerConvNet(pl.LightningModule):
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
         negative_output = negative_output[:anchor_output.size(0)]
-        self.outputs_list_train.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
+        # self.outputs_list_train.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
         # loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         # loss_pearson = self.loss_func_pearson_corelation(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T, device=anchor_output.device)
@@ -208,7 +208,7 @@ class PointTransformerConvNet(pl.LightningModule):
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
         negative_output = negative_output[:anchor_output.size(0)]
-        self.outputs_list_val.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
+        # self.outputs_list_val.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
 
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         # loss_pearson = self.loss_func_pearson_corelation(
