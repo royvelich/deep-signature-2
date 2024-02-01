@@ -256,19 +256,19 @@ class PointTransformerConvNet(pl.LightningModule):
     def on_train_epoch_end(self):
         # Get the current learning rate from the optimizer
         current_lr = self.optimizers().param_groups[0]['lr']
-        corr_mat = torch.corrcoef(torch.cat(self.outputs_list_train, dim=0).T)
+        # corr_mat = torch.corrcoef(torch.cat(self.outputs_list_train, dim=0).T)
 
         # Log the learning rate
         self.log('learning_rate', current_lr, on_step=False, on_epoch=True, sync_dist=True)
-        self.log('train_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True, sync_dist=True)
+        # self.log('train_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True, sync_dist=True)
 
         # Reset the outputs list
-        self.outputs_list_train = []
+        # self.outputs_list_train = []
 
-    def on_validation_epoch_end(self):
-        corr_mat = torch.corrcoef(torch.cat(self.outputs_list_val, dim=0).T)
-        self.log('val_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True, sync_dist=True)
-        self.outputs_list_val = []
+    # def on_validation_epoch_end(self):
+        # corr_mat = torch.corrcoef(torch.cat(self.outputs_list_val, dim=0).T)
+        # self.log('val_pearson_corr', corr_mat[0,1], on_step=False, on_epoch=True, sync_dist=True)
+        # self.outputs_list_val = []
 
 
     def normalize_features(self, features):
