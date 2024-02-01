@@ -9,6 +9,8 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from data.dynamic_triplet_dataset import DynamicTripletDataset
+from data.human_segmentation_original_dataset import HumanSegOrigDataset
+from data.shape_triplet_dataset import ShapeTripletDataset
 from models.point_transformer_conv.model import PointTransformerConvNet
 from utils import init_wandb, custom_euclidean_transform
 
@@ -37,40 +39,49 @@ def main_loop():
         # file_path2 = server_dir+"data/hyperbolic_monge_patches_100_N_300.pkl"
         # file_path3 = server_dir+"data/parabolic_monge_patches_100_N_300.pkl"
 
-        file_path = "./data/spherical_monge_patches_100_N_10000.pkl"
-        file_path2 = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
-        file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
+        # file_path = "./data/spherical_monge_patches_100_N_10000.pkl"
+        # file_path2 = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
+        # file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
+
+        dataset_path = "/home/gal.yona/diffusion-net2/diffusion-net/experiments/human_segmentation_original/data/sig17_seg_benchmark"
+        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False)
+
         num_workers = 4
         # combine_reg_and_non_reg_patches = True
         train_ratio = 0.9
-        batch_size = 128
+        batch_size = 8
         devices = -1 # takes the number of available GPUs
 
 
     else:
         # file_path = "generated_triplet_data/triplets_data_size_50_N_10_all_monge_patch_normalized_pos_and_rot.pkl"
         os.environ["WANDB_MODE"] = "offline"
-        file_path = "data/spherical_monge_patches_100_N_10.pkl"
-        file_path2 = "data/hyperbolic_monge_patches_100_N_10.pkl"
-        file_path3 = "data/parabolic_monge_patches_100_N_10.pkl"
-        batch_size = 8
+        # file_path = "data/spherical_monge_patches_100_N_10.pkl"
+        # file_path2 = "data/hyperbolic_monge_patches_100_N_10.pkl"
+        # file_path3 = "data/parabolic_monge_patches_100_N_10.pkl"
+        dataset_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\diffusion-net2\diffusion-net\experiments\human_segmentation_original\data\sig17_seg_benchmark"
+
+        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False)
+
+        batch_size = 2
         train_ratio = 0.8
         devices = 1
-        logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
+
+        # logger = init_wandb(lr=lr,max_epochs=max_epochs, weight_decay=weight_decay, dataset_path=file_path+" and "+file_path2)
 
 
 
 
     # Load the triplets from the file
-    with open(file_path, 'rb') as f:
-        f.seek(0)  # Move the file pointer to the beginning of the file
-        data_spherical = pickle.load(f)
-    with open(file_path2, 'rb') as f:
-        f.seek(0)
-        data_hyperbolic = pickle.load(f)
-    with open(file_path3, 'rb') as f:
-        f.seek(0)
-        data_parabolic = pickle.load(f)
+    # with open(file_path, 'rb') as f:
+    #     f.seek(0)  # Move the file pointer to the beginning of the file
+    #     data_spherical = pickle.load(f)
+    # with open(file_path2, 'rb') as f:
+    #     f.seek(0)
+    #     data_hyperbolic = pickle.load(f)
+    # with open(file_path3, 'rb') as f:
+    #     f.seek(0)
+    #     data_parabolic = pickle.load(f)
 
 
 
@@ -79,11 +90,12 @@ def main_loop():
 
     # Create custom dataset
     # custom_dataset = CustomTripletDataset(data)
-    custom_dataset = DynamicTripletDataset(data_spherical, data_hyperbolic, data_parabolic)
-    # release memory
-    del data_spherical
-    del data_hyperbolic
-    del data_parabolic
+    # custom_dataset = DynamicTripletDataset(data_spherical, data_hyperbolic, data_parabolic)
+    custom_dataset = ShapeTripletDataset(train_dataset)
+    # # release memory
+    # del data_spherical
+    # del data_hyperbolic
+    # del data_parabolic
 
     # Define the ratio for train and validation split (e.g., 80% for training, 20% for validation)
 
@@ -103,11 +115,11 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    num_point_transformer_layers = 1
+    num_point_transformer_layers = 2
     num_encoder_decoder_layers = 8
     hidden_channels = 512
     in_channels = 9
-    out_channels = 2
+    out_channels = 100
     # want to train model from trained weights
 
     model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)

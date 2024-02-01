@@ -112,12 +112,12 @@ class PointTransformerConvNet(pl.LightningModule):
         for _ in range(num_point_transformer_layers):  # Last layer doesn't need BN and activation
             self.hidden_bns.append(nn.BatchNorm1d(hidden_channels))
 
-        self.pooling = global_mean_pool  # You can use other pooling functions if needed
+        # self.pooling = global_mean_pool  # can use other pooling functions if needed
         self.pooling = global_max_pool
-        # self.pooling = global_add_pool  # You can use other pooling functions if needed
+        # self.pooling = global_add_pool
 
         # self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
-        self.decoder_concat_global = MLPWithSkipConnections(input_dim=hidden_channels * 2, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
+        self.decoder_concat_global = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
 
         # self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
         self.loss_func_contrastive = contrastive_tuplet_loss
@@ -127,7 +127,7 @@ class PointTransformerConvNet(pl.LightningModule):
         self.outputs_list_val = []
 
 
-    def forward(self, data, global_pooling=True):
+    def forward(self, data, global_pooling=False):
 
         # x = self.append_moments(data.x) # x,y,z,xx,xy,xz,yy,yz,zz coordinates of each point
         x = data.x # x,y,z coordinates of each point
@@ -163,9 +163,9 @@ class PointTransformerConvNet(pl.LightningModule):
         output = self.forward(batch)
         device = output.device
 
-        anchor_idx = torch.arange(0, output.size(0), 3, device=device)
-        positive_idx = torch.arange(1, output.size(0), 3, device=device)
-        negative_idx = torch.arange(2, output.size(0), 3, device=device)
+        anchor_idx = torch.arange(0, output.size(0))[batch.batch%3==0]
+        positive_idx = torch.arange(0, output.size(0))[batch.batch%3==1]
+        negative_idx = torch.arange(0, output.size(0))[batch.batch%3==2]
 
         anchor_output = torch.index_select(output, 0, anchor_idx)
         positive_output = torch.index_select(output, 0, positive_idx)
@@ -174,6 +174,7 @@ class PointTransformerConvNet(pl.LightningModule):
         # make the size of the anchor and positive the same as the negative
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
+        negative_output = negative_output[:anchor_output.size(0)]
         self.outputs_list_train.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
         # loss = self.loss_func(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
