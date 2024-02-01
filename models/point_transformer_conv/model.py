@@ -163,9 +163,10 @@ class PointTransformerConvNet(pl.LightningModule):
         output = self.forward(batch)
         device = output.device
 
-        anchor_idx = torch.arange(0, output.size(0))[batch.batch%3==0]
-        positive_idx = torch.arange(0, output.size(0))[batch.batch%3==1]
-        negative_idx = torch.arange(0, output.size(0))[batch.batch%3==2]
+        # fix all tensors to device
+        anchor_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device)%3==0]
+        positive_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device)%3==1]
+        negative_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device)%3==2]
 
         anchor_output = torch.index_select(output, 0, anchor_idx)
         positive_output = torch.index_select(output, 0, positive_idx)
@@ -194,17 +195,19 @@ class PointTransformerConvNet(pl.LightningModule):
         output = self.forward(batch)
         device = output.device
 
-        anchor_idx = torch.arange(0, output.size(0), 3, device=device)
-        positive_idx = torch.arange(1, output.size(0), 3, device=device)
-        negative_idx = torch.arange(2, output.size(0), 3, device=device)
+        # fix all tensors to device
+        anchor_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 0]
+        positive_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 1]
+        negative_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 2]
 
         anchor_output = torch.index_select(output, 0, anchor_idx)
         positive_output = torch.index_select(output, 0, positive_idx)
         negative_output = torch.index_select(output, 0, negative_idx)
 
-        # make the size of the anchor and positive the same as the negative
+        # make the size of the anchor and positive the same as the negative and vice versa
         anchor_output = anchor_output[:negative_output.size(0)]
         positive_output = positive_output[:negative_output.size(0)]
+        negative_output = negative_output[:anchor_output.size(0)]
         self.outputs_list_val.append(torch.cat([anchor_output.T, positive_output.T, negative_output.T], dim=1).T)
 
         loss_tuplet = self.loss_func_contrastive(a=anchor_output.T, p=positive_output.T, n=negative_output.T)
