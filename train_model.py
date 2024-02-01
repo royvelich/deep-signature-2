@@ -115,7 +115,7 @@ def main_loop():
     # model - initiallize to recieve input length as 9 for x,y,z,xy,yz,zx,xx,yy,zz
     # model = PointNet_FC(k=9)
     # model = STNkd(k=9)
-    num_point_transformer_layers = 2
+    num_point_transformer_layers = 4
     num_encoder_decoder_layers = 8
     hidden_channels = 512
     in_channels = 9
