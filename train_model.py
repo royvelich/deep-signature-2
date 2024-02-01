@@ -49,7 +49,7 @@ def main_loop():
         num_workers = 4
         # combine_reg_and_non_reg_patches = True
         train_ratio = 0.9
-        batch_size = 8
+        batch_size = 4
         devices = -1 # takes the number of available GPUs
 
 
