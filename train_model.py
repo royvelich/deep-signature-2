@@ -43,13 +43,13 @@ def main_loop():
         # file_path2 = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
         # file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
 
-        dataset_path = "/home/gal.yona/diffusion-net2/diffusion-net/experiments/human_segmentation_original/data/sig17_seg_benchmark"
+        dataset_path = "/rg/kimmel_prj/gal.yona/prj/Github/deep-signature-2/data/sig17_seg_benchmark/"
         train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False)
 
         num_workers = 4
         # combine_reg_and_non_reg_patches = True
         train_ratio = 0.9
-        batch_size = 8
+        batch_size = 32
         devices = -1 # takes the number of available GPUs
 
 
