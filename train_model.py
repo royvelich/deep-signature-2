@@ -44,7 +44,7 @@ def main_loop():
         # file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
 
         dataset_path = "/workspace/Github/deep-signature-2/data/sig17_seg_benchmark/"
-        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=True)
+        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=False)
 
         num_workers = 4
         # combine_reg_and_non_reg_patches = True
@@ -141,7 +141,7 @@ def main_loop():
                })
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_non_uniform_samples_random_rotations_just_cont_loss-{epoch:02d}',
+        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_reconstruct_uniform_samples_random_rotations_just_cont_loss-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=3
