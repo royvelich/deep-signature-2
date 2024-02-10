@@ -354,7 +354,7 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
 
 
         # Compute the loss
-        loss = self.compute_loss(anchor_output, positive_output)
+        loss = self.loss_func(anchor_output, positive_output)
         self.log('train_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
         return loss
 
@@ -373,7 +373,7 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
         positive_output = torch.index_select(output, 0, positive_idx)
 
         # Compute the loss
-        loss = self.compute_loss(anchor_output, positive_output)
+        loss = self.loss_func(anchor_output, positive_output)
         self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
         return loss
 
