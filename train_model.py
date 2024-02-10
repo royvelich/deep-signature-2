@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from data.dynamic_triplet_dataset import DynamicTripletDataset
 from data.human_segmentation_original_dataset import HumanSegOrigDataset
 from data.shape_triplet_dataset import ShapeTripletDataset
-from models.point_transformer_conv.model import PointTransformerConvNet
+from models.point_transformer_conv.model import PointTransformerConvNet, PointTransformerConvNetReconstruct
 from utils import init_wandb, custom_euclidean_transform
 
 from data.triplet_dataset import CustomTripletDataset
@@ -61,7 +61,7 @@ def main_loop():
         # file_path3 = "data/parabolic_monge_patches_100_N_10.pkl"
         dataset_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\diffusion-net2\diffusion-net\experiments\human_segmentation_original\data\sig17_seg_benchmark"
 
-        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False)
+        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=True)
 
         batch_size = 2
         train_ratio = 0.8
@@ -122,7 +122,7 @@ def main_loop():
     out_channels = 100
     # want to train model from trained weights
 
-    model = PointTransformerConvNet(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
+    model = PointTransformerConvNetReconstruct(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
     # model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
     # model_path = "./checkpoints/model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=116.ckpt"
     #

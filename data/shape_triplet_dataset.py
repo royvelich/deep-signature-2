@@ -42,8 +42,8 @@ class ShapeTripletDataset(Dataset):
         shape_anc_pos, shape_neg = copy.deepcopy(self.shapes_dataset[idx]),  copy.deepcopy(self.shapes_dataset[neg_idx])
 
         # 0.01 of max distance between points
-        radius_anc_pos = 0.1 * np.max(np.linalg.norm(shape_anc_pos, axis=1))
-        radius_neg = 0.1 * np.max(np.linalg.norm(shape_neg, axis=1))
+        radius_anc_pos = 0.08 * np.max(np.linalg.norm(shape_anc_pos, axis=1))
+        radius_neg = 0.08 * np.max(np.linalg.norm(shape_neg, axis=1))
 
         # sampling number_of_points_to_sample points using fps detach tensors to numpy
         anc_pos_sampled_points, anc_pos_sampled_indices = self.default_fps_sampling(shape_anc_pos.detach().numpy())

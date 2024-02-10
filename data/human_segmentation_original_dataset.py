@@ -15,7 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/"))  # add th
 class HumanSegOrigDataset(Dataset):
     """Human segmentation dataset from Maron et al (not the remeshed version from subsequent work)"""
 
-    def __init__(self, root_dir, train, k_eig=128, use_cache=True, op_cache_dir=None):
+    def __init__(self, root_dir, train, k_eig=128, use_cache=True, op_cache_dir=None, debug=False):
 
         self.train = train  # bool
         self.k_eig = k_eig 
@@ -28,6 +28,8 @@ class HumanSegOrigDataset(Dataset):
         self.verts_list = []
         self.faces_list = []
         self.labels_list = []  # per-face labels!!
+
+        self.debug = debug
 
         # check the cache
         if use_cache:
@@ -110,7 +112,7 @@ class HumanSegOrigDataset(Dataset):
         print("loading {} meshes".format(len(mesh_files)))
 
         # Load the actual files
-        for iFile in range(len(mesh_files)):
+        for iFile in range(len(mesh_files[:10]) if self.debug else len(mesh_files)):
 
             print("loading mesh " + str(mesh_files[iFile]))
 
@@ -129,7 +131,7 @@ class HumanSegOrigDataset(Dataset):
             self.faces_list.append(faces)
             self.labels_list.append(labels)
 
-        for ind, labels in enumerate(self.labels_list):
+        for ind, labels in enumerate(self.labels_list[:10] if self.debug else self.labels_list):
             self.labels_list[ind] = labels
 
 

@@ -12,7 +12,8 @@ from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss__pearson_correlation_k1_k2, \
     loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised, contrastive_tuplet_loss, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2, loss_contrastive_plus_k1__greater_k2, \
-    loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss, calculate_pearson_k1_k2_loss_vectorized
+    loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss, calculate_pearson_k1_k2_loss_vectorized, \
+    loss_chamfer_distance, loss_chamfer_distance_torch
 from utils import normalize_points_translation_and_rotation, \
     normalize_point_cloud
 from vars import LR, WEIGHT_DECAY
@@ -117,7 +118,7 @@ class PointTransformerConvNet(pl.LightningModule):
         # self.pooling = global_add_pool
 
         # self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
-        self.decoder_concat_global = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
+        self.decoder = MLPWithSkipConnections(input_dim=hidden_channels, hidden_dim=hidden_channels, output_dim=out_channels, num_layers=num_encoder_decoder_layers, activation=self.activation)
 
         # self.loss_func = loss_contrastive_plus_pearson_correlation_k1_k2
         self.loss_func_contrastive = contrastive_tuplet_loss
@@ -148,7 +149,7 @@ class PointTransformerConvNet(pl.LightningModule):
             x = torch.cat([x, global_features[data.batch]], dim=1)
 
         # Apply final linear layer
-        x = self.decoder_concat_global(x)
+        x = self.decoder(x)
 
         return x
 
@@ -329,3 +330,50 @@ class PointTransformerConvNet(pl.LightningModule):
 
         rotated_x = torch.cat(rotated_x, dim=0)
         return rotated_x
+
+class PointTransformerConvNetReconstruct(PointTransformerConvNet):
+    def __init__(self, in_channels, out_channels=8, hidden_channels=64, num_point_transformer_layers=3, num_encoder_decoder_layers=8):
+        super(PointTransformerConvNetReconstruct, self).__init__(in_channels, out_channels, hidden_channels, num_point_transformer_layers, num_encoder_decoder_layers)
+        self.loss_func = loss_chamfer_distance_torch
+
+    def training_step(self, batch, batch_idx):
+        # Unpack the batch
+        batch.x = self.append_moments(batch.x)
+
+        output = self.forward(batch)
+        device = output.device
+
+        # fix all tensors to device
+        anchor_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 0]
+        positive_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 1]
+
+        anchor_output = torch.index_select(output, 0, anchor_idx)
+        positive_output = torch.index_select(output, 0, positive_idx)
+
+
+
+
+        # Compute the loss
+        loss = self.compute_loss(anchor_output, positive_output)
+        self.log('train_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+
+        batch.x = self.append_moments(batch.x)
+
+        output = self.forward(batch)
+        device = output.device
+
+        # fix all tensors to device
+        anchor_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 0]
+        positive_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 1]
+
+        anchor_output = torch.index_select(output, 0, anchor_idx)
+        positive_output = torch.index_select(output, 0, positive_idx)
+
+        # Compute the loss
+        loss = self.compute_loss(anchor_output, positive_output)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
+        return loss
+

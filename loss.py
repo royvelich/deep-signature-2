@@ -1,4 +1,5 @@
 import torch
+# import ChamferDistancePytorch.chamfer3D.dist_chamfer_3D
 
 
 def calculate_pearson_loss_vectorized(matrix, device):
@@ -182,3 +183,31 @@ def loss_contrastive_plus_k1__greater_k2(a,p,n):
 
 def loss_gaussian_curvature_supervised(output, principal_curvatures):
     return (1/output.size(0))*torch.norm(output[:,0]*output[:,1] - principal_curvatures[0]*principal_curvatures[1])**2
+
+def loss_chamfer_distance(pc_input, pc_output):
+    chamLoss = ChamferDistancePytorch.chamfer3D.dist_chamfer_3D.chamfer_3DDist()
+    dist1, dist2, idx1, idx2 = chamLoss(pc_input, pc_output)
+    # f_score, precision, recall = fscore.fscore(dist1, dist2)
+    chamfer_loss = dist1.mean() + dist2.mean()
+    return chamfer_loss
+
+def loss_chamfer_distance_torch(points1, points2):
+    """
+    Compute the Chamfer distance between two point clouds.
+
+    Args:
+        points1 (torch.Tensor): First point cloud (n_points1 x 3).
+        points2 (torch.Tensor): Second point cloud (n_points2 x 3).
+
+    Returns:
+        torch.Tensor: Chamfer distance.
+    """
+    pairwise_dist1 = torch.cdist(points1, points2)  # Pairwise distances from points1 to points2
+    min_dist1, _ = torch.min(pairwise_dist1, dim=1)  # Minimum distance for each point in points1
+
+    pairwise_dist2 = torch.cdist(points2, points1)  # Pairwise distances from points2 to points1
+    min_dist2, _ = torch.min(pairwise_dist2, dim=1)  # Minimum distance for each point in points2
+
+    chamfer_dist = torch.mean(min_dist1) + torch.mean(min_dist2)
+    return chamfer_dist
+
