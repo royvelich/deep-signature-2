@@ -63,7 +63,7 @@ def main_loop():
 
         train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=True)
 
-        batch_size = 2
+        batch_size = 1
         train_ratio = 0.8
         devices = 1
 
@@ -119,7 +119,7 @@ def main_loop():
     num_encoder_decoder_layers = 8
     hidden_channels = 512
     in_channels = 9
-    out_channels = 100
+    out_channels = 3
     # want to train model from trained weights
 
     model = PointTransformerConvNetReconstruct(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)

@@ -337,6 +337,7 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
         self.loss_func = loss_chamfer_distance_torch
 
     def training_step(self, batch, batch_idx):
+        x_input = batch.x
         # Unpack the batch
         batch.x = self.append_moments(batch.x)
 
@@ -347,19 +348,20 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
         anchor_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 0]
         positive_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 1]
 
-        anchor_output = torch.index_select(output, 0, anchor_idx)
+        # anchor_output = torch.index_select(output, 0, anchor_idx)
         positive_output = torch.index_select(output, 0, positive_idx)
 
 
 
 
         # Compute the loss
-        loss = self.loss_func(anchor_output, positive_output)
+        anchor_input = torch.index_select(x_input, 0, anchor_idx)
+        loss = self.loss_func(anchor_input, positive_output)
         self.log('train_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-
+        x_input = batch.x
         batch.x = self.append_moments(batch.x)
 
         output = self.forward(batch)
@@ -372,8 +374,11 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
         anchor_output = torch.index_select(output, 0, anchor_idx)
         positive_output = torch.index_select(output, 0, positive_idx)
 
+
         # Compute the loss
-        loss = self.loss_func(anchor_output, positive_output)
+        anchor_input = torch.index_select(x_input, 0, anchor_idx)
+
+        loss = self.loss_func(anchor_input, positive_output)
         self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
         return loss
 
