@@ -15,7 +15,7 @@ from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
     loss_contrastive_plus_pearson_correlation_k1_k2, loss_gaussian_curvature_supervised, contrastive_tuplet_loss, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2, loss_contrastive_plus_k1__greater_k2, \
     loss_contrastive_plus_pearson_correlation_k1__greater_k2_hinge_loss, calculate_pearson_k1_k2_loss_vectorized, \
-    loss_chamfer_distance, loss_chamfer_distance_torch
+    loss_chamfer_distance, loss_chamfer_distance_torch, loss_intra_set_distance
 from utils import normalize_points_translation_and_rotation, \
     normalize_point_cloud
 from vars import LR, WEIGHT_DECAY
@@ -435,7 +435,10 @@ class PointCloudReconstruction(pl.LightningModule):
             nn.ReLU(),
             nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
         )
-        self.loss_func = loss_chamfer_distance_torch
+
+        self.loss_func_chamfer = loss_chamfer_distance_torch
+        self.loss_func_intra = loss_intra_set_distance
+
         # want to pool the output from Mxnum_points_to_reconstructx3 to num_points_to_reconstructx3
 
         self.num_points_to_reconstruct = num_points_to_reconstruct
@@ -484,7 +487,9 @@ class PointCloudReconstruction(pl.LightningModule):
 
         # Compute the loss
         # anchor_input = torch.index_select(anchor_input, 0, anchor_idx)
-        loss = self.loss_func(anchor_input, pos_output)
+        loss_chamfer = self.loss_func_chamfer(anchor_input, pos_output)
+        loss_intra = self.loss_func_intra(pos_output)
+        loss = loss_chamfer + 0.00001*loss_intra
         self.log('train_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
 
         # visualize the point clouds
@@ -517,7 +522,9 @@ class PointCloudReconstruction(pl.LightningModule):
 
         # Compute the loss
         # anchor_input = torch.index_select(anchor_input, 0, anchor_idx)
-        loss = self.loss_func(anchor_input, pos_output)
+        loss_chamfer = self.loss_func_chamfer(anchor_input, pos_output)
+        loss_intra = self.loss_func_intra(pos_output)
+        loss = loss_chamfer + 0.00001 * loss_intra
         self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
         # if batch_idx % 1 == 0:
         #     visualize_pointclouds2(anchor_input, pos_output)

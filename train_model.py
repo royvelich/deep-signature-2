@@ -122,12 +122,18 @@ def main_loop():
     in_channels = 9
     out_channels = 3
     # want to train model from trained weights
+    checkpoint = torch.load("C:/Users\galyo\Downloads\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=998.ckpt", map_location=torch.device('cpu'))
+
+    # Extract the state dictionary from the checkpoint
+    state_dict = checkpoint['state_dict']
+    state_dict = {k.replace('.select', ''): v for k, v in state_dict.items()}
 
     # model = UNet(num_channels=in_channels, unet_depth=num_encoder_decoder_layers)
     model = PointCloudReconstruction(num_blocks=4, in_channels=9, latent_dim=512, num_points_to_reconstruct=1024)
-    # model.load_from_checkpoint("C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\checkpoints\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=38.ckpt", num_blocks=4,
+    model.load_state_dict(state_dict)
+    # model.load_from_checkpoint("C:/Users\galyo\Downloads\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=998.ckpt", num_blocks=4,
     # in_channels=9,
-    # latent_dim=256, map_location=torch.device('cpu'))
+    # latent_dim=512, num_points_to_reconstruct=1024, map_location=torch.device('cpu'))
     # model = PointCloudReconstruction.load_from_checkpoint("C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\checkpoints\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=38.ckpt", map_location=torch.device('cpu'))
     # model = PointTransformerConvNetReconstruct(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
     # model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"

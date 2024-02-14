@@ -211,3 +211,18 @@ def loss_chamfer_distance_torch(points1, points2):
     chamfer_dist = torch.mean(min_dist1) + torch.mean(min_dist2)
     return chamfer_dist
 
+def loss_intra_set_distance(points):
+    """
+    Compute the intra-set distance of a point cloud.
+
+    Args:
+        points (torch.Tensor): Point cloud (n_points x 3).
+
+    Returns:
+        torch.Tensor: Intra-set distance.
+    """
+    pairwise_dist = torch.cdist(points, points)  # Pairwise distances
+    intra_set_dist = torch.mean(pairwise_dist)
+    eps = 1e-6
+    intra_set_dist = 1/(intra_set_dist+eps)
+    return intra_set_dist
