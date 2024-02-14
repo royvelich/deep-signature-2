@@ -46,12 +46,12 @@ def main_loop():
         # file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
 
         dataset_path = "/workspace/Github/deep-signature-2/data/sig17_seg_benchmark/"
-        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=False)
+        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=True)
 
         num_workers = 4
         # combine_reg_and_non_reg_patches = True
         train_ratio = 0.9
-        batch_size = 2
+        batch_size = 1
         devices = -1 # takes the number of available GPUs
 
 
@@ -125,10 +125,10 @@ def main_loop():
     # want to train model from trained weights
 
     # model = UNet(num_channels=in_channels, unet_depth=num_encoder_decoder_layers)
-    model = PointCloudReconstruction(num_blocks=4, in_channels=9, latent_dim=256, num_points_to_reconstruct=512)
-    model.load_from_checkpoint("C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\checkpoints\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=38.ckpt", num_blocks=4,
-    in_channels=9,
-    latent_dim=256, map_location=torch.device('cpu'))
+    model = PointCloudReconstruction(num_blocks=4, in_channels=9, latent_dim=512, num_points_to_reconstruct=1024)
+    # model.load_from_checkpoint("C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\checkpoints\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=38.ckpt", num_blocks=4,
+    # in_channels=9,
+    # latent_dim=256, map_location=torch.device('cpu'))
     # model = PointCloudReconstruction.load_from_checkpoint("C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\checkpoints\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=38.ckpt", map_location=torch.device('cpu'))
     # model = PointTransformerConvNetReconstruct(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
     # model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
