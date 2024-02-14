@@ -12,6 +12,7 @@ from utils import random_rotation, random_rotation_numpy, normalize_point_cloud_
     normalize_points_translation_and_rotation
 
 import fpsample
+import os
 # import torch_points3d as tp3d
 # from torch_points3d.core.data_transform import FPS
 from scipy.spatial import cKDTree
@@ -65,6 +66,8 @@ class ShapeTripletDataset(Dataset):
 
         # remove from anc_v and neg_v the points that are not in the neighborhoods
         # anc_v = anc_v[anc_pos_radius_neighborhoods[1,:]]
+
+        os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
         pos_v = pos_v[anc_pos_radius_neighborhoods[1,:].to(device=pos_v.device)]
         pos_v = pos_v.to(device=anc_v.device)
         # neg_v = neg_v[neg_knn_radius_neighborhoods[1,:]]
