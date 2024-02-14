@@ -122,15 +122,15 @@ def main_loop():
     in_channels = 9
     out_channels = 3
     # want to train model from trained weights
-    checkpoint = torch.load("C:/Users\galyo\Downloads\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=998.ckpt", map_location=torch.device('cpu'))
+    # checkpoint = torch.load("C:/Users\galyo\Downloads\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=998.ckpt", map_location=torch.device('cpu'))
 
     # Extract the state dictionary from the checkpoint
-    state_dict = checkpoint['state_dict']
-    state_dict = {k.replace('.select', ''): v for k, v in state_dict.items()}
+    # state_dict = checkpoint['state_dict']
+    # state_dict = {k.replace('.select', ''): v for k, v in state_dict.items()}
 
     # model = UNet(num_channels=in_channels, unet_depth=num_encoder_decoder_layers)
     model = PointCloudReconstruction(num_blocks=4, in_channels=9, latent_dim=512, num_points_to_reconstruct=1024)
-    model.load_state_dict(state_dict)
+    # model.load_state_dict(state_dict)
     # model.load_from_checkpoint("C:/Users\galyo\Downloads\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=998.ckpt", num_blocks=4,
     # in_channels=9,
     # latent_dim=512, num_points_to_reconstruct=1024, map_location=torch.device('cpu'))
@@ -154,7 +154,7 @@ def main_loop():
                })
     checkpoint_callback = ModelCheckpoint(
         dirpath='./checkpoints',  # Directory to save the checkpoints
-        filename='model_point_transformer_'+str(num_point_transformer_layers)+'_layers_width_'+str(hidden_channels)+'_reconstruct_uniform_samples_random_rotations_just_cont_loss-{epoch:02d}',
+        filename='model_reconstruct_uniform_samples_random_rotations_chamfer_and_intra_loss_training-{epoch:02d}',
         save_top_k=1,  # Save all checkpoints
         save_on_train_epoch_end=True,
         every_n_epochs=3
