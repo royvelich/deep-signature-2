@@ -45,7 +45,7 @@ def main_loop():
         # file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
 
         dataset_path = "/workspace/Github/deep-signature-2/data/sig17_seg_benchmark/"
-        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=True)
+        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=False)
 
         num_workers = 4
         # combine_reg_and_non_reg_patches = True
@@ -122,7 +122,7 @@ def main_loop():
     in_channels = 9
     out_channels = 3
     # want to train model from trained weights
-    # checkpoint = torch.load("C:/Users\galyo\Downloads\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=998.ckpt", map_location=torch.device('cpu'))
+    # checkpoint = torch.load("C:/Users\galyo\Downloads\model_reconstruct_uniform_samples_random_rotations_chamfer_and_intra_loss_training-epoch=998.ckpt", map_location=torch.device('cpu'))
 
     # Extract the state dictionary from the checkpoint
     # state_dict = checkpoint['state_dict']
