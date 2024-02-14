@@ -13,7 +13,6 @@ from data.human_segmentation_original_dataset import HumanSegOrigDataset
 from data.shape_triplet_dataset import ShapeTripletDataset
 from models.point_transformer_conv.model import PointTransformerConvNet, PointTransformerConvNetReconstruct, \
     PointCloudReconstruction
-from models.point_unet.model import UNet
 from utils import init_wandb, custom_euclidean_transform
 
 from data.triplet_dataset import CustomTripletDataset
