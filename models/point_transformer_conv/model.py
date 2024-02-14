@@ -22,7 +22,7 @@ from vars import LR, WEIGHT_DECAY
 
 # Taken from https://github.com/vsitzmann/siren
 # from visualize_pointclouds import visualize_pointclouds
-from visualize_pointclouds import visualize_pointclouds, visualize_pointclouds2
+# from visualize_pointclouds import visualize_pointclouds, visualize_pointclouds2
 
 
 class Sine(torch.nn.Module):
