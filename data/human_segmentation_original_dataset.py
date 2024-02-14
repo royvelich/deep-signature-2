@@ -112,7 +112,7 @@ class HumanSegOrigDataset(Dataset):
         print("loading {} meshes".format(len(mesh_files)))
 
         # Load the actual files
-        for iFile in range(len(mesh_files[:10]) if self.debug else len(mesh_files)):
+        for iFile in range(len(mesh_files[:5]) if self.debug else len(mesh_files)):
 
             print("loading mesh " + str(mesh_files[iFile]))
 
@@ -131,7 +131,7 @@ class HumanSegOrigDataset(Dataset):
             self.faces_list.append(faces)
             self.labels_list.append(labels)
 
-        for ind, labels in enumerate(self.labels_list[:10] if self.debug else self.labels_list):
+        for ind, labels in enumerate(self.labels_list[:5] if self.debug else self.labels_list):
             self.labels_list[ind] = labels
 
 

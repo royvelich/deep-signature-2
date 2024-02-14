@@ -26,7 +26,7 @@ print("Current working directory: ", current_directory)
 
 
 def main_loop():
-    max_epochs = 1000
+    max_epochs = -1
     batch_size = 16
     lr = LR
     weight_decay = WEIGHT_DECAY
@@ -45,7 +45,7 @@ def main_loop():
         # file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
 
         dataset_path = "/workspace/Github/deep-signature-2/data/sig17_seg_benchmark/"
-        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=False)
+        train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=True)
 
         num_workers = 4
         # combine_reg_and_non_reg_patches = True

@@ -545,7 +545,7 @@ class PointCloudReconstruction(pl.LightningModule):
 
     def configure_optimizers(self, lr=LR, weight_decay=WEIGHT_DECAY):
         optimizer = torch.optim.AdamW(self.parameters(), lr=lr)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=1.0)
         return [optimizer], [scheduler]
 
     def on_train_epoch_end(self):
