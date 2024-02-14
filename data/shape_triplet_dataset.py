@@ -65,7 +65,7 @@ class ShapeTripletDataset(Dataset):
 
         # remove from anc_v and neg_v the points that are not in the neighborhoods
         # anc_v = anc_v[anc_pos_radius_neighborhoods[1,:]]
-        pos_v = pos_v[anc_pos_radius_neighborhoods[1,:]].to(device=anc_v.device)
+        # pos_v = pos_v[anc_pos_radius_neighborhoods[1,:]].to(device=anc_v.device)
         # neg_v = neg_v[neg_knn_radius_neighborhoods[1,:]]
         # anc_v = torch.tensor(anc_v, dtype=torch.float32)
         # pos_v = torch.tensor(pos_v, dtype=torch.float32)
