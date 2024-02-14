@@ -547,3 +547,7 @@ class PointCloudReconstruction(pl.LightningModule):
         optimizer = torch.optim.AdamW(self.parameters(), lr=lr)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
         return [optimizer], [scheduler]
+
+    def on_train_epoch_end(self):
+        current_lr = self.optimizers().param_groups[0]['lr']
+        self.log('learning_rate', current_lr, on_step=False, on_epoch=True, sync_dist=True)

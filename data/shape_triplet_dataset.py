@@ -42,8 +42,8 @@ class ShapeTripletDataset(Dataset):
         shape_anc_pos, shape_neg = copy.deepcopy(self.shapes_dataset[idx]),  copy.deepcopy(self.shapes_dataset[neg_idx])
 
         # 0.01 of max distance between points
-        radius_anc_pos = 0.08 * np.max(np.linalg.norm(shape_anc_pos, axis=1))
-        radius_neg = 0.08 * np.max(np.linalg.norm(shape_neg, axis=1))
+        radius_anc_pos = 0.06 * np.max(np.linalg.norm(shape_anc_pos, axis=1))
+        radius_neg = 0.06 * np.max(np.linalg.norm(shape_neg, axis=1))
 
         # sampling number_of_points_to_sample points using fps detach tensors to numpy
         anc_pos_sampled_points, anc_pos_sampled_indices = self.default_fps_sampling(shape_anc_pos.detach().numpy())
@@ -65,6 +65,7 @@ class ShapeTripletDataset(Dataset):
 
         # remove from anc_v and neg_v the points that are not in the neighborhoods
         # anc_v = anc_v[anc_pos_radius_neighborhoods[1,:]]
+        pos_v = pos_v[anc_pos_radius_neighborhoods[1,:]]
         # neg_v = neg_v[neg_knn_radius_neighborhoods[1,:]]
         # anc_v = torch.tensor(anc_v, dtype=torch.float32)
         # pos_v = torch.tensor(pos_v, dtype=torch.float32)
@@ -112,12 +113,12 @@ class ShapeTripletDataset(Dataset):
     def transform_random_rotations(self, patch):
         N = patch.shape[0]
         grid_size = int(np.sqrt(N))
-        ratio = np.random.uniform(0.01, 0.05)
+        # ratio = np.random.uniform(0.01, 0.05)
         mid_point_indice = N // 2 - grid_size // 2 - 1
 
         # origin= patch.v
         # translate to origin
-        patch = patch - patch[mid_point_indice]
+        # patch = patch - patch[mid_point_indice]
         # origin_after_Trans = patch.v
 
         # rotate
