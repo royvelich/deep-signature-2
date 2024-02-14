@@ -63,6 +63,9 @@ class ShapeTripletDataset(Dataset):
         pos_v = self.transform_random_rotations(copy.deepcopy(anc_v))
         neg_v = shape_neg
 
+        # remove from anc_v and neg_v the points that are not in the neighborhoods
+        # anc_v = anc_v[anc_pos_radius_neighborhoods[1,:]]
+        # neg_v = neg_v[neg_knn_radius_neighborhoods[1,:]]
         # anc_v = torch.tensor(anc_v, dtype=torch.float32)
         # pos_v = torch.tensor(pos_v, dtype=torch.float32)
         # neg_v = torch.tensor(neg_v, dtype=torch.float32)

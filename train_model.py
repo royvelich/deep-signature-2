@@ -11,7 +11,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from data.dynamic_triplet_dataset import DynamicTripletDataset
 from data.human_segmentation_original_dataset import HumanSegOrigDataset
 from data.shape_triplet_dataset import ShapeTripletDataset
-from models.point_transformer_conv.model import PointTransformerConvNet, PointTransformerConvNetReconstruct
+from models.point_transformer_conv.model import PointTransformerConvNet, PointTransformerConvNetReconstruct, \
+    PointCloudReconstruction
+from models.point_unet.model import UNet
 from utils import init_wandb, custom_euclidean_transform
 
 from data.triplet_dataset import CustomTripletDataset
@@ -122,11 +124,17 @@ def main_loop():
     out_channels = 3
     # want to train model from trained weights
 
-    model = PointTransformerConvNetReconstruct(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
+    # model = UNet(num_channels=in_channels, unet_depth=num_encoder_decoder_layers)
+    model = PointCloudReconstruction(num_blocks=4, in_channels=9, latent_dim=256, num_points_to_reconstruct=512)
+    model.load_from_checkpoint("C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\checkpoints\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=38.ckpt", num_blocks=4,
+    in_channels=9,
+    latent_dim=256, map_location=torch.device('cpu'))
+    # model = PointCloudReconstruction.load_from_checkpoint("C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\checkpoints\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=38.ckpt", map_location=torch.device('cpu'))
+    # model = PointTransformerConvNetReconstruct(in_channels=in_channels, hidden_channels=hidden_channels, out_channels=out_channels, num_point_transformer_layers=num_point_transformer_layers, num_encoder_decoder_layers=num_encoder_decoder_layers)
     # model_path = "/home/gal.yona/deep-signature-2/trained_models/model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
     # model_path = "./checkpoints/model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=116.ckpt"
-    #
-    # model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
+    # model_path = "C:/Users\galyo\Downloads\model_point_transformer_4_layers_width_512_reconstruct_uniform_samples_random_rotations_just_cont_loss-epoch=704.ckpt"
+    # model = PointTransformerConvNetReconstruct.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
     # model.eval()
 
     # training

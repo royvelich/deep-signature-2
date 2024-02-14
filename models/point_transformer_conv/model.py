@@ -3,9 +3,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch_geometric.nn.pool
 import wandb
 from torch.nn.utils.rnn import pad_packed_sequence
-from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_pool, global_max_pool, global_add_pool
+from torch_geometric.nn import PointTransformerConv, radius_graph, global_mean_pool, global_max_pool, global_add_pool, \
+    GraphUNet
 import pytorch_lightning as pl
 
 from loss import loss_contrastive_plus_codazzi_and_pearson_correlation, \
@@ -20,6 +22,7 @@ from vars import LR, WEIGHT_DECAY
 
 # Taken from https://github.com/vsitzmann/siren
 # from visualize_pointclouds import visualize_pointclouds
+from visualize_pointclouds import visualize_pointclouds, visualize_pointclouds2
 
 
 class Sine(torch.nn.Module):
@@ -358,6 +361,10 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
         anchor_input = torch.index_select(x_input, 0, anchor_idx)
         loss = self.loss_func(anchor_input, positive_output)
         self.log('train_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
+
+        # visualize the point clouds
+        if batch_idx % 1 == 0:
+            visualize_pointclouds2(anchor_input, positive_output)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -371,7 +378,7 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
         anchor_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 0]
         positive_idx = torch.arange(0, output.size(0), device=device)[batch.batch.to(device) % 3 == 1]
 
-        anchor_output = torch.index_select(output, 0, anchor_idx)
+        # anchor_output = torch.index_select(output, 0, anchor_idx)
         positive_output = torch.index_select(output, 0, positive_idx)
 
 
@@ -380,5 +387,156 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
 
         loss = self.loss_func(anchor_input, positive_output)
         self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
+        if batch_idx % 1 == 0:
+            visualize_pointclouds2(anchor_input, positive_output)
         return loss
 
+
+class PointCloudReconstruction(pl.LightningModule):
+    def __init__(self, num_blocks, in_channels, latent_dim, num_points_to_reconstruct=512):
+        super(PointCloudReconstruction, self).__init__()
+        self.first_point_transformer_conv = PointTransformerConv(in_channels, latent_dim,
+            attn_nn=nn.Sequential(
+                nn.Linear(latent_dim, latent_dim),
+                nn.ReLU(),
+                nn.Linear(latent_dim, latent_dim)
+            ),
+            pos_nn=nn.Sequential(
+                nn.Linear(3, latent_dim),
+                nn.ReLU(),
+                nn.Linear(latent_dim, latent_dim)
+            ))
+        self.blocks = nn.ModuleList([
+                PointTransformerConv(latent_dim, latent_dim,
+                    attn_nn=nn.Sequential(
+                    nn.Linear(latent_dim, latent_dim),
+                    nn.ReLU(),
+                    nn.Linear(latent_dim, latent_dim)
+                ))
+            for _ in range(num_blocks-1)
+        ])
+
+        self.graph_unet = GraphUNet(in_channels=latent_dim, hidden_channels=latent_dim, out_channels=latent_dim, depth=4, pool_ratios=[0.5, 0.5, 0.5, 0.5],sum_res=False)
+        # self.centroid_layer = nn.Linear(latent_dim, 3)  # 3D centroid
+        # self.normal_layer = nn.Linear(latent_dim, 3)    # 3D normal
+
+        self.mlp_project_x_axis = nn.Sequential(
+            nn.Linear(latent_dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
+        )
+        self.mlp_project_y_axis = nn.Sequential(
+            nn.Linear(latent_dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
+        )
+        self.mlp_project_z_axis = nn.Sequential(
+            nn.Linear(latent_dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
+        )
+        self.loss_func = loss_chamfer_distance_torch
+        # want to pool the output from Mxnum_points_to_reconstructx3 to num_points_to_reconstructx3
+
+        self.num_points_to_reconstruct = num_points_to_reconstruct
+
+
+
+    def forward(self, data):
+        x= data.x
+        x = self.first_point_transformer_conv(x=x,pos=data.pos, edge_index=data.edge_index)
+        for block in self.blocks:
+            x = block(x=x,pos=data.pos, edge_index=data.edge_index)
+        x = self.graph_unet(x, edge_index=data.edge_index)
+        # centroid = self.centroid_layer(x)
+        # normal = self.normal_layer(x)
+        proj_x = self.mlp_project_x_axis(x)
+        proj_y = self.mlp_project_y_axis(x)
+        proj_z = self.mlp_project_z_axis(x)
+        x = torch.stack([proj_x, proj_y, proj_z], dim=-1)
+        x = torch.mean(x, dim=0)
+        return x
+
+    def training_step(self, batch, batch_idx):
+        device = batch.x.device
+
+        # fix all tensors to device
+        anchor_idx = torch.arange(0, batch.size(0), device=device)[batch.batch.to(device) % 3 == 0]
+        positive_idx = torch.arange(0, batch.size(0), device=device)[batch.batch.to(device) % 3 == 1]
+
+        anchor_input = batch.x[anchor_idx]
+
+        positive_batch_idx = torch.unique(batch.batch[positive_idx])
+        # work only on 1 sized batch
+        positive_input_batch = batch[positive_batch_idx.item()]
+
+
+        positive_input_batch.x = self.append_moments(positive_input_batch.x)
+
+        pos_output = self.forward(positive_input_batch)
+
+
+        # anchor_output = torch.index_select(output, 0, anchor_idx)
+        # positive_output = torch.index_select(output, 0, positive_idx)
+        # reshape positive output to be of shape (batch_size, num_points, 3)
+        # positive_output = positive_output.view(-1, self.num_points_to_reconstruct, 3)
+
+
+        # Compute the loss
+        # anchor_input = torch.index_select(anchor_input, 0, anchor_idx)
+        loss = self.loss_func(anchor_input, pos_output)
+        self.log('train_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
+
+        # visualize the point clouds
+        # if batch_idx % 8 == 0:
+        #     visualize_pointclouds2(anchor_input, pos_output)
+        #     visualize_pointclouds2(anchor_input, positive_input_batch.x[:, :3])
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        device = batch.x.device
+
+        # fix all tensors to device
+        anchor_idx = torch.arange(0, batch.size(0), device=device)[batch.batch.to(device) % 3 == 0]
+        positive_idx = torch.arange(0, batch.size(0), device=device)[batch.batch.to(device) % 3 == 1]
+
+        anchor_input = batch.x[anchor_idx]
+
+        positive_batch_idx = torch.unique(batch.batch[positive_idx])
+        # work only on 1 sized batch
+        positive_input_batch = batch[positive_batch_idx.item()]
+
+        positive_input_batch.x = self.append_moments(positive_input_batch.x)
+
+        pos_output = self.forward(positive_input_batch)
+
+        # anchor_output = torch.index_select(output, 0, anchor_idx)
+        # positive_output = torch.index_select(output, 0, positive_idx)
+        # reshape positive output to be of shape (batch_size, num_points, 3)
+        # positive_output = positive_output.view(-1, self.num_points_to_reconstruct, 3)
+
+        # Compute the loss
+        # anchor_input = torch.index_select(anchor_input, 0, anchor_idx)
+        loss = self.loss_func(anchor_input, pos_output)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
+        # if batch_idx % 1 == 0:
+        #     visualize_pointclouds2(anchor_input, pos_output)
+        return loss
+
+    def append_moments(self, x: torch.Tensor) -> torch.Tensor:
+        second_order_moments = torch.einsum('bi,bj->bij', x, x)
+
+        # Get the upper triangular indices
+        rows, cols = torch.triu_indices(second_order_moments.shape[1], second_order_moments.shape[2])
+
+        # Extract the upper triangular part for each MxM matrix
+        upper_triangular_values = second_order_moments[:, rows, cols]
+
+        appended_x = torch.cat((x, upper_triangular_values.view(x.shape[0], -1)), dim=1)
+
+        return appended_x
+
+    def configure_optimizers(self, lr=LR, weight_decay=WEIGHT_DECAY):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=lr)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=1.0)
+        return [optimizer], [scheduler]
