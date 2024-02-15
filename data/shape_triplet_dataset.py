@@ -47,8 +47,8 @@ class ShapeTripletDataset(Dataset):
         radius_neg = 0.06 * np.max(np.linalg.norm(shape_neg, axis=1))
 
         # sampling number_of_points_to_sample points using fps detach tensors to numpy
-        anc_pos_sampled_points, anc_pos_sampled_indices = self.default_fps_sampling(shape_anc_pos.detach().numpy())
-        neg_sampled_points, neg_sampled_indices = self.default_fps_sampling(shape_neg.detach().numpy())
+        anc_pos_sampled_points, anc_pos_sampled_indices = self.default_fps_sampling(shape_anc_pos)
+        neg_sampled_points, neg_sampled_indices = self.default_fps_sampling(shape_neg)
 
         anc_pos_sampled_points = torch.tensor(anc_pos_sampled_points)
         neg_sampled_points = torch.tensor(neg_sampled_points)
