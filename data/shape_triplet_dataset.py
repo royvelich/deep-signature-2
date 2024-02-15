@@ -57,8 +57,8 @@ class ShapeTripletDataset(Dataset):
         anc_pos_radius_neighborhoods = radius(shape_anc_pos, anc_pos_sampled_points, r=radius_anc_pos, max_num_neighbors=self.max_neighbourhood_size)
         neg_knn_radius_neighborhoods = radius(shape_neg, neg_sampled_points, r=radius_neg, max_num_neighbors=self.max_neighbourhood_size)
         # map the first row of the neighborhoods to the sampled points from 0-number_of_points_to_sample to 0-N image
-        anc_pos_radius_neighborhoods[0,:] = torch.tensor(anc_pos_sampled_indices[anc_pos_radius_neighborhoods[0,:]].astype(np.int64))
-        neg_knn_radius_neighborhoods[0,:] = torch.tensor(neg_sampled_indices[neg_knn_radius_neighborhoods[0,:]].astype(np.int64))
+        anc_pos_radius_neighborhoods[0,:] = anc_pos_sampled_indices[anc_pos_radius_neighborhoods[0,:]]
+        neg_knn_radius_neighborhoods[0,:] = neg_sampled_indices[neg_knn_radius_neighborhoods[0,:]]
 
         anc_v = shape_anc_pos
         pos_v = self.transform_random_rotations(copy.deepcopy(anc_v))
