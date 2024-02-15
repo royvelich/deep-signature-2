@@ -5,13 +5,13 @@ import torch
 from torch.nn.utils.rnn import pack_sequence
 from torch.utils.data import Dataset
 from torch_geometric.data import Data, Batch
-from torch_geometric.nn import knn_graph, radius, radius_graph
+from torch_geometric.nn import knn_graph, radius, radius_graph, fps
 
 from data.non_uniform_sampling import non_uniform_2d_sampling
 from utils import random_rotation, random_rotation_numpy, normalize_point_cloud_numpy, \
     normalize_points_translation_and_rotation
 
-import fpsample
+# import fpsample
 # import os
 # import torch_points3d as tp3d
 # from torch_points3d.core.data_transform import FPS
@@ -134,7 +134,11 @@ class ShapeTripletDataset(Dataset):
 
     def default_fps_sampling(self, v):
             # v = torch.tensor(data=shape.v, dtype=torch.float32)
-            indices = fpsample.fps_sampling(v, self.number_of_points_to_sample)
+            # indices = fpsample.fps_sampling(v, self.number_of_points_to_sample)
+            # fps sampling via pytorch 3d
+            ratio = self.number_of_points_to_sample / v.shape[0]
+            indices = fps(v, ratio=ratio)
+            indices = indices[:self.number_of_points_to_sample]
             v = v[indices]
             return v, indices
 
