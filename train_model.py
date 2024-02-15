@@ -44,7 +44,11 @@ def main_loop():
         # file_path2 = "./data/hyperbolic_monge_patches_100_N_10000.pkl"
         # file_path3 = "./data/parabolic_monge_patches_100_N_10000.pkl"
 
-        dataset_path = "/workspace/Github/deep-signature-2/data/sig17_seg_benchmark/"
+        # path in hpc
+        # dataset_path = "/workspace/Github/deep-signature-2/data/sig17_seg_benchmark/"
+
+        # path in gipdeep
+        dataset_path = "/home/gal.yona/diffusion-net2/diffusion-net/experiments/human_segmentation_original/data/sig17_seg_benchmark"
         train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=True)
 
         num_workers = 4
