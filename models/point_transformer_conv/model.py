@@ -524,7 +524,7 @@ class PointCloudReconstruction(pl.LightningModule):
         # anchor_input = torch.index_select(anchor_input, 0, anchor_idx)
         loss_chamfer = self.loss_func_chamfer(anchor_input, pos_output)
         loss_intra = self.loss_func_intra(pos_output)
-        loss = loss_chamfer + 0.00001 * loss_intra
+        loss = loss_chamfer + 0.01 * loss_intra
         self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
         # if batch_idx % 1 == 0:
         #     visualize_pointclouds2(anchor_input, pos_output)
