@@ -499,13 +499,13 @@ class PointCloudReconstruction(pl.LightningModule):
         # create meshgrid from pos_eps_x and pos_eps_y
         grid_dim = int(torch.sqrt(torch.Tensor([self.num_points_to_reconstruct])))
 
-        grids_array = [torch.meshgrid([torch.linspace(int(-(grid_dim-1) / 2),
-                                                int((grid_dim-1) / 2),
-                                                grid_dim)*eps_x,
-                                torch.linspace(int(- (grid_dim-1) / 2),
-                                                int( (grid_dim-1) / 2),
-                                                grid_dim)*eps_y]) for eps_x, eps_y in
-                           zip(pos_eps_x, pos_eps_y)]
+        grids_array = [torch.meshgrid([torch.linspace(int(-(grid_dim - 1) / 2),
+                                                      int((grid_dim - 1) / 2),
+                                                      grid_dim, device=device) * eps_x,
+                                       torch.linspace(int(- (grid_dim - 1) / 2),
+                                                      int((grid_dim - 1) / 2, ),
+                                                      grid_dim, device=device) * eps_y]) for eps_x, eps_y in
+                       zip(pos_eps_x, pos_eps_y)]
         # create 3d point clouds as patches and translate them to the sampled points positions
         # depended on self.num_points_to_reconstruct to be a perfect square like 64
         pos_output = torch.stack([self.rotate_point_cloud(torch.stack([x[0], x[1], pos_z_output[0].view(int(np.sqrt(self.num_points_to_reconstruct)),int(np.sqrt(self.num_points_to_reconstruct)))], dim=-1),torch.tensor(anchor_input_normals[i],dtype=torch.float))+anchor_input_x[anchor_input_fps_indices[i]] for  i, x in enumerate(grids_array)], dim=0)
@@ -550,13 +550,14 @@ class PointCloudReconstruction(pl.LightningModule):
         pos_z_output, pos_eps_x, pos_eps_y = self.forward(positive_input_batch)
         # create meshgrid from pos_eps_x and pos_eps_y
         grid_dim = int(torch.sqrt(torch.Tensor([self.num_points_to_reconstruct])))
+        # make sure all in the same device
 
         grids_array = [torch.meshgrid([torch.linspace(int(-(grid_dim - 1) / 2),
                                                       int((grid_dim - 1) / 2),
-                                                      grid_dim) * eps_x,
+                                                      grid_dim, device=device) * eps_x,
                                        torch.linspace(int(- (grid_dim - 1) / 2),
-                                                      int((grid_dim - 1) / 2),
-                                                      grid_dim) * eps_y]) for eps_x, eps_y in
+                                                      int((grid_dim - 1) / 2,),
+                                                      grid_dim,  device=device) * eps_y]) for eps_x, eps_y in
                        zip(pos_eps_x, pos_eps_y)]
         # create 3d point clouds as patches and translate them to the sampled points positions
         # depended on self.num_points_to_reconstruct to be a perfect square like 64
