@@ -647,7 +647,7 @@ class PointCloudReconstruction(pl.LightningModule):
         # calculate the rotation matrix
         point_cloud = point_cloud.view(-1, 3)
 
-        z_axis = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32).to(point_cloud.device)
+        z_axis = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32).to(normal_desired_direction.device)
         rotation_axis = torch.cross(z_axis, normal_desired_direction)
         angle = torch.acos(torch.dot(z_axis, normal_desired_direction) / (torch.norm(z_axis) * torch.norm(normal_desired_direction)))
         rotation_matrix = self.rotation_matrix_from_axis_angle(rotation_axis, angle)
