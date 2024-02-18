@@ -117,22 +117,22 @@ class HumanSegOrigDataset(Dataset):
             print("loading mesh " + str(mesh_files[iFile]))
 
             verts, faces = pp3d.read_mesh(mesh_files[iFile])
-            labels = np.loadtxt(label_files[iFile]).astype(int)-1
+            # labels = np.loadtxt(label_files[iFile]).astype(int)-1
 
             # to torch
             verts = torch.tensor(np.ascontiguousarray(verts)).float()
             faces = torch.tensor(np.ascontiguousarray(faces))
-            labels = torch.tensor(np.ascontiguousarray(labels))
+            # labels = torch.tensor(np.ascontiguousarray(labels))
 
             # center and unit scale
             verts = self.normalize_positions(verts)
 
             self.verts_list.append(verts)
             self.faces_list.append(faces)
-            self.labels_list.append(labels)
+            # self.labels_list.append(labels)
 
-        for ind, labels in enumerate(self.labels_list[:5] if self.debug else self.labels_list):
-            self.labels_list[ind] = labels
+        # for ind, labels in enumerate(self.labels_list[:5] if self.debug else self.labels_list):
+        #     self.labels_list[ind] = labels
 
 
     def __len__(self):

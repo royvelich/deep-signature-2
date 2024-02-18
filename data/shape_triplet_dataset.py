@@ -1,6 +1,7 @@
 import copy
 
 import numpy as np
+import open3d.data
 import torch
 from torch.nn.utils.rnn import pack_sequence
 from torch.utils.data import Dataset
@@ -11,6 +12,8 @@ from data.non_uniform_sampling import non_uniform_2d_sampling
 from utils import random_rotation, random_rotation_numpy, normalize_point_cloud_numpy, \
     normalize_points_translation_and_rotation
 
+import open3d as o3d
+
 # import fpsample
 # import os
 # import torch_points3d as tp3d
@@ -20,11 +23,11 @@ from scipy.spatial import cKDTree
 
 
 class ShapeTripletDataset(Dataset):
-    def __init__(self, shapes_dataset, transform=None, radius = 0.01, number_of_points_to_sample = 32, max_neighbourhood_size = 256):
+    def __init__(self, shapes_dataset, transform=None, radius = 0.01, ratio_points_to_sample = 0.02, max_neighbourhood_size = 256):
         self.shapes_dataset = shapes_dataset
         self.transform = transform
         self.radius = radius # radius for knn graph
-        self.number_of_points_to_sample = number_of_points_to_sample # number of points to sample from the point cloud
+        self.ratio_points_to_sample = ratio_points_to_sample # number of points to sample from the point cloud
         self.max_neighbourhood_size = max_neighbourhood_size # max number of points in the neighbourhood
 
 
@@ -42,11 +45,10 @@ class ShapeTripletDataset(Dataset):
 
         shape_anc_pos, shape_neg = copy.deepcopy(self.shapes_dataset[idx]),  copy.deepcopy(self.shapes_dataset[neg_idx])
 
-        # 0.01 of max distance between points
-        radius_anc_pos = 0.06 * np.max(np.linalg.norm(shape_anc_pos, axis=1))
-        radius_neg = 0.06 * np.max(np.linalg.norm(shape_neg, axis=1))
+        # in relation to max distance between points
+        radius_anc_pos = 0.05 * np.max(np.linalg.norm(shape_anc_pos, axis=1))
+        radius_neg = 0.05 * np.max(np.linalg.norm(shape_neg, axis=1))
 
-        # sampling number_of_points_to_sample points using fps detach tensors to numpy
         anc_pos_sampled_points, anc_pos_sampled_indices = self.default_fps_sampling(shape_anc_pos)
         neg_sampled_points, neg_sampled_indices = self.default_fps_sampling(shape_neg)
 
@@ -62,12 +64,15 @@ class ShapeTripletDataset(Dataset):
 
         anc_v = shape_anc_pos
         pos_v = self.transform_random_rotations(copy.deepcopy(anc_v))
-        neg_v = shape_neg
+        # neg_v = shape_neg
 
-        # remove from anc_v and neg_v the points that are not in the neighborhoods
+        # Get unique values from the first row
+        unique_values = np.unique(anc_pos_radius_neighborhoods[0])
+
+
+    # remove from anc_v and neg_v the points that are not in the neighborhoods
         # anc_v = anc_v[anc_pos_radius_neighborhoods[1,:]]
 
-        # os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
         # pos_v = pos_v[anc_pos_radius_neighborhoods[1,:].to(device=pos_v.device)]
         # pos_v = pos_v.to(device=anc_v.device)
         # neg_v = neg_v[neg_knn_radius_neighborhoods[1,:]]
@@ -75,14 +80,28 @@ class ShapeTripletDataset(Dataset):
         # pos_v = torch.tensor(pos_v, dtype=torch.float32)
         # neg_v = torch.tensor(neg_v, dtype=torch.float32)
 
-        item_anc = Data(x=anc_v, pos=anc_v,
-             edge_index=anc_pos_radius_neighborhoods)
-        item_pos = Data(x=pos_v, pos=pos_v,
-                edge_index=anc_pos_radius_neighborhoods)
-        item_neg = Data(x=neg_v, pos=neg_v,
-                edge_index=neg_knn_radius_neighborhoods)
+        # Create an Open3D PointCloud object
+        point_cloud = o3d.geometry.PointCloud()
+        point_cloud.points = o3d.utility.Vector3dVector(shape_anc_pos.numpy())
 
-        item = item_anc, item_pos, item_neg
+        point_cloud.estimate_normals(search_param=open3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+        point_cloud.orient_normals_consistent_tangent_plane(10)
+        # point_cloud.orient_normals_towards_camera_location([0, 0, 1])
+        normals_anc = np.array(point_cloud.normals)[anc_pos_sampled_indices]
+        del point_cloud
+        # from visualize_pointclouds import visualize_pointclouds2
+        # visualize_pointclouds2(anc_v.cpu().detach().numpy(), vector_field_to_visualize=normals_anc, fps_indices=anc_pos_sampled_indices.cpu().detach().numpy())
+        #  want to put z-axis 0,0,1 to the normal direction
+        pos_normals = torch.tensor([[0,0,1]]*normals_anc.shape[0])
+        item_anc = Data(x=anc_v, pos=anc_v,
+             edge_index=anc_pos_radius_neighborhoods, fps_indices=anc_pos_sampled_indices, fps_normals=normals_anc)
+
+        item_pos = Data(x=pos_v, pos=pos_v,
+                edge_index=anc_pos_radius_neighborhoods, fps_indices=anc_pos_sampled_indices, fps_normals=pos_normals)
+        # item_neg = Data(x=neg_v, pos=neg_v,
+        #         edge_index=neg_knn_radius_neighborhoods)
+
+        item = item_anc, item_pos
 
         # patch_anc = self.transform_random_rotations(copy.deepcopy(patch_anc_pos))
         # patch_pos = self.transform_random_rotations(patch_anc_pos)
@@ -136,9 +155,8 @@ class ShapeTripletDataset(Dataset):
             # v = torch.tensor(data=shape.v, dtype=torch.float32)
             # indices = fpsample.fps_sampling(v, self.number_of_points_to_sample)
             # fps sampling via pytorch 3d
-            ratio = self.number_of_points_to_sample / v.shape[0]
-            indices = fps(v, ratio=ratio)
-            indices = indices[:self.number_of_points_to_sample]
+            indices = fps(v, ratio=self.ratio_points_to_sample)
+            # indices = indices[:self.number_of_points_to_sample]
             v = v[indices]
             return v, indices
 

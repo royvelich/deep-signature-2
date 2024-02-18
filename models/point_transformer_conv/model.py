@@ -393,7 +393,7 @@ class PointTransformerConvNetReconstruct(PointTransformerConvNet):
 
 
 class PointCloudReconstruction(pl.LightningModule):
-    def __init__(self, num_blocks, in_channels, latent_dim, num_points_to_reconstruct=512):
+    def __init__(self, num_blocks, in_channels, latent_dim, num_points_to_reconstruct=64, lamda=0.01):
         super(PointCloudReconstruction, self).__init__()
         self.first_point_transformer_conv = PointTransformerConv(in_channels, latent_dim,
             attn_nn=nn.Sequential(
@@ -420,20 +420,30 @@ class PointCloudReconstruction(pl.LightningModule):
         # self.centroid_layer = nn.Linear(latent_dim, 3)  # 3D centroid
         # self.normal_layer = nn.Linear(latent_dim, 3)    # 3D normal
 
-        self.mlp_project_x_axis = nn.Sequential(
-            nn.Linear(latent_dim, 512),
-            nn.ReLU(),
-            nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
-        )
-        self.mlp_project_y_axis = nn.Sequential(
-            nn.Linear(latent_dim, 512),
-            nn.ReLU(),
-            nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
-        )
+        # self.mlp_project_x_axis = nn.Sequential(
+        #     nn.Linear(latent_dim, 512),
+        #     nn.ReLU(),
+        #     nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
+        # )
+        # self.mlp_project_y_axis = nn.Sequential(
+        #     nn.Linear(latent_dim, 512),
+        #     nn.ReLU(),
+        #     nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
+        # )
         self.mlp_project_z_axis = nn.Sequential(
             nn.Linear(latent_dim, 512),
             nn.ReLU(),
             nn.Linear(512, num_points_to_reconstruct)  # Output 3D point cloud
+        )
+        self.mlp_eps_x = nn.Sequential(
+            nn.Linear(num_points_to_reconstruct, 128),
+            nn.ReLU(),
+            nn.Linear(128, 1)  # Output 3D point cloud
+        )
+        self.mlp_eps_y = nn.Sequential(
+            nn.Linear(num_points_to_reconstruct, 128),
+            nn.ReLU(),
+            nn.Linear(128, 1)  # Output 3D point cloud
         )
 
         self.loss_func_chamfer = loss_chamfer_distance_torch
@@ -442,7 +452,7 @@ class PointCloudReconstruction(pl.LightningModule):
         # want to pool the output from Mxnum_points_to_reconstructx3 to num_points_to_reconstructx3
 
         self.num_points_to_reconstruct = num_points_to_reconstruct
-
+        self.lamda = lamda
 
 
     def forward(self, data):
@@ -451,14 +461,21 @@ class PointCloudReconstruction(pl.LightningModule):
         for block in self.blocks:
             x = block(x=x,pos=data.pos, edge_index=data.edge_index)
         x = self.graph_unet(x, edge_index=data.edge_index)
+        # extract fps points from x
+        x= x[data.fps_indices]
         # centroid = self.centroid_layer(x)
         # normal = self.normal_layer(x)
-        proj_x = self.mlp_project_x_axis(x)
-        proj_y = self.mlp_project_y_axis(x)
-        proj_z = self.mlp_project_z_axis(x)
-        x = torch.stack([proj_x, proj_y, proj_z], dim=-1)
-        x = torch.mean(x, dim=0)
-        return x
+        # proj_x = self.mlp_project_x_axis(x)
+        # proj_y = self.mlp_project_y_axis(x)
+        x = self.mlp_project_z_axis(x)
+        # x = torch.stack([proj_x, proj_y, proj_z], dim=-1)
+        # predict epsilon
+        eps_x = self.mlp_eps_x(x)
+        eps_y = self.mlp_eps_y(x)
+
+        # x = torch.cat([proj_z, eps], dim=-1)
+        # x = torch.mean(x, dim=0)
+        return x, eps_x, eps_y
 
     def training_step(self, batch, batch_idx):
         device = batch.x.device
@@ -467,7 +484,9 @@ class PointCloudReconstruction(pl.LightningModule):
         anchor_idx = torch.arange(0, batch.size(0), device=device)[batch.batch.to(device) % 3 == 0]
         positive_idx = torch.arange(0, batch.size(0), device=device)[batch.batch.to(device) % 3 == 1]
 
-        anchor_input = batch.x[anchor_idx]
+        anchor_input_x = batch.x[anchor_idx]
+        anchor_input_normals = batch.fps_normals[0]
+        anchor_input_fps_indices = batch[0].fps_indices
 
         positive_batch_idx = torch.unique(batch.batch[positive_idx])
         # work only on 1 sized batch
@@ -476,9 +495,22 @@ class PointCloudReconstruction(pl.LightningModule):
 
         positive_input_batch.x = self.append_moments(positive_input_batch.x)
 
-        pos_output = self.forward(positive_input_batch)
+        pos_z_output, pos_eps_x, pos_eps_y = self.forward(positive_input_batch)
+        # create meshgrid from pos_eps_x and pos_eps_y
+        grid_dim = int(torch.sqrt(torch.Tensor([self.num_points_to_reconstruct])))
 
-
+        grids_array = [torch.meshgrid([torch.linspace(int(-(grid_dim-1) / 2),
+                                                int((grid_dim-1) / 2),
+                                                grid_dim)*eps_x,
+                                torch.linspace(int(- (grid_dim-1) / 2),
+                                                int( (grid_dim-1) / 2),
+                                                grid_dim)*eps_y]) for eps_x, eps_y in
+                           zip(pos_eps_x, pos_eps_y)]
+        # create 3d point clouds as patches and translate them to the sampled points positions
+        # depended on self.num_points_to_reconstruct to be a perfect square like 64
+        pos_output = torch.stack([self.rotate_point_cloud(torch.stack([x[0], x[1], pos_z_output[0].view(int(np.sqrt(self.num_points_to_reconstruct)),int(np.sqrt(self.num_points_to_reconstruct)))], dim=-1),torch.tensor(anchor_input_normals[i],dtype=torch.float))+anchor_input_x[anchor_input_fps_indices[i]] for  i, x in enumerate(grids_array)], dim=0)
+        pos_output = pos_output.view(-1, self.num_points_to_reconstruct, 3)
+        pos_output = pos_output.view(-1,3)
         # anchor_output = torch.index_select(output, 0, anchor_idx)
         # positive_output = torch.index_select(output, 0, positive_idx)
         # reshape positive output to be of shape (batch_size, num_points, 3)
@@ -487,15 +519,15 @@ class PointCloudReconstruction(pl.LightningModule):
 
         # Compute the loss
         # anchor_input = torch.index_select(anchor_input, 0, anchor_idx)
-        loss_chamfer = self.loss_func_chamfer(anchor_input, pos_output)
+        loss_chamfer = self.loss_func_chamfer(anchor_input_x, pos_output)
         loss_intra = self.loss_func_intra(pos_output)
-        loss = loss_chamfer + 0.00001*loss_intra
+        loss = loss_chamfer + self.lamda*loss_intra
         self.log('train_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
 
         # visualize the point clouds
         # if batch_idx % 8 == 0:
-        #     visualize_pointclouds2(anchor_input, pos_output)
-        #     visualize_pointclouds2(anchor_input, positive_input_batch.x[:, :3])
+        #     visualize_pointclouds2(anchor_input_x, pos_output)
+        #     visualize_pointclouds2(anchor_input_x, positive_input_batch.x[:, :3])
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -505,7 +537,9 @@ class PointCloudReconstruction(pl.LightningModule):
         anchor_idx = torch.arange(0, batch.size(0), device=device)[batch.batch.to(device) % 3 == 0]
         positive_idx = torch.arange(0, batch.size(0), device=device)[batch.batch.to(device) % 3 == 1]
 
-        anchor_input = batch.x[anchor_idx]
+        anchor_input_x = batch.x[anchor_idx]
+        anchor_input_normals = batch.fps_normals[0]
+        anchor_input_fps_indices = batch[0].fps_indices
 
         positive_batch_idx = torch.unique(batch.batch[positive_idx])
         # work only on 1 sized batch
@@ -513,8 +547,26 @@ class PointCloudReconstruction(pl.LightningModule):
 
         positive_input_batch.x = self.append_moments(positive_input_batch.x)
 
-        pos_output = self.forward(positive_input_batch)
+        pos_z_output, pos_eps_x, pos_eps_y = self.forward(positive_input_batch)
+        # create meshgrid from pos_eps_x and pos_eps_y
+        grid_dim = int(torch.sqrt(torch.Tensor([self.num_points_to_reconstruct])))
 
+        grids_array = [torch.meshgrid([torch.linspace(int(-(grid_dim - 1) / 2),
+                                                      int((grid_dim - 1) / 2),
+                                                      grid_dim) * eps_x,
+                                       torch.linspace(int(- (grid_dim - 1) / 2),
+                                                      int((grid_dim - 1) / 2),
+                                                      grid_dim) * eps_y]) for eps_x, eps_y in
+                       zip(pos_eps_x, pos_eps_y)]
+        # create 3d point clouds as patches and translate them to the sampled points positions
+        # depended on self.num_points_to_reconstruct to be a perfect square like 64
+        pos_output = torch.stack([self.rotate_point_cloud(torch.stack([x[0], x[1], pos_z_output[0].view(
+            int(np.sqrt(self.num_points_to_reconstruct)), int(np.sqrt(self.num_points_to_reconstruct)))], dim=-1),
+                                                          torch.tensor(anchor_input_normals[i], dtype=torch.float)) +
+                                  anchor_input_x[anchor_input_fps_indices[i]] for i, x in enumerate(grids_array)],
+                                 dim=0)
+        pos_output = pos_output.view(-1, self.num_points_to_reconstruct, 3)
+        pos_output = pos_output.view(-1, 3)
         # anchor_output = torch.index_select(output, 0, anchor_idx)
         # positive_output = torch.index_select(output, 0, positive_idx)
         # reshape positive output to be of shape (batch_size, num_points, 3)
@@ -522,9 +574,9 @@ class PointCloudReconstruction(pl.LightningModule):
 
         # Compute the loss
         # anchor_input = torch.index_select(anchor_input, 0, anchor_idx)
-        loss_chamfer = self.loss_func_chamfer(anchor_input, pos_output)
+        loss_chamfer = self.loss_func_chamfer(anchor_input_x, pos_output)
         loss_intra = self.loss_func_intra(pos_output)
-        loss = loss_chamfer + 0.01 * loss_intra
+        loss = loss_chamfer + self.lamda * loss_intra
         self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
         # if batch_idx % 1 == 0:
         #     visualize_pointclouds2(anchor_input, pos_output)
@@ -551,3 +603,74 @@ class PointCloudReconstruction(pl.LightningModule):
     def on_train_epoch_end(self):
         current_lr = self.optimizers().param_groups[0]['lr']
         self.log('learning_rate', current_lr, on_step=False, on_epoch=True, sync_dist=True)
+
+
+
+    def calculate_rotation_matrix(self, normals):
+        # Create a reference vector pointing in the z-direction
+        reference_vector = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32)
+
+        # Calculate the rotation axis as the cross product between normals and reference_vector
+        rotation_axis = torch.cross(normals, reference_vector)
+
+        # Calculate the dot product between normals and reference_vector for the angle
+        dot_product = torch.sum(normals * reference_vector, dim=-1)
+        angle = torch.acos(dot_product / (torch.norm(normals, dim=-1) * torch.norm(reference_vector)))
+
+        # Normalize the rotation axis
+        rotation_axis = rotation_axis / torch.norm(rotation_axis, dim=-1, keepdim=True)
+
+        # Convert axis-angle to quaternion
+        half_angle = angle / 2
+        quaternion = torch.cat(
+            [torch.cos(half_angle).unsqueeze(-1), rotation_axis * torch.sin(half_angle).unsqueeze(-1)], dim=-1)
+
+        # Convert quaternion to rotation matrix
+        rotation_matrix = self.quaternion_to_rotation_matrix(quaternion)
+
+        return rotation_matrix
+
+    def quaternion_to_rotation_matrix(self, quaternion):
+        q0, q1, q2, q3 = quaternion.unbind(dim=-1)
+
+        rotation_matrix = torch.stack([
+            1 - 2 * (q2 ** 2 + q3 ** 2), 2 * (q1 * q2 - q0 * q3), 2 * (q1 * q3 + q0 * q2),
+            2 * (q1 * q2 + q0 * q3), 1 - 2 * (q1 ** 2 + q3 ** 2), 2 * (q2 * q3 - q0 * q1),
+            2 * (q1 * q3 - q0 * q2), 2 * (q2 * q3 + q0 * q1), 1 - 2 * (q1 ** 2 + q2 ** 2)
+        ]).view(-1, 3, 3)
+
+        return rotation_matrix
+
+    def rotate_point_cloud(self, point_cloud, normal_desired_direction):
+        # assume each patch has normal of [0,0,1] and need to be rotated to normal_desired_direction
+        # calculate the rotation matrix
+        point_cloud = point_cloud.view(-1, 3)
+
+        z_axis = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32).to(point_cloud.device)
+        rotation_axis = torch.cross(z_axis, normal_desired_direction)
+        angle = torch.acos(torch.dot(z_axis, normal_desired_direction) / (torch.norm(z_axis) * torch.norm(normal_desired_direction)))
+        rotation_matrix = self.rotation_matrix_from_axis_angle(rotation_axis, angle)
+
+        # rotate the point cloud
+        rotated_point_cloud = torch.matmul(point_cloud, rotation_matrix.T)
+        return rotated_point_cloud
+
+    def rotation_matrix_from_axis_angle(self, axis, angle):
+        """
+        Create a 3x3 rotation matrix from an axis and an angle using the Rodrigues' rotation formula.
+        """
+        axis = axis / torch.norm(axis)
+        c = torch.cos(angle)
+        s = torch.sin(angle)
+        t = 1 - c
+
+        x, y, z = axis
+
+        rotation_matrix = torch.tensor([
+            [t * x * x + c, t * x * y - s * z, t * x * z + s * y],
+            [t * x * y + s * z, t * y * y + c, t * y * z - s * x],
+            [t * x * z - s * y, t * y * z + s * x, t * z * z + c]
+        ], dtype=torch.float32)
+
+        return rotation_matrix
+
