@@ -562,8 +562,8 @@ class PointCloudReconstruction(pl.LightningModule):
         # create 3d point clouds as patches and translate them to the sampled points positions
         # depended on self.num_points_to_reconstruct to be a perfect square like 64
         pos_output = torch.stack([self.rotate_point_cloud(torch.stack([x[0], x[1], pos_z_output[0].view(
-            int(np.sqrt(self.num_points_to_reconstruct)), int(np.sqrt(self.num_points_to_reconstruct)))], dim=-1),
-                                                          torch.tensor(anchor_input_normals[i], dtype=torch.float)) +
+            int(np.sqrt(self.num_points_to_reconstruct)), int(np.sqrt(self.num_points_to_reconstruct)))], dim=-1).to(device),
+                                                          torch.tensor(anchor_input_normals[i], dtype=torch.float, device=device)) +
                                   anchor_input_x[anchor_input_fps_indices[i]] for i, x in enumerate(grids_array)],
                                  dim=0)
         pos_output = pos_output.view(-1, self.num_points_to_reconstruct, 3)
