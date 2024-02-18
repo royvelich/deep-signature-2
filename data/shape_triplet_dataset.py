@@ -88,7 +88,7 @@ class ShapeTripletDataset(Dataset):
         point_cloud.orient_normals_consistent_tangent_plane(10)
         # point_cloud.orient_normals_towards_camera_location([0, 0, 1])
         normals_anc = np.array(point_cloud.normals)[anc_pos_sampled_indices]
-        del point_cloud
+        # del point_cloud
         # from visualize_pointclouds import visualize_pointclouds2
         # visualize_pointclouds2(anc_v.cpu().detach().numpy(), vector_field_to_visualize=normals_anc, fps_indices=anc_pos_sampled_indices.cpu().detach().numpy())
         #  want to put z-axis 0,0,1 to the normal direction
