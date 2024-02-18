@@ -50,6 +50,7 @@ def main_loop():
         # path in gipdeep
         dataset_path = "/home/gal.yona/diffusion-net2/diffusion-net/experiments/human_segmentation_original/data/sig17_seg_benchmark"
         train_dataset = HumanSegOrigDataset(dataset_path, train=True, use_cache=False, debug=True)
+        os.environ["WANDB_MODE"] = "offline"
 
         num_workers = 0
         # combine_reg_and_non_reg_patches = True
