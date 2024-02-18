@@ -81,19 +81,19 @@ class ShapeTripletDataset(Dataset):
         # neg_v = torch.tensor(neg_v, dtype=torch.float32)
 
         # Create an Open3D PointCloud object
-        # point_cloud = o3d.geometry.PointCloud()
-        # point_cloud.points = o3d.utility.Vector3dVector(shape_anc_pos.numpy())
-        #
-        # point_cloud.estimate_normals(search_param=open3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
-        # point_cloud.orient_normals_consistent_tangent_plane(10)
-        # point_cloud.orient_normals_towards_camera_location([0, 0, 1])
-        # normals_anc = np.array(point_cloud.normals)[anc_pos_sampled_indices]
-        # del point_cloud
+        point_cloud = o3d.geometry.PointCloud()
+        point_cloud.points = o3d.utility.Vector3dVector(shape_anc_pos.numpy())
+
+        point_cloud.estimate_normals(search_param=open3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+        point_cloud.orient_normals_consistent_tangent_plane(10)
+        point_cloud.orient_normals_towards_camera_location([0, 0, 1])
+        normals_anc = np.array(point_cloud.normals)[anc_pos_sampled_indices]
+        del point_cloud
         # from visualize_pointclouds import visualize_pointclouds2
         # visualize_pointclouds2(anc_v.cpu().detach().numpy(), vector_field_to_visualize=normals_anc, fps_indices=anc_pos_sampled_indices.cpu().detach().numpy())
         #  want to put z-axis 0,0,1 to the normal direction
         pos_normals = torch.tensor([[0,0,1]]*anc_pos_sampled_indices.shape[0])
-        normals_anc = pos_normals
+        # normals_anc = pos_normals
         item_anc = Data(x=anc_v, pos=anc_v,
              edge_index=anc_pos_radius_neighborhoods, fps_indices=anc_pos_sampled_indices, fps_normals=normals_anc)
 
