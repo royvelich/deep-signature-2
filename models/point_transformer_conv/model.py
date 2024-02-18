@@ -653,7 +653,7 @@ class PointCloudReconstruction(pl.LightningModule):
         rotation_matrix = self.rotation_matrix_from_axis_angle(rotation_axis, angle)
 
         # rotate the point cloud
-        rotated_point_cloud = torch.matmul(point_cloud, rotation_matrix.T)
+        rotated_point_cloud = torch.matmul(point_cloud.to(normal_desired_direction.device), (rotation_matrix.to(normal_desired_direction.device)).T)
         return rotated_point_cloud
 
     def rotation_matrix_from_axis_angle(self, axis, angle):
