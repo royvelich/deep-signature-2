@@ -175,8 +175,8 @@ class Patch(Mesh):
         # x, y, z = self._v[:,0], self._v[:,1], self._v[:,2]
         self._v = np.stack([x, y], axis=1)  # Use only x and y coordinates
         # ratio = 0.5
-        ratio = np.random.uniform(0.03, 0.05)
-        # ratio = 0.05
+        # ratio = np.random.uniform(0.03, 0.05)
+        ratio = 0.05
         if downsample:
            indices = self.downsample_non_uniform(ratio=ratio)
         else:
@@ -359,8 +359,13 @@ class Patch(Mesh):
         else:
             return self._directional_derivative(direction_field=self._d2_grid, scalar_field=scalar_field, h=h)
 
+    def get_mid_point(self):
+        index_of_point_closest_to_zero = np.argmin(self._x_grid**2 + self._y_grid**2+ self._z_grid**2)
+        return  index_of_point_closest_to_zero
+
+
 class Patch2(Mesh):
-    def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray,downsample=True):
+    def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray,downsample=True, ratio=0.05):
         self._x_grid = x_grid
         self._y_grid = y_grid
         self._z_grid = z_grid
@@ -373,11 +378,17 @@ class Patch2(Mesh):
         # normalization needs to be before downsample
         # self._v = normalize_points(self._v)
         # x, y, z = self._v[:,0], self._v[:,1], self._v[:,2]
-
         self._v = np.stack([x, y, z], axis=1)  # Use only x and y coordinates
 
+        if downsample:
+              indices = self.downsample_non_uniform(ratio=ratio)
+              self._v = np.stack([x[indices], y[indices], z[indices]], axis=1)  # Use only x and y
 
 
+    def downsample_non_uniform(self, ratio: float) -> Mesh:
+        v = torch.tensor(data=self._v)
+        indices = non_uniform_2d_sampling(int(sqrt(len(v))),  ratio=ratio)
+        return indices
 
 class Torus(Mesh):
     def __init__(self, x_grid: np.ndarray, y_grid: np.ndarray, z_grid: np.ndarray,downsample=True):

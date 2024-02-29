@@ -86,7 +86,7 @@ class ShapeTripletDataset(Dataset):
 
         point_cloud.estimate_normals(search_param=open3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
         point_cloud.orient_normals_consistent_tangent_plane(10)
-        point_cloud.orient_normals_towards_camera_location([0, 0, 1])
+        # point_cloud.orient_normals_towards_camera_location([0, 0, 1])
         normals_anc = np.array(point_cloud.normals)[anc_pos_sampled_indices]
         del point_cloud
         # from visualize_pointclouds import visualize_pointclouds2

@@ -1,22 +1,15 @@
-import pickle
 from datetime import datetime
 from pathlib import Path
 
 import igl
 import matplotlib
-import numpy as np
-import imageio.v3 as iio
 import torch
-import torch_geometric
 from matplotlib import pyplot as plt
 from pygfx import Mesh, MeshPhongMaterial, Geometry, Color, WorldObject
-from scipy.spatial import Delaunay
-from sklearn.neighbors import NearestNeighbors
+from skimage.exposure import exposure
 from torch_geometric.data import Data
-from torch_geometric.nn import fps
+from torch_geometric.nn import knn_graph
 from wgpu.gui.auto import WgpuCanvas, run
-import pygfx as gfx
-import pylinalg as la
 
 # uncomment for just snapshot
 # from wgpu.gui.offscreen import WgpuCanvas
@@ -29,16 +22,8 @@ import numpy as np
 import pywavefront
 import seaborn as sns
 
-import time
-
-import pyvista as pv
-
-from data.triplet_dataset import CustomTripletDataset
-from deep_signature.generation import QuadraticMonagePatchGenerator2
-from geometry2 import normalize_points
 from models.point_transformer_conv.model import PointTransformerConvNet
-from utils import compute_edges_from_faces, compute_patches_from_mesh, save_glb, is_vertex_in_boundary, \
-    compute_edges_from_faces2
+from utils import compute_edges_from_faces, compute_patches_from_mesh, save_glb
 
 
 def _rescale_k(k: np.ndarray) -> np.ndarray:
@@ -57,11 +42,66 @@ def _get_vertex_colors_from_k(k: np.ndarray,title: str = '') -> np.ndarray:
     # plot_color_histogram(k, title=title+' histogram')
 
     # convex combinations between red and blue colors, based on the predicted gaussian curvature
+    # blue big values for k
+    # green small values for k
     c1 = np.column_stack((np.zeros_like(k), k_one_minus, np.zeros_like(k), np.ones_like(k)))
     c2 = np.column_stack((np.zeros_like(k), np.zeros_like(k), k, np.ones_like(k)))
     c = c1 + c2
 
     return c
+
+def _get_vertex_colors_from_2_vals(output0: np.ndarray, output1: np.ndarray, title: str = '') -> np.ndarray:
+    # Plot histograms
+    # plt.figure(figsize=(10, 5))
+    #
+    # plt.subplot(1, 2, 1)
+    # plt.hist(output0, bins=50, color='blue', alpha=0.7)
+    # plt.title('Histogram of Output0')
+    # plt.xlabel('Values')
+    # plt.ylabel('Frequency')
+    #
+    # plt.show()
+    #
+    # Perform histogram equalization
+    output0 = exposure.equalize_hist(output0)
+    output1 = exposure.equalize_hist(output1)
+
+
+    # # plot_color_histogram(k, title=title+' histogram')
+    # output0 = _rescale_k(k=output0)
+    # output1 = _rescale_k(k=output1)
+
+
+    # convex combinations between red and blue colors, based on the predicted gaussian curvature
+    # blue big values for k
+    # green small values for k
+    c1 = np.column_stack((output0, np.zeros_like(output0), np.zeros_like(output0), np.ones_like(output0)))
+    c2 = np.column_stack((np.zeros_like(output1), np.zeros_like(output1), output1, np.ones_like(output1)))
+    c = c1 + c2
+
+    return c
+
+def _get_vertex_colors_from_1_val(output: np.ndarray, title: str = '') -> np.ndarray:
+
+    # Perform histogram equalization
+    output = exposure.equalize_hist(output)
+
+
+    # # plot_color_histogram(k, title=title+' histogram')
+    # output0 = _rescale_k(k=output0)
+    # output1 = _rescale_k(k=output1)
+
+
+    # convex combinations between red and blue colors, based on the predicted gaussian curvature
+    # blue big values for k
+    # green small values for k
+    output_minus_1 = 1 - output
+    c1 = np.column_stack((output, np.zeros_like(output), np.zeros_like(output), np.ones_like(output)))
+    c2 = np.column_stack((np.zeros_like(output), np.zeros_like(output), output_minus_1, np.ones_like(output)))
+    c = c1 + c2
+
+    return c
+
 
 
 def _create_world_object_for_mesh(faces, vertices, k: np.ndarray, title='title', color: Color = '#ffffff') -> WorldObject:
@@ -149,8 +189,10 @@ def xyz_second_moments(vertices):
 # # sample, k1, k2, point_0_0_index = patch_generator.generate(k1=0.5, k2=-0.5,downsample=False)
 #
 #
-model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\images\pointtransformer\width128_trained_reg_plus_unreg_patches_k1k2\grid_size_30_reg_patches\model_point_transformer_3_layers_width_128-epoch=29.ckpt"
-# # model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2/trained_models\model_point_transformer_3_layers_width_128-epoch=09-v1.ckpt"
+# model_path = "C:/Users\galyo\Documents\Computer science\M.Sc\Projects\DeepSignatureProject\deep-signature-2\images\pointtransformer\width128_trained_reg_plus_unreg_patches_k1k2\grid_size_30_reg_patches\model_point_transformer_3_layers_width_128-epoch=29.ckpt"
+# model_path = "C:/Users\galyo\Downloads\model_point_transformer_1_layers_width_128_train_non_uniform_samples_also_with_planar_patches-epoch=149.ckpt"
+model_path = "C:/Users\galyo\Downloads\model_point_transformer_1_layers_width_512_non_uniform_samples_random_rotations-epoch=92.ckpt"
+
 model = PointTransformerConvNet.load_from_checkpoint(model_path, map_location=torch.device('cpu'))
 model.eval()
 #
@@ -226,6 +268,7 @@ def on_key_down(event,camera,scene,renderer):
 # canvas.request_draw(lambda: renderer.render(scene, camera))
 
 def snapshot(scene, camera, renderer, canvas):
+    vis_obj = 'output0'
     renderer.render(scene, camera)
     # canvas.request_draw()
     camera.show_object(scene)
@@ -246,6 +289,7 @@ def animate(scene, camera, canvas, renderer):
 
 
 def snapshot_multiple_patches(data, dataset_reg_and_unreg=False):
+    dis = 1
     for i in range(len(data)):
         index = np.random.randint(0, 3)
         sample = data[i][index]
@@ -413,9 +457,18 @@ def plot_color_histogram(data, title):
 
 def calculate_correlation(data1, data2):
     output = np.corrcoef(data1, data2)
+    plt.plot(data1, label='Array 1')
+    plt.plot(data2, label='Array 2')
+
+    plt.legend()
+    plt.xlabel('Index')
+    plt.ylabel('Value')
+    plt.title('Plot of Two Arrays')
+    plt.show()
+
     return output
 
-def animate_mesh(mesh_name:str="vase-lion100K"):
+def animate_mesh(mesh_name:str="vase-lion100K.obj"):
     dis = 100  # distance between the rendered patches in the visualization
 
     # geometry = gfx.torus_knot_geometry(1.0, 0.3, 32, 8, p=1, q=0)
@@ -423,7 +476,8 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
     # f = geometry.indices.data.astype(np.int32)
 
     # Load the OBJ file
-    scene = pywavefront.Wavefront(mesh_name+".obj", collect_faces=True)
+    # need to be obj file
+    scene = pywavefront.Wavefront(mesh_name, collect_faces=True)
     v = np.array(scene.vertices)
     f = np.array(scene.mesh_list[0].faces)
 
@@ -432,7 +486,7 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
     # tripy_faces = tripy.earclip(edges2)
 
     # downsample the mesh
-    ratio = 0.05
+    ratio = 0.1
     # indices = fps(x=torch.tensor(data=v), ratio=ratio)
     m, v_downsampled, f_downsampled, _, _ = igl.decimate(v, f, int(f.shape[0]*ratio))
     # v_downsampled, f_downsampled = v, f
@@ -445,10 +499,11 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
 
     # need to choose for each neighborhood the faces that contain it vertices and organize them in the right order
     # normalized_   patches, faces = compute_patches_from_mesh(v, f, k=30)
-    patches_size = 30
+    patches_size = 200
     GT_radius_size = 30
+    is_radius = False
 
-    normalized_patches, faces = compute_patches_from_mesh(v_downsampled, f_downsampled, k=patches_size)
+    normalized_patches, faces = compute_patches_from_mesh(v_downsampled, f_downsampled, k=patches_size, is_radius=is_radius)
 
     # second_moments = sample.v_second_moments
     # sample_patch = sample 
@@ -466,6 +521,7 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
     # output = model(Data(x=second_moments.to(torch.float32), pos=torch.tensor(v, dtype=torch.float32),edge_index=compute_edges_from_faces(f)), global_pooling=False)
 
     output = []
+    # edges not suppose to affect the model output
     for i in range(len(normalized_patches)):
         # if vertex v[i] contained in less or equal than 4 faces output append 0 value
         # if is_vertex_in_boundary(f_downsampled, i, 4):
@@ -473,7 +529,10 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
         #     continue
         output.append(model(Data(x=torch.tensor(normalized_patches[i], dtype=torch.float32),
                                  pos=torch.tensor(normalized_patches[i], dtype=torch.float32),
-                                 edge_index=compute_edges_from_faces(faces[i])), global_pooling=True).detach().numpy())
+                                edge_index=knn_graph(torch.tensor(normalized_patches[i]), k=20, batch=None, loop=False), global_pooling=True)).detach().numpy())
+
+                                 # edge_index=compute_edges_from_faces(faces[i])), global_pooling=True).detach().numpy())
+
     output = np.concatenate(output, axis=0)
     # try to negate the output
     output = - output
@@ -485,24 +544,28 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
     # calculate_correlation(k1, k2)
     # calculate_correlation(output[:, 0], output[:, 1])
 
-    add_colored_mesh(scene, faces=sample_patch_downsampled.faces, vertices=sample_patch_downsampled.vertices, colors=output[:, 0],
-                     position=(0, 0, 0), title='output0')
-    add_colored_mesh(scene, sample_patch_downsampled.faces, sample_patch_downsampled.vertices, colors=output[:, 1], position=(dis, 0, 0),
-                     title='output1')
-    add_colored_mesh(scene, sample_patch_downsampled.faces, sample_patch_downsampled.vertices, colors=output[:, 0] * output[:, 1],
-                     position=(2 * dis, 0, 0),
-                     title='output0*output1')
-    c_uint8_gt = (_get_vertex_colors_from_k(k1*k2) * 255).astype(np.uint8)
+    # add_colored_mesh(scene, faces=sample_patch_downsampled.faces, vertices=sample_patch_downsampled.vertices, colors=output[:, 0],
+    #                  position=(0, 0, 0), title='output0')
+    # add_colored_mesh(scene, sample_patch_downsampled.faces, sample_patch_downsampled.vertices, colors=output[:, 1], position=(dis, 0, 0),
+    #                  title='output1')
+    # add_colored_mesh(scene, sample_patch_downsampled.faces, sample_patch_downsampled.vertices, colors=output[:, 0] * output[:, 1],
+    #                  position=(2 * dis, 0, 0),
+    #                  title='output0*output1')
+    # c_uint8_gt = (_get_vertex_colors_from_k(k1*k2) * 255).astype(np.uint8)
+    #
+    # save_glb(vertices=v, faces=f, colors=c_uint8_gt, path=Path(mesh_name+"_"+str(ratio)+'_k1_k2_gt.glb'))
+    # d1_downsampled, d2_downsampled, k1_downsampled, k2_downsampled = igl.principal_curvature(v_downsampled, f_downsampled, radius=GT_radius_size)
+    #
+    # c_uint8_gt_downsampled = (_get_vertex_colors_from_k(k1_downsampled*k2_downsampled) * 255).astype(np.uint8)
+    # save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces, colors=c_uint8_gt_downsampled, path=Path(mesh_name+"_"+str(ratio)+'_k1_k2_downsampled_gt.glb'))
 
-    save_glb(vertices=v, faces=f, colors=c_uint8_gt, path=Path(mesh_name+"_"+str(ratio)+'_k1_k2_gt.glb'))
-    d1_downsampled, d2_downsampled, k1_downsampled, k2_downsampled = igl.principal_curvature(v_downsampled, f_downsampled, radius=GT_radius_size)
+    # c_uint8_output = (_get_vertex_colors_from_k(output[:, 0]*output[:, 1]) * 255).astype(np.uint8)
+    # save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces, colors=c_uint8_output, path=Path(mesh_name+"_"+str(ratio)+'_output0_output1.glb'))
 
-    c_uint8_gt_downsampled = (_get_vertex_colors_from_k(k1_downsampled*k2_downsampled) * 255).astype(np.uint8)
-    save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces, colors=c_uint8_gt_downsampled, path=Path(mesh_name+"_"+str(ratio)+'_k1_k2_downsampled_gt.glb'))
-
-    c_uint8_output = (_get_vertex_colors_from_k(output[:, 0]*output[:, 1]) * 255).astype(np.uint8)
-    save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces, colors=c_uint8_output, path=Path(mesh_name+"_"+str(ratio)+'_output0_output1.glb'))
-
+    c_uint8_output = (_get_vertex_colors_from_2_vals(output[:, 0] , output[:, 1])*255).astype(np.uint8)
+    # c_uint8_output = (_get_vertex_colors_from_1_val(output[:, 0]*output[:, 1])*255).astype(np.uint8)
+    save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces, colors=c_uint8_output,
+             path=Path(mesh_name + "_" + str(ratio) + '_output0_output1.glb'))
 
     # c_uint8_gt = (_get_vertex_colors_from_k((k1+k2)/2) * 255).astype(np.uint8)
     #
@@ -517,19 +580,19 @@ def animate_mesh(mesh_name:str="vase-lion100K"):
     # save_glb(vertices=sample_patch_downsampled.vertices, faces=sample_patch_downsampled.faces,
     #          colors=c_uint8_gt_downsampled, path=Path(mesh_name + "_" + str(ratio) + '_mean_curvature_output_gt.glb'))
 
-    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, dis, 0), title='k1')
-    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, dis, 0),
-                     title='k2')
-    add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1 * k2, position=(2 * dis, dis, 0),
-                     title='k1*k2')
+    # add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1, position=(0, dis, 0), title='k1')
+    # add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k2, position=(dis, dis, 0),
+    #                  title='k2')
+    # add_colored_mesh(scene, sample_patch.faces, sample_patch.vertices, colors=k1 * k2, position=(2 * dis, dis, 0),
+    #                  title='k1*k2')
 
-    print("k1 and k2 correlation:"+str(calculate_correlation(k1, k2)))
-    print("mean k1:"+str(np.mean(k1)))
-    print("mean k2:"+str(np.mean(k2)))
-    print("k1_downsampled and k2_downsampled correlation:"+str(calculate_correlation(k1_downsampled, k2_downsampled)))
-    print("mean k1_downsampled:" + str(np.mean(k1_downsampled)))
-    print("mean k2_downsampled:" + str(np.mean(k2_downsampled)))
-    print("output[:,0] and output[:,1] correlation:"+str(calculate_correlation(output[:, 0], output[:, 1])))
+    # print("k1 and k2 correlation:"+str(calculate_correlation(k1, k2)))
+    # print("mean k1:"+str(np.mean(k1)))
+    # print("mean k2:"+str(np.mean(k2)))
+    # print("k1_downsampled and k2_downsampled correlation:"+str(calculate_correlation(k1_downsampled, k2_downsampled)))
+    # print("mean k1_downsampled:" + str(np.mean(k1_downsampled)))
+    # print("mean k2_downsampled:" + str(np.mean(k2_downsampled)))
+    # print("output[:,0] and output[:,1] correlation:"+str(calculate_correlation(output[:, 0], output[:, 1])))
 
 
     # if dataset_reg_and_unreg:
@@ -631,7 +694,8 @@ if __name__ == "__main__":
     # snapshot_multiple_patches()
     # snapshot_or_animate_torus()
     # meshes_names = ["vase-lion100K", "chair100K", "chair", "botijo", "aircraft", "blade", "dancer_25K", "dancer2", "dancing_children100K"]
-    meshes_names = ["saddle30"]
+    # meshes_names = ["mesh_different_sampling/non_uniform/same_ratio/peak33007.obj"]
+    meshes_names = ["3d_vis/vase-lion100K.obj"]
 
     for mesh_name in meshes_names:
         animate_mesh(mesh_name=mesh_name)

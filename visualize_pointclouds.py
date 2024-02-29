@@ -1,46 +1,109 @@
 import pickle
+import threading
+import time
 
+import networkx as nx
 import numpy as np
-# import pyvista as pv
+import pyvista as pv
 import torch
 from matplotlib import pyplot as plt
 # from mpl_toolkits.mplot3d import Axes3D
 import open3d as o3d
 
 # from utils import normalize_point_cloud, normalize_points_translation_and_rotation
+from torch_geometric.nn import knn_graph
 
 
-def visualize_pointclouds(pointcloud1, pointcloud2, pointcloud3=None, pointcloud4 = None, labels=None, title=None):
-    # from torch to numpy
-    # if is torch
-    if isinstance(pointcloud1, torch.Tensor):
-        pointcloud1 = pointcloud1.detach().cpu().numpy()
-    if isinstance(pointcloud2, torch.Tensor):
-        pointcloud2 = pointcloud2.detach().cpu().numpy()
-    if pointcloud3 is not None and isinstance(pointcloud3, torch.Tensor):
-        pointcloud3 = pointcloud3.detach().cpu().numpy()
-    if pointcloud4 is not None and isinstance(pointcloud4, torch.Tensor):
-        pointcloud4 = pointcloud4.detach().cpu().numpy()
-    cloud1 = pv.PolyData(pointcloud1)
-    cloud2 = pv.PolyData(pointcloud2)
+def thread_plot_patch(plotter):
+    while True:
+        plotter.show()
+        time.sleep(0.1)
+
+def is_connected(pointcloud, k=12):
+    edge_indices = knn_graph(torch.tensor(pointcloud), k=k, batch=None, loop=False)
+    edge_indices = edge_indices.view(-1, 2).numpy()
+
+    # Create a graph from edge indices
+    G = nx.Graph()
+    G.add_edges_from(edge_indices)
+
+    # Check if the graph is connected
+    return nx.is_connected(G)
+
+def visualize_pointclouds(*pointcloud_color_tuples, check_connected=False):
+    pointcloud_color_tuples = [
+        (pc.detach().cpu().numpy(), color) if isinstance(pc, torch.Tensor) else (pc, color)
+        for pc, color in pointcloud_color_tuples
+    ]
 
     plotter = pv.Plotter()
-    plotter.add_points(cloud1, color="blue", render_points_as_spheres=True, point_size=5)
-    plotter.add_points(cloud2, color="red", render_points_as_spheres=True, point_size=5)
-    if pointcloud3 is not None:
-        cloud3 = pv.PolyData(pointcloud3)
-        plotter.add_points(cloud3, color="green", render_points_as_spheres=True, point_size=5)
-    if pointcloud4 is not None:
-        cloud4 = pv.PolyData(pointcloud4)
-        plotter.add_points(cloud4, color="yellow", render_points_as_spheres=True, point_size=5)
 
-    if title:
-        plotter.set_title(title)
 
+    for pc, color in pointcloud_color_tuples:
+        if pc is not None:
+            cloud = pv.PolyData(pc)
+            plotter.add_points(cloud, color=color, render_points_as_spheres=True, point_size=5)
+            if check_connected:
+                print("the patch in "+str(color)+ " is connected: "+str(is_connected(pc)))
+                # Get edge indices using the knn_function
+                # edge_indices = knn_graph(torch.tensor(pc), k=6, batch=None, loop=False)
+                # Reshape edge_indices to (N, 2) for add_cells
+                # edge_indices = edge_indices.view(-1, 2).numpy()
+
+                # Create lines from edge indices
+                # lines = pv.PolyData()
+                # lines.points = pc
+                # lines.lines = edge_indices
+                #
+                # # Add edges to the plot
+                # plotter.add_mesh(lines, color="black", line_width=1.0)
     plotter.add_axes_at_origin()
 
-        # Show the plot
+    # Show the plot
+    #
+    # thread = threading.Thread(target=thread_plot_patch, args=(plotter,))
+    # thread.start()
     plotter.show()
+
+def visualize_pointclouds2(pointcloud1, pointcloud2=None, pointcloud3=None, pointcloud4=None, labels=None, title=None,vector_field_to_visualize=None, fps_indices=None, arrow_scale=0.001):
+        # from torch to numpy
+        # if is torch
+        if isinstance(pointcloud1, torch.Tensor):
+            pointcloud1 = pointcloud1.detach().cpu().numpy()
+        if pointcloud2 is not None and isinstance(pointcloud2, torch.Tensor):
+            pointcloud2 = pointcloud2.detach().cpu().numpy()
+        if pointcloud3 is not None and isinstance(pointcloud3, torch.Tensor):
+            pointcloud3 = pointcloud3.detach().cpu().numpy()
+        if pointcloud4 is not None and isinstance(pointcloud4, torch.Tensor):
+            pointcloud4 = pointcloud4.detach().cpu().numpy()
+
+
+        cloud1 = pv.PolyData(pointcloud1)
+
+        plotter = pv.Plotter()
+        plotter.add_points(cloud1, color="blue", render_points_as_spheres=True, point_size=5)
+        if pointcloud2 is not None:
+            cloud2 = pv.PolyData(pointcloud2)
+            plotter.add_points(cloud2, color="red", render_points_as_spheres=True, point_size=5)
+        if pointcloud3 is not None:
+            cloud3 = pv.PolyData(pointcloud3)
+            plotter.add_points(cloud3, color="green", render_points_as_spheres=True, point_size=5)
+        if pointcloud4 is not None:
+            cloud4 = pv.PolyData(pointcloud4)
+            plotter.add_points(cloud4, color="yellow", render_points_as_spheres=True, point_size=5)
+        if vector_field_to_visualize is not None:
+            plotter.add_arrows(cent=pointcloud1[fps_indices],direction=vector_field_to_visualize, color="red", mag=arrow_scale)
+
+        if title:
+            plotter.set_title(title)
+
+        plotter.add_axes_at_origin()
+
+        # Show the plot
+
+        plotter.show()
+
+
 
 def apply_pca_and_align(points, eigenvectors=None):
     """ Apply PCA on a set of points and align the principal components with the axes. """

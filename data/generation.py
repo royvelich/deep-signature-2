@@ -200,9 +200,10 @@ class QuadraticMonagePatchGenerator2(PatchGenerator):
         return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample), k1, k2,point0_0_index
 
 class QuadraticMonagePatchPointCloudGenerator(PatchGenerator):
-    def __init__(self, limit: float, grid_size: int, downsample: bool = False):
+    def __init__(self, limit: float, grid_size: int, downsample: bool = False, ratio: float = 0.05):
         super().__init__(limit=limit, grid_size=grid_size)
         self.downsample = downsample
+        self.ratio = ratio
 
     def generate(self, k1=0, k2=0,grid_size_delta=0, patch_type='spherical') -> tuple[
         Patch2, ndarray | int | float | complex, ndarray | int | float | complex, int]:
@@ -216,7 +217,7 @@ class QuadraticMonagePatchPointCloudGenerator(PatchGenerator):
 
         # calculated to be the index of the vertex with (x,y) closest to (0,0) and positive
         point0_0_index = int((curr_grid_size** 2 + curr_grid_size)/2)
-        curvature_limit = 3
+        curvature_limit = 1.5
         if k1==0:
             eps = 0.01
             if patch_type=='spherical':
@@ -249,14 +250,16 @@ class QuadraticMonagePatchPointCloudGenerator(PatchGenerator):
             elif patch_type == 'planar':
                 k1 = 0
                 k2 = 0
+            elif patch_type == 'NaN':
+                pass
             else:
                 raise ValueError('patch_type not recognized')
 
 
         x_grid, y_grid = np.meshgrid(x, y)
-        z_grid = k1 * x_grid ** 2 / 2 + k2 * y_grid ** 2 / 2
+        z_grid = k1 * x_grid ** 2 + k2 * y_grid ** 2
 
-        return Patch2(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample), k1, k2,point0_0_index
+        return Patch2(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample,ratio=self.ratio), k1, k2,point0_0_index
 
 
 
@@ -328,24 +331,30 @@ class PeakSaddleGenerator(PatchGenerator):
 
         x = np.linspace(-self._limit, self._limit, curr_grid_size)
         y = np.linspace(-self._limit, self._limit, curr_grid_size)
+        if 0.0 not in x:
+            x = np.insert(x, np.searchsorted(x, 0), 0)
+
+        if 0.0 not in y:
+            y = np.insert(y, np.searchsorted(y, 0), 0)
+
         x_grid, y_grid = np.meshgrid(x, y)
 
         if shape == "peak1":
-            z_grid = x_grid ** 2 + y_grid ** 2
+            z_grid = -x_grid ** 2 - y_grid ** 2
         elif shape == "peak2":
-            z_grid = 3*x_grid ** 2 + y_grid ** 2
+            z_grid = 1.5*x_grid ** 2 + 0.2*y_grid ** 2
         elif shape == "peak3":
             z_grid = 0.5*x_grid ** 2 + 0.5*y_grid ** 2
         elif shape == "peak4":
-            z_grid = 2*x_grid ** 2 + y_grid ** 2
+            z_grid = 1.5*x_grid ** 2 + 1.5*y_grid ** 2
         elif shape == "saddle1":
             z_grid = 0.2*x_grid ** 2 - 0.2*y_grid ** 2
         elif shape == "saddle2":
-            z_grid = -0.8*x_grid ** 2 + 2*y_grid ** 2
+            z_grid = 1.5*x_grid ** 2 - 0.5*y_grid ** 2
         elif shape == "saddle3":
             z_grid = x_grid ** 2 - y_grid ** 2
         elif shape == "saddle4":
-            z_grid = 2 * x_grid ** 2 - 3* y_grid ** 2
+            z_grid = 1.5 * x_grid ** 2 - 1.5* y_grid ** 2
         elif shape == "parabolic1":
             z_grid = 0.5*x_grid**2
 
