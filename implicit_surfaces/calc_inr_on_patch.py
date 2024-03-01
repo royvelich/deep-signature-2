@@ -5,12 +5,12 @@ import numpy as np
 import open3d as o3d
 from visualize_pointclouds import visualize_pointclouds2
 from model import SIREN
-from loss import calculate_dirichlet_energy, rand_differences_loss,DirichletEnergyLoss
+from loss import calculate_dirichlet_energy, rand_differences_loss,DirichletEnergyLoss, dirichlet_loss
 
 grid_size = 7
 limit = 1
 downsample = False
-epochs = 20000
+epochs = 3000
 
 meshes_generator = PeakSaddleGenerator(limit=limit, grid_size=grid_size, downsample=downsample)
 # meshes_generator = QuadraticMonageParabolicPlanarPatchGenerator(limit=limit, grid_size=grid_size, downsample=True)
@@ -47,7 +47,7 @@ for epoch in range(epochs):
     dxdy = torch.autograd.grad(output["model_out"], output["model_in"],grad_outputs=torch.ones_like(output["model_out"]), create_graph=True)
     dx = dxdy[0][:,0]
     dy = dxdy[0][:,1]
-    loss = torch.norm(output['model_out']-f_uv)**2 + torch.norm(dx)**2 + torch.norm(dy)**2
+    loss = torch.norm(output['model_out']-f_uv)**2 + 0.001*(torch.norm(dx)**2 + torch.norm(dy)**2 + dirichlet_loss(model))
     loss.backward()
     # update the weights
     model.optimizer.step()

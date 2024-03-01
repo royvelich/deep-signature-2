@@ -56,9 +56,11 @@ def rand_differences_loss(model):
     return torch.mean(rand_sampled_f_uv_derivative_norm).item()  # Convert to Python scalar
 
 def dirichlet_loss(model):
-    # calculate derivative of model inr regarding the x,y input coordinates using autodiff
-    # calculate the norm of the derivative
-    # return the mean of the norm
-    u_der = torch.autograd.grad(model(rand_sampled_uv)['model_out'], rand_sampled_uv, grad_outputs=torch.ones_like(rand_sampled_uv), create_graph=True)[0]
-    v_der = torch.autograd.grad(model(rand_sampled_uv)['model_out'], rand_sampled_uv, grad_outputs=torch.ones_like(rand_sampled_uv), create_graph=True)[0]
-    return torch.mean(torch.norm(torch.autograd.grad(model(rand_sampled_uv)['model_out'], rand_sampled_uv, grad_outputs=torch.ones_like(rand_sampled_uv), create_graph=True)[0], dim=1)).item()  # Convert to Python scalar
+    rand_sampled_uv = torch.rand(50, 2) * 2 - 1
+    rand_sampled_output = model(rand_sampled_uv)
+    dxdy = torch.autograd.grad(rand_sampled_output["model_out"], rand_sampled_output["model_in"],
+                               grad_outputs=torch.ones_like(rand_sampled_output["model_out"]), create_graph=True)
+    dx = dxdy[0][:, 0]
+    dy = dxdy[0][:, 1]
+    loss = torch.norm(dx)**2 + torch.norm(dy)**2
+    return loss
