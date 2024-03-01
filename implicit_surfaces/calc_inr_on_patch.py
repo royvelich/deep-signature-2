@@ -10,7 +10,7 @@ from loss import calculate_dirichlet_energy, rand_differences_loss,DirichletEner
 grid_size = 7
 limit = 1
 downsample = False
-epochs = 3000
+epochs = 20000
 
 meshes_generator = PeakSaddleGenerator(limit=limit, grid_size=grid_size, downsample=downsample)
 # meshes_generator = QuadraticMonageParabolicPlanarPatchGenerator(limit=limit, grid_size=grid_size, downsample=True)
