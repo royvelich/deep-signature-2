@@ -65,7 +65,7 @@ def visualize_pointclouds(*pointcloud_color_tuples, check_connected=False):
     # thread.start()
     plotter.show()
 
-def visualize_pointclouds2(pointcloud1, pointcloud2=None, pointcloud3=None, pointcloud4=None, labels=None, title=None,vector_field_to_visualize=None, fps_indices=None, arrow_scale=0.001):
+def visualize_pointclouds2(pointcloud1, pointcloud2=None, pointcloud3=None, pointcloud4=None, labels=None, title=None, vector_fields_to_visualize=None, fps_indices=None, arrow_scale=0.001):
         # from torch to numpy
         # if is torch
         if isinstance(pointcloud1, torch.Tensor):
@@ -91,8 +91,11 @@ def visualize_pointclouds2(pointcloud1, pointcloud2=None, pointcloud3=None, poin
         if pointcloud4 is not None:
             cloud4 = pv.PolyData(pointcloud4)
             plotter.add_points(cloud4, color="yellow", render_points_as_spheres=True, point_size=5)
-        if vector_field_to_visualize is not None:
-            plotter.add_arrows(cent=pointcloud1[fps_indices],direction=vector_field_to_visualize, color="red", mag=arrow_scale)
+        if vector_fields_to_visualize is not None:
+            colors = ["red","blue", "green", "yellow"]
+            for i in range(len(vector_fields_to_visualize)):
+                plotter.add_arrows(cent=pointcloud1[fps_indices], direction=vector_fields_to_visualize[i], color=colors[i], mag=arrow_scale)
+
 
         if title:
             plotter.set_title(title)

@@ -358,4 +358,10 @@ class PeakSaddleGenerator(PatchGenerator):
         elif shape == "parabolic1":
             z_grid = 0.5*x_grid**2
 
+        elif shape == "random_order_2":
+            a = np.random.uniform(-1, 1)
+            b = np.random.uniform(-1, 1)
+            c = np.random.uniform(-1, 1)
+            z_grid = a*x_grid**2 + b*y_grid**2 + c*x_grid*y_grid
+
         return Patch(x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, downsample=self.downsample)

@@ -55,12 +55,20 @@ def rand_differences_loss(model):
     rand_sampled_f_uv_derivative_norm = torch.norm(rand_sampled_f_uv_derivative, dim=1)
     return torch.mean(rand_sampled_f_uv_derivative_norm).item()  # Convert to Python scalar
 
-def dirichlet_loss(model):
-    rand_sampled_uv = torch.rand(50, 2) * 2 - 1
+def dirichlet_loss(model, gaussian_weights=True):
+    rand_sampled_uv = (torch.rand(50, 2) * 2 - 1)*0.05
     rand_sampled_output = model(rand_sampled_uv)
     dxdy = torch.autograd.grad(rand_sampled_output["model_out"], rand_sampled_output["model_in"],
                                grad_outputs=torch.ones_like(rand_sampled_output["model_out"]), create_graph=True)
     dx = dxdy[0][:, 0]
     dy = dxdy[0][:, 1]
-    loss = torch.norm(dx)**2 + torch.norm(dy)**2
+    if gaussian_weights:
+        # add gaussian weights s.t. the center 0,0 will have the highest weight
+        gaussian_weights = torch.exp(-torch.norm(rand_sampled_uv, dim=1)**2)
+        # multiply the derivatives with weights
+        dx_weighted = dx * gaussian_weights
+        dy_weighted = dy * gaussian_weights
+        loss = torch.norm(dx_weighted, p=2) + torch.norm(dy_weighted, p=2)
+    else:
+        loss = torch.norm(dx, p=2) + torch.norm(dy, p=2)
     return loss

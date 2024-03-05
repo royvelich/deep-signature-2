@@ -178,8 +178,8 @@ signature2,mesh_2_d1, mesh_2d2 = calculate_mean_curvature_based_signature(mesh2.
 # sample 1000 points from the first mesh and then take the 1000 nearest neighbors from the second mesh
 fps_sampled = fps(torch.tensor(mesh.v), ratio=0.1)
 mesh2_corresponding_indices = sp.spatial.cKDTree(mesh2.v).query(mesh.v[fps_sampled])[1]
-visualize_pointclouds2(mesh.v, vector_field_to_visualize=d1[fps_sampled], fps_indices=fps_sampled, arrow_scale=0.01)
-visualize_pointclouds2(mesh2.v, vector_field_to_visualize=mesh_2_d1[mesh2_corresponding_indices], fps_indices=mesh2_corresponding_indices, arrow_scale=0.01)
+visualize_pointclouds2(mesh.v, vector_fields_to_visualize=d1[fps_sampled], fps_indices=fps_sampled, arrow_scale=0.01)
+visualize_pointclouds2(mesh2.v, vector_fields_to_visualize=mesh_2_d1[mesh2_corresponding_indices], fps_indices=mesh2_corresponding_indices, arrow_scale=0.01)
 # plot for each signaure1[:,i] and signature2[:,i] the function signature1[:,i][fps_sampled] and signature2[:,i][mesh2_corresponding_indices]
 for i in range(signature1.shape[1]):
     plt.title(f"signature {i} - mesh {len(mesh.v)} vs mesh {len(mesh2.v)}")
