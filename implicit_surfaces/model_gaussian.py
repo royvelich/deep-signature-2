@@ -86,7 +86,7 @@ class GaussianMLP(nn.Module):
     """
     def __init__(self, n_in_features, n_out_features, hidden_layer_config=[],
                  w0=30, ww=None, delay_init=False):
-        super(MLP, self).__init__()
+        super(GaussianMLP, self).__init__()
         self.in_features = n_in_features
         self.out_features = n_out_features
         self.w0 = w0
