@@ -47,7 +47,7 @@ class GaussianActivation(nn.Module):
 
 
 
-class MLP(nn.Module):
+class GaussianMLP(nn.Module):
     """MLP Module
 
     Parameters
