@@ -57,7 +57,7 @@ for i in range(number_of_patches):
     f_uv = torch.tensor(f_uv, dtype=torch.float32).view(-1, 1)
     input_v_torch = input_v_torch.cuda()
     f_uv = f_uv.cuda()
-    patches.append((input_v, f_uv, mid_point_index))
+    patches.append((input_v_torch, f_uv, mid_point_index))
 
 hidden_dim = 256
 hidden_layer_config = [hidden_dim, hidden_dim]
